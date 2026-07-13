@@ -55,7 +55,7 @@ export default function Contact({ config }: ContactProps) {
         delayChildren: 0.15
       }
     }
-  };
+  } as const;
 
   const itemVariants = {
     hidden: { opacity: 0, y: 30 },
@@ -68,7 +68,7 @@ export default function Contact({ config }: ContactProps) {
         damping: 14
       }
     }
-  };
+  } as const;
 
   return (
     <section 
@@ -330,7 +330,7 @@ export default function Contact({ config }: ContactProps) {
             {/* Social media connections footer */}
             <div className="flex items-center justify-center space-x-6 pt-6 border-t border-zinc-100 dark:border-zinc-900/50 mt-6">
               <a 
-                href={config?.facebookUrl || "https://facebook.com/maisonrosas.pasteleria"} 
+                href={config?.facebookUrl || "https://www.facebook.com/edwinraul.rosasalbines"} 
                 target="_blank" 
                 rel="noreferrer" 
                 className="flex items-center space-x-1.5 text-zinc-500 hover:text-brand-500 dark:text-zinc-400 dark:hover:text-brand-300 transition-colors text-xs font-mono font-medium"
@@ -339,7 +339,7 @@ export default function Contact({ config }: ContactProps) {
                 <span>Facebook</span>
               </a>
               <a 
-                href={config?.instagramUrl || "https://instagram.com/maisonrosas.pasteleria"} 
+                href={config?.instagramUrl || "https://www.instagram.com/edwinraulrosas741/"} 
                 target="_blank" 
                 rel="noreferrer" 
                 className="flex items-center space-x-1.5 text-zinc-500 hover:text-brand-500 dark:text-zinc-400 dark:hover:text-brand-300 transition-colors text-xs font-mono font-medium"
