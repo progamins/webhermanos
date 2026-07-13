@@ -33,16 +33,35 @@ export default function Contact({ config }: ContactProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const [sending, setSending] = useState(false);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !message) return;
-    
-    // Simulate contact form submission
-    setSent(true);
-    setName('');
-    setEmail('');
-    setMessage('');
-    setTimeout(() => setSent(false), 5000);
+
+    setSending(true);
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, message })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setSent(true);
+        setName('');
+        setEmail('');
+        setMessage('');
+        setTimeout(() => setSent(false), 5000);
+      } else {
+        alert(data.error || 'No se pudo enviar el mensaje. Intenta de nuevo.');
+      }
+    } catch (err) {
+      alert('Ocurrió un error al enviar tu mensaje. Por favor, intenta de nuevo.');
+    } finally {
+      setSending(false);
+    }
   };
 
   // Modern Framer Motion variants for dynamic entry

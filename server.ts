@@ -590,6 +590,91 @@ async function startServer() {
     }
   }
 
+  // 5b. Contact Form API — sends real email via Resend when user submits contact form
+  app.post("/api/contact", async (req, res) => {
+    const { name, email, message } = req.body;
+    if (!name || !message) {
+      return res.status(400).json({ success: false, error: "Nombre y mensaje son requeridos." });
+    }
+
+    const resendApiKey = process.env.RESEND_API_KEY;
+    if (!resendApiKey) {
+      console.warn("[CONTACT] RESEND_API_KEY no configurado. Guardando mensaje simulado.");
+      // Save to simulated_emails as fallback so it's visible in admin panel
+      const emailId = `contact-${Date.now()}-${Math.round(Math.random() * 1000)}`;
+      const htmlContent = `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 20px auto;">
+          <h2>Nuevo mensaje del formulario de contacto</h2>
+          <p><strong>Nombre:</strong> ${name}</p>
+          ${email ? `<p><strong>Email:</strong> ${email}</p>` : ''}
+          <p><strong>Mensaje:</strong></p>
+          <blockquote style="border-left: 4px solid #728F75; padding-left: 15px; margin: 10px 0; color: #333;">
+            ${message}
+          </blockquote>
+          <p><em>Recibido el ${new Date().toLocaleString('es-PE')}</em></p>
+        </div>
+      `;
+      try {
+        await setDoc(doc(db, "simulated_emails", emailId), {
+          id: emailId,
+          recipient: "edwinraulrosasalbines@gmail.com",
+          subject: `Nuevo mensaje de ${name} - Formulario de Contacto`,
+          htmlContent,
+          date: new Date().toISOString(),
+          read: false,
+          sentReal: false,
+          sendError: "RESEND_API_KEY no configurado"
+        });
+      } catch (e) { /* ignore */ }
+      return res.json({ success: true, message: "Mensaje recibido con éxito." });
+    }
+
+    try {
+      const rawSenderEmail = process.env.RESEND_SENDER_EMAIL || "edwinraulrosasalbines@gmail.com";
+      const cleanSenderEmail = rawSenderEmail.replace(/^["']|["']$/g, "").trim();
+
+      const resend = new Resend(resendApiKey);
+      const { data, error } = await resend.emails.send({
+        from: `Formulario Web Maison Rosas <${cleanSenderEmail}>`,
+        to: "edwinraulrosasalbines@gmail.com",
+        subject: `Nuevo mensaje de ${name} - Formulario de Contacto`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 20px auto; border: 1px solid #E7ECE7; border-radius: 16px; overflow: hidden;">
+            <div style="background-color: #FCFAF5; padding: 30px 20px; text-align: center; border-bottom: 2px solid #E7ECE7;">
+              <h1 style="font-family: Georgia, serif; font-size: 28px; color: #495E4A; margin: 0;">Maison Rosas</h1>
+              <p style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.2em; color: #D99C52; margin: 8px 0 0 0;">Notificación de Contacto Web</p>
+            </div>
+            <div style="padding: 30px;">
+              <h2 style="font-family: Georgia, serif; font-size: 20px; color: #313F32;">Nuevo mensaje del formulario de contacto</h2>
+              <p style="font-size: 13px; color: #495E4A; line-height: 1.6;">Has recibido un nuevo mensaje desde el formulario de contacto de la web.</p>
+              <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin: 20px 0;">
+                <tr><td style="padding: 8px 0; color: #8DAA90; font-weight: 500;">Nombre:</td><td style="padding: 8px 0; font-weight: bold; color: #495E4A;">${name}</td></tr>
+                ${email ? `<tr><td style="padding: 8px 0; color: #8DAA90; font-weight: 500;">Email:</td><td style="padding: 8px 0; font-weight: bold; color: #495E4A;">${email}</td></tr>` : ''}
+                <tr><td style="padding: 8px 0; color: #8DAA90; font-weight: 500;">Fecha:</td><td style="padding: 8px 0; color: #495E4A;">${new Date().toLocaleString('es-PE')}</td></tr>
+              </table>
+              <div style="background-color: #FCFAF5; border: 1px solid #E7ECE7; border-radius: 12px; padding: 20px; margin-top: 10px;">
+                <p style="font-size: 13px; color: #495E4A; margin: 0 0 10px 0; font-weight: bold;">Mensaje:</p>
+                <p style="font-size: 13px; color: #495E4A; line-height: 1.6; white-space: pre-wrap;">${message}</p>
+              </div>
+              <p style="font-size: 11px; color: #8DAA90; margin-top: 20px; text-align: center;">Este mensaje fue enviado automáticamente desde el formulario de contacto de <strong>Maison Rosas</strong>.</p>
+            </div>
+          </div>
+        `
+      });
+
+      if (error) {
+        console.warn(`[CONTACT] Error de Resend:`, error);
+        return res.status(500).json({ success: false, error: "No se pudo enviar el mensaje. Intenta de nuevo más tarde." });
+      }
+
+      console.log(`[CONTACT] Mensaje de ${name} enviado por Resend. ID:`, data?.id);
+      return res.json({ success: true, message: "¡Mensaje enviado con éxito!" });
+    } catch (err: any) {
+      console.error(`[CONTACT] Error inesperado:`, err);
+      return res.status(500).json({ success: false, error: "Ocurrió un error al enviar tu mensaje. Por favor, intenta de nuevo." });
+    }
+  });
+
   // 6. Post Order API (used by client customizer, triggers SSE broadcast)
   app.post("/api/orders", async (req, res) => {
     const { order } = req.body;
