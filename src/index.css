@@ -1,0 +1,214 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-brand-bg: #FCFAF5;
+  --color-brand-primary: #728F75;
+  --color-brand-secondary: #D99C52;
+  --color-brand-50: #F5F8F5;
+  --color-brand-100: #E7ECE7;
+  --color-brand-200: #D2DCD2;
+  --color-brand-300: #B2C6B4;
+  --color-brand-400: #8DAA90;
+  --color-brand-500: #728F75; /* Base Gourmet Pistachio */
+  --color-brand-600: #5B755D; /* Dark Pistachio */
+  --color-brand-700: #495E4A;
+  --color-brand-800: #3D4E3E;
+  --color-brand-900: #313F32;
+  --color-brand-950: #1A231B;
+}
+
+/* Set base font configurations to enforce artisanal aesthetic */
+html, body {
+  font-family: "Inter", system-ui, sans-serif;
+  background-color: #FCFAF5;
+  color: #27272a; /* zinc-800 */
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Playfair Display", Georgia, serif;
+}
+
+/* Custom scrollbar and glassmorphism styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(114, 143, 117, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(114, 143, 117, 0.6);
+}
+
+.glass-card, .glass-panel {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 
+    0 8px 32px 0 rgba(217, 156, 82, 0.08),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.dark .glass-card, .dark .glass-panel {
+  background: rgba(18, 18, 20, 0.6);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 8px 32px 0 rgba(0, 0, 0, 0.3),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Premium Liquid Glass styling */
+.liquid-glass {
+  background: linear-gradient(
+    135deg, 
+    rgba(255, 255, 255, 0.55) 0%, 
+    rgba(255, 255, 255, 0.25) 100%
+  );
+  backdrop-filter: blur(25px) saturate(190%);
+  -webkit-backdrop-filter: blur(25px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 
+    0 12px 40px 0 rgba(217, 156, 82, 0.12),
+    inset 0 1px 2px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 3px 0 rgba(0, 0, 0, 0.02);
+  border-radius: 24px;
+}
+
+.dark .liquid-glass {
+  background: linear-gradient(
+    135deg, 
+    rgba(18, 18, 22, 0.65) 0%, 
+    rgba(24, 24, 28, 0.35) 100%
+  );
+  backdrop-filter: blur(25px) saturate(190%);
+  -webkit-backdrop-filter: blur(25px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 12px 40px 0 rgba(0, 0, 0, 0.4),
+    inset 0 1px 2px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 3px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* High-gloss overlay highlights */
+.liquid-glass-sheen {
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-glass-sheen::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.dark .liquid-glass-sheen::after {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+/* Liquid Glass Interactive Elements */
+.liquid-glass-input {
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(217, 156, 82, 0.25);
+  backdrop-filter: blur(8px);
+  border-radius: 14px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.liquid-glass-input:focus {
+  background: rgba(255, 255, 255, 0.75);
+  border-color: var(--color-brand-500);
+  box-shadow: 
+    0 0 12px rgba(114, 143, 117, 0.25),
+    inset 0 1px 2px rgba(255, 255, 255, 0.5);
+  transform: translateY(-0.5px);
+}
+
+.dark .liquid-glass-input {
+  background: rgba(20, 20, 24, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dark .liquid-glass-input:focus {
+  background: rgba(20, 20, 24, 0.8);
+  border-color: var(--color-brand-400);
+  box-shadow: 
+    0 0 12px rgba(232, 165, 152, 0.15),
+    inset 0 1px 1px rgba(255, 255, 255, 0.05);
+  transform: translateY(-0.5px);
+}
+
+/* Fluid glow keyframes and classes for background moving bubbles */
+@keyframes fluid-blob-bounce {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(40px, -60px) scale(1.15);
+  }
+  66% {
+    transform: translate(-30px, 40px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-blob-1 {
+  animation: fluid-blob-bounce 15s infinite alternate ease-in-out;
+}
+
+.animate-blob-2 {
+  animation: fluid-blob-bounce 20s infinite alternate-reverse ease-in-out 3s;
+}
+
+.animate-blob-3 {
+  animation: fluid-blob-bounce 18s infinite alternate ease-in-out 6s;
+}
+
+.glow-btn, .btn-glow {
+  box-shadow: 0 4px 15px rgba(114, 143, 117, 0.4);
+  transition: all 0.3s ease;
+}
+
+.glow-btn:hover, .btn-glow:hover {
+  box-shadow: 0 8px 25px rgba(114, 143, 117, 0.7);
+  transform: translateY(-1.5px);
+}
+
+.dot-pattern {
+  background-image: radial-gradient(rgba(217, 156, 82, 0.15) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Confetti animation */
+@keyframes float-particle {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
