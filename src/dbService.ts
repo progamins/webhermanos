@@ -295,8 +295,8 @@ const INITIAL_GALLERY: GalleryItem[] = [
 
 const DEFAULT_CONFIG: AppConfig = {
   whatsappNumber: '51902568187',
-  facebookUrl: 'https://facebook.com/maisonrosas.pasteleria',
-  instagramUrl: 'https://instagram.com/maisonrosas.pasteleria',
+  facebookUrl: 'https://www.facebook.com/edwinraul.rosasalbines',
+  instagramUrl: 'https://www.instagram.com/edwinraulrosas741/',
   email: 'maisonrosas@gmail.com',
   address: 'AV ricardo palma 213 sanchez cerro piura sullana peru',
   openingHours: 'Lunes a Sábado: 9:00 AM - 7:00 PM | Domingos: 10:00 AM - 2:00 PM',
@@ -389,12 +389,14 @@ export async function seedDatabaseIfNeeded() {
       }
     } else {
       const data = configDoc.data();
-      if (data && (data.whatsappNumber === '51987654321' || data.email === 'contacto@maisonrosas.pe')) {
+      if (data && (data.whatsappNumber === '51987654321' || data.email === 'contacto@maisonrosas.pe' || data.facebookUrl?.includes('maisonrosas') || data.instagramUrl?.includes('maisonrosas'))) {
         console.log('Updating legacy configuration in Firestore...');
         try {
           await setDoc(doc(db, CONFIG_COL, 'app_config'), {
             ...data,
             whatsappNumber: DEFAULT_CONFIG.whatsappNumber,
+            facebookUrl: DEFAULT_CONFIG.facebookUrl,
+            instagramUrl: DEFAULT_CONFIG.instagramUrl,
             email: DEFAULT_CONFIG.email,
             address: DEFAULT_CONFIG.address,
             seoTitle: DEFAULT_CONFIG.seoTitle,
