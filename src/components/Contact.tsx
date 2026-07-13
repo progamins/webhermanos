@@ -178,7 +178,7 @@ export default function Contact({ config }: ContactProps) {
                 <div>
                   <h4 className="text-sm font-serif font-semibold text-zinc-900 dark:text-zinc-100">Correo Electrónico</h4>
                   <p className="text-xs font-light text-zinc-500 dark:text-zinc-400 mt-1 leading-normal">
-                    {config?.email || 'maisonrosas@gmail.com'}
+                    {config?.email || 'edwinraulrosasalbines@gmail.com'}
                   </p>
                 </div>
               </motion.div>
@@ -194,7 +194,7 @@ export default function Contact({ config }: ContactProps) {
               <div className="relative h-64 rounded-2xl overflow-hidden border border-zinc-100 dark:border-zinc-800/80" id="google-map-iframe-wrapper">
                 {/* Fully functional interactive standard embed map of Sullana/Piura */}
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m10!1m8!1m3!1d1987.5900509991548!2d-80.6880143!3d-4.9095089!3m2!1i1024!2i768!4f13.1!5e0!3m2!1ses!2spe!4v1783971349976!5m2!1spe"
+                  src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1987.5922687315956!2d-80.68788103194943!3d-4.908764583474027!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1ses!2spe!4v1783983457270!5m2!1ses!2spe"
                   className="w-full h-full border-0 absolute inset-0"
                   allowFullScreen={true}
                   loading="lazy"

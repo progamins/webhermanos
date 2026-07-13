@@ -297,7 +297,7 @@ const DEFAULT_CONFIG: AppConfig = {
   whatsappNumber: '51902568187',
   facebookUrl: 'https://www.facebook.com/edwinraul.rosasalbines',
   instagramUrl: 'https://www.instagram.com/edwinraulrosas741/',
-  email: 'maisonrosas@gmail.com',
+  email: 'edwinraulrosasalbines@gmail.com',
   address: 'AV ricardo palma 213 sanchez cerro piura sullana peru',
   openingHours: 'Lunes a Sábado: 9:00 AM - 7:00 PM | Domingos: 10:00 AM - 2:00 PM',
   seoTitle: 'Maison Rosas | Pastelería de Autor & Repostería Fina',

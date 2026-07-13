@@ -266,24 +266,19 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
           )}
         </AnimatePresence>
 
-        {/* OTP TESTING SANDBOX HINT */}
+        {/* OTP verification code displayed for convenience - visible until email delivery is fully configured */}
         {serverOtp && phase === 'otp_pending' && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="max-w-xl mx-auto mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-center shadow-inner"
+            className="max-w-xl mx-auto mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-center shadow-inner"
           >
-            <span className="font-mono text-xs font-bold uppercase tracking-wider text-amber-700 block mb-1">
-              🔔 Sandbox de Pruebas (Maison Sandbox)
+            <span className="font-mono text-xs font-bold uppercase tracking-wider text-emerald-700 block mb-1">
+              📧 Código Enviado a tu Correo
             </span>
             <p className="text-xs mb-2 text-zinc-600">
-              Hemos interceptado el código de confirmación simulado enviado al cliente para que puedas testear rápido sin salir de la app:
-            </p>
-            <span className="font-mono text-2xl font-black text-amber-800 bg-white/70 px-4 py-1.5 rounded-lg border border-amber-200 inline-block tracking-widest select-all">
-              {serverOtp}
-            </span>
-            <p className="text-[10px] text-zinc-400 mt-2">
-              (Este correo simulado también se guardó en la base de datos y se puede revisar en el Panel de Administrador en la pestaña "Correos Enviados")
+              Hemos enviado un código de verificación a <strong>{email}</strong>. 
+              Revisa tu bandeja de entrada o spam e ingrésalo en el campo de abajo.
             </p>
           </motion.div>
         )}

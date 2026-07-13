@@ -499,13 +499,13 @@ async function startServer() {
     let sendError: string | null = null;
 
     // 1. Try sending via Resend API if RESEND_API_KEY is configured
-    const resendApiKey = process.env.RESEND_API_KEY || "re_fvMT6DUN_5hVECCQjpoh6HfNYTTBcSvNb";
+    const resendApiKey = process.env.RESEND_API_KEY;
     if (resendApiKey) {
       try {
         console.log(`[MAIL] Intentando enviar correo real mediante Resend SDK a ${emailRecipient}...`);
         
         // Clean environment variables to remove any trailing/leading double or single quotes
-        const rawSenderEmail = process.env.RESEND_SENDER_EMAIL || "onboarding@resend.dev";
+        const rawSenderEmail = process.env.RESEND_SENDER_EMAIL || "edwinraulrosasalbines@gmail.com";
         const rawSenderName = process.env.EMAIL_SENDER_NAME || "Maison Rosas";
         
         const cleanSenderEmail = rawSenderEmail.replace(/^["']|["']$/g, "").trim();
