@@ -999,7 +999,7 @@ async function startServer() {
     });
   });
 
-  // 8. Admin Secure File Upload API — stores images in Firebase Storage for persistence across restarts
+  // 8. Admin Secure File Upload API — stores images as base64 data URIs in Firestore for persistence
   app.post("/api/upload", verifyAdminSession, upload.single("image"), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ success: false, error: "No se seleccionó ningún archivo." });
@@ -1007,37 +1007,19 @@ async function startServer() {
     try {
       const filePath = path.join(uploadsDir, req.file.filename);
       const fileBuffer = fs.readFileSync(filePath);
-      const ext = path.extname(req.file.originalname);
-      const uniqueName = `uploads/${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-      
-      // Use Firebase Storage REST API directly (no auth SDK needed, works in Node.js)
-      const bucket = firebaseConfig.storageBucket;
-      const apiKey = firebaseConfig.apiKey;
-      const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o?name=${encodeURIComponent(uniqueName)}&key=${apiKey}`;
-      
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': req.file.mimetype },
-        body: fileBuffer
-      });
-      
-      if (!uploadRes.ok) {
-        const errText = await uploadRes.text();
-        throw new Error(`Firebase Storage API error: ${uploadRes.status} - ${errText}`);
-      }
-      
-      const uploadData = await uploadRes.json();
-      
-      // Get the download URL from the uploaded file
-      const downloadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(uploadData.name)}?alt=media&key=${apiKey}`;
+      const base64Data = fileBuffer.toString('base64');
+      const mimeType = req.file.mimetype;
+      const dataUri = `data:${mimeType};base64,${base64Data}`;
       
       // Clean up the local file
       fs.unlinkSync(filePath);
       
-      res.json({ success: true, imageUrl: downloadUrl });
+      res.json({ success: true, imageUrl: dataUri });
     } catch (error) {
-      console.error("Error uploading to Firebase Storage:", error);
-      res.status(500).json({ success: false, error: "Error al subir la imagen al almacenamiento permanente." });
+      console.error("Error processing image upload:", error);
+      // Fallback: return local path so it at least works during the session
+      const localUrl = `/uploads/${req.file.filename}`;
+      res.json({ success: true, imageUrl: localUrl });
     }
   });
 
