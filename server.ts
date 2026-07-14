@@ -998,13 +998,27 @@ async function startServer() {
     });
   });
 
-  // 8. Admin Secure File Upload API — stores images locally (also supports Firebase Storage URL passthrough)
-  app.post("/api/upload", verifyAdminSession, upload.single("image"), (req, res) => {
+  // 8. Admin Secure File Upload API — stores images in Firebase Storage for persistence across restarts
+  app.post("/api/upload", verifyAdminSession, upload.single("image"), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ success: false, error: "No se seleccionó ningún archivo." });
     }
-    const imageUrl = `/uploads/${req.file.filename}`;
-    res.json({ success: true, imageUrl });
+    try {
+      // Read the file from local disk and upload to Firebase Storage
+      const filePath = path.join(uploadsDir, req.file.filename);
+      const fileBuffer = fs.readFileSync(filePath);
+      const uniqueName = `uploads/${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(req.file.originalname)}`;
+      const storageRefPath = storageRef(storageObj, uniqueName);
+      const metadata = { contentType: req.file.mimetype };
+      const snapshot = await uploadBytes(storageRefPath, fileBuffer, metadata);
+      const imageUrl = await getDownloadURL(snapshot.ref);
+      // Clean up the local file since it's now in Firebase Storage
+      fs.unlinkSync(filePath);
+      res.json({ success: true, imageUrl });
+    } catch (error) {
+      console.error("Error uploading to Firebase Storage:", error);
+      res.status(500).json({ success: false, error: "Error al subir la imagen al almacenamiento permanente." });
+    }
   });
 
   // Memory storage for vouchers (uploaded to Firebase Storage for persistence)

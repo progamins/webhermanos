@@ -63,32 +63,25 @@ const ImageUploader = ({
     setError('');
 
     try {
-      // Upload directly to Firebase Storage from the browser (persistente)
-      const imageUrl = await dbService.uploadImageToStorage(file);
-      onChange(imageUrl);
-    } catch (err) {
-      console.error('Error uploading to Firebase Storage:', err);
-      // Fallback: try the server endpoint
-      try {
-        const formData = new FormData();
-        formData.append('image', file);
-        const token = localStorage.getItem('maison_admin_token') || '';
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          headers: {
-            'x-admin-token': token
-          },
-          body: formData
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          onChange(data.imageUrl);
-          return;
-        }
+      // Upload via server endpoint which stores in Firebase Storage (persistente)
+      const formData = new FormData();
+      formData.append('image', file);
+      const token = localStorage.getItem('maison_admin_token') || '';
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'x-admin-token': token
+        },
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        onChange(data.imageUrl);
+      } else {
         setError(data.error || 'Error subiendo archivo');
-      } catch (fallbackErr) {
-        setError('Error de red al subir la imagen');
       }
+    } catch (err) {
+      setError('Error de red al subir la imagen');
     } finally {
       setUploading(false);
     }
