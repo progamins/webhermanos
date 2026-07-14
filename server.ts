@@ -115,7 +115,7 @@ async function verifyAdminSession(req: express.Request, res: express.Response, n
 
 async function startServer() {
   const app = express();
-  app.use(express.json());
+  app.use(express.json({ limit: '10mb' }));
 
   // 1. Security Headers Middleware (XSS, Clickjacking, MIME-Sniffing protection)
   app.use((req, res, next) => {
@@ -999,28 +999,13 @@ async function startServer() {
     });
   });
 
-  // 8. Admin Secure File Upload API — stores images as base64 data URIs in Firestore for persistence
+  // 8. Admin Secure File Upload API — stores images on disk and returns local URL
   app.post("/api/upload", verifyAdminSession, upload.single("image"), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ success: false, error: "No se seleccionó ningún archivo." });
     }
-    try {
-      const filePath = path.join(uploadsDir, req.file.filename);
-      const fileBuffer = fs.readFileSync(filePath);
-      const base64Data = fileBuffer.toString('base64');
-      const mimeType = req.file.mimetype;
-      const dataUri = `data:${mimeType};base64,${base64Data}`;
-      
-      // Clean up the local file
-      fs.unlinkSync(filePath);
-      
-      res.json({ success: true, imageUrl: dataUri });
-    } catch (error) {
-      console.error("Error processing image upload:", error);
-      // Fallback: return local path so it at least works during the session
-      const localUrl = `/uploads/${req.file.filename}`;
-      res.json({ success: true, imageUrl: localUrl });
-    }
+    const localUrl = `/uploads/${req.file.filename}`;
+    res.json({ success: true, imageUrl: localUrl });
   });
 
   // Memory storage for vouchers (uploaded to Firebase Storage for persistence)
