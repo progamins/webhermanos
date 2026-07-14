@@ -328,13 +328,6 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
 
             {/* SECURE EMAIL / OTP LOGIN */}
             <div className="space-y-4">
-              <div className="flex items-center space-x-3 text-brand-secondary">
-                <div className="p-2 bg-amber-50 rounded-xl">
-                  <Mail className="h-5 w-5" />
-                </div>
-                <h3 className="font-serif text-lg font-bold text-zinc-900">Ver mis Pedidos</h3>
-              </div>
-
               <div style={{background:"#F8F6EF", borderRadius:"12px", border:"1px solid #E8E4D8", padding:"32px", fontFamily:"'Georgia', serif"}}>
                 <div style={{display:"flex", alignItems:"center", gap:"10px", marginBottom:"14px"}}>
                   <div style={{width:"36px", height:"36px", borderRadius:"8px", background:"#F3EAD9", display:"flex", alignItems:"center", justifyContent:"center"}}>
