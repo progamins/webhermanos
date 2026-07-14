@@ -998,35 +998,46 @@ async function startServer() {
     });
   });
 
-  // 8. Admin Secure File Upload API
-  app.post("/api/upload", verifyAdminSession, upload.single("image"), (req, res) => {
+  // Memory storage for uploads that go to Firebase Storage (persistent across restarts)
+  const memoryStorage = multer.memoryStorage();
+  const uploadMemory = multer({
+    storage: memoryStorage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    fileFilter: (req, file, cb) => {
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+      if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error("Formato de archivo no soportado. Sube JPEG, PNG, WEBP o GIF."));
+      }
+    }
+  });
+
+  // 8. Admin Secure File Upload API — stores images in Firebase Storage for persistence
+  app.post("/api/upload", verifyAdminSession, uploadMemory.single("image"), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ success: false, error: "No se seleccionó ningún archivo." });
     }
-    const imageUrl = `/uploads/${req.file.filename}`;
-    res.json({ success: true, imageUrl });
-  });
-
-  // Multer setup for vouchers (saved locally inside the static uploads directory)
-  const voucherStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      const vouchersDir = path.join(uploadsDir, "vouchers");
-      if (!fs.existsSync(vouchersDir)) {
-        fs.mkdirSync(vouchersDir, { recursive: true });
-      }
-      cb(null, vouchersDir);
-    },
-    filename: (req, file, cb) => {
-      const { orderId } = req.body;
-      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-      const ext = path.extname(file.originalname);
-      cb(null, `voucher-order-${orderId || "unknown"}-${uniqueSuffix}${ext}`);
+    try {
+      const uniqueName = `uploads/${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(req.file.originalname)}`;
+      const storageRefPath = storageRef(storageObj, uniqueName);
+      const metadata = {
+        contentType: req.file.mimetype,
+      };
+      const snapshot = await uploadBytes(storageRefPath, req.file.buffer, metadata);
+      const imageUrl = await getDownloadURL(snapshot.ref);
+      res.json({ success: true, imageUrl });
+    } catch (error) {
+      console.error("Error uploading to Firebase Storage:", error);
+      res.status(500).json({ success: false, error: "Error al subir la imagen al almacenamiento permanente." });
     }
   });
 
-  const uploadVoucherDisk = multer({
-    storage: voucherStorage,
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  // Memory storage for vouchers (uploaded to Firebase Storage for persistence)
+  const voucherMemoryStorage = multer.memoryStorage();
+  const uploadVoucherMemory = multer({
+    storage: voucherMemoryStorage,
+    limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
       const allowedTypes = [
         "image/jpeg",
@@ -1043,8 +1054,8 @@ async function startServer() {
     }
   });
 
-  // Upload voucher to local storage and update order in database
-  app.post("/api/admin/orders/upload-voucher", verifyAdminSession, uploadVoucherDisk.single("voucher"), async (req, res) => {
+  // Upload voucher to Firebase Storage and update order in database
+  app.post("/api/admin/orders/upload-voucher", verifyAdminSession, uploadVoucherMemory.single("voucher"), async (req, res) => {
     const { orderId } = req.body;
     if (!orderId) {
       return res.status(400).json({ success: false, error: "ID del pedido es requerido." });
@@ -1055,8 +1066,14 @@ async function startServer() {
 
     try {
       const originalName = req.file.originalname;
-      const filename = req.file.filename;
-      const voucherUrl = `/uploads/vouchers/${filename}`;
+      const ext = path.extname(originalName);
+      const uniqueName = `vouchers/${orderId}-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+      const storageRefPath = storageRef(storageObj, uniqueName);
+      const metadata = {
+        contentType: req.file.mimetype,
+      };
+      const snapshot = await uploadBytes(storageRefPath, req.file.buffer, metadata);
+      const voucherUrl = await getDownloadURL(snapshot.ref);
 
       // Update order in Firestore
       const orderRef = doc(db, "orders", orderId);
@@ -1080,12 +1097,12 @@ async function startServer() {
         voucherUploadedAt: updateData.voucherUploadedAt
       });
     } catch (error) {
-      console.error("Error uploading voucher locally:", error);
-      res.status(500).json({ success: false, error: "Error al subir el comprobante de pago." });
+      console.error("Error uploading voucher to Firebase Storage:", error);
+      res.status(500).json({ success: false, error: "Error al subir el comprobante de pago al almacenamiento permanente." });
     }
   });
 
-  // Delete voucher from local storage and update order in database
+  // Delete voucher from Firebase Storage and update order in database
   app.post("/api/admin/orders/delete-voucher", verifyAdminSession, async (req, res) => {
     const { orderId, voucherPath } = req.body;
     if (!orderId) {
@@ -1093,11 +1110,14 @@ async function startServer() {
     }
 
     try {
-      if (voucherPath && voucherPath.startsWith("/uploads/vouchers/")) {
-        const relativeFilePath = voucherPath.replace("/uploads/", "");
-        const fullPath = path.join(uploadsDir, relativeFilePath);
-        if (fs.existsSync(fullPath)) {
-          fs.unlinkSync(fullPath);
+      // Try to delete from Firebase Storage if we have a URL
+      if (voucherPath && voucherPath.startsWith("https://")) {
+        try {
+          const voucherRef = storageRef(storageObj, voucherPath);
+          await deleteObject(voucherRef);
+        } catch (e) {
+          // File may already be deleted, ignore
+          console.warn("Could not delete voucher from Firebase Storage:", e);
         }
       }
 
