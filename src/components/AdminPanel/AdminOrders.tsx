@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Layers, Search, Check, Trash2 } from 'lucide-react';
+import { X, Plus, Search, Check, Trash2, Pencil, ChevronUp, ChevronDown, ChevronsUpDown, Eye, Download, FilterX, Ban, Save } from 'lucide-react';
 import { Order } from '../../types';
 import { dbService } from '../../dbService';
 import { exportOrdersToExcel } from './helpers';
@@ -14,346 +14,482 @@ interface AdminOrdersProps {
 
 type OrderStatus = Order['status'];
 
+const STATUS_STYLES: Record<string, { label: string; bg: string; dot: string }> = {
+  Pendiente: { label: 'Pendiente', bg: 'bg-amber-50 text-amber-800 border-amber-200', dot: 'bg-amber-400' },
+  Confirmado: { label: 'Confirmado', bg: 'bg-sky-50 text-sky-800 border-sky-200', dot: 'bg-sky-500' },
+  Preparando: { label: 'Preparando', bg: 'bg-indigo-50 text-indigo-800 border-indigo-200', dot: 'bg-indigo-500' },
+  'Decoración': { label: 'Decoración', bg: 'bg-pink-50 text-pink-800 border-pink-200', dot: 'bg-pink-500' },
+  Listo: { label: 'Listo', bg: 'bg-emerald-50 text-emerald-800 border-emerald-200', dot: 'bg-emerald-500' },
+  'En camino': { label: 'En Camino', bg: 'bg-purple-50 text-purple-800 border-purple-200', dot: 'bg-purple-500' },
+  Entregado: { label: 'Entregado', bg: 'bg-green-50 text-green-800 border-green-200', dot: 'bg-green-500' },
+  Cancelado: { label: 'Cancelado', bg: 'bg-red-50 text-red-800 border-red-200', dot: 'bg-red-500' },
+};
+
+const ALL_STATUSES = ['Pendiente', 'Confirmado', 'Preparando', 'Decoración', 'Listo', 'En camino', 'Entregado', 'Cancelado'];
+
 export default function AdminOrders({ orders, setOrders, onRefreshData, showToast, onOpenPaymentModal }: AdminOrdersProps) {
-  const [ordersSortField, setOrdersSortField] = useState<keyof Order | ''>('');
-  const [ordersSortDirection, setOrdersSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [ordersSearch, setOrdersSearch] = useState('');
-  const [ordersStatusFilter, setOrdersStatusFilter] = useState('Todos');
-  const [ordersSizeFilter, setOrdersSizeFilter] = useState('Todos');
-  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
-  const [editingOrderData, setEditingOrderData] = useState<Partial<Order>>({});
-  const [isAddingRow, setIsAddingRow] = useState(false);
-  const [newRowData, setNewRowData] = useState<Partial<Order>>({
-    customerName: '', productName: '', size: 'Mediano (20 porciones)', flavor: 'Vainilla',
+  const [sortField, setSortField] = useState<keyof Order | ''>('');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Todos');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<Partial<Order>>({});
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newOrder, setNewOrder] = useState<Partial<Order>>({
+    customerName: '', productName: '', size: 'Estándar (20-25 Porciones)', flavor: 'Vainilla Francesa',
     customColor: '', selectedDecoration: 'Ninguna', totalPrice: 150, status: 'Pendiente', message: ''
   });
+  // Filter
+  const filtered = orders.filter(o => {
+    const q = search.toLowerCase();
+    const matchSearch = !q ||
+      o.id.toLowerCase().includes(q) ||
+      (o.customerName || '').toLowerCase().includes(q) ||
+      (o.productName || '').toLowerCase().includes(q) ||
+      (o.flavor || '').toLowerCase().includes(q) ||
+      (o.customColor || '').toLowerCase().includes(q) ||
+      (o.selectedDecoration || '').toLowerCase().includes(q) ||
+      (o.message || '').toLowerCase().includes(q) ||
+      (o.trackingCode || '').toLowerCase().includes(q);
 
-  const filteredOrders = orders.filter(ord => {
-    const searchLower = ordersSearch.toLowerCase();
-    const matchesSearch = !ordersSearch ||
-      ord.id.toLowerCase().includes(searchLower) ||
-      (ord.customerName || '').toLowerCase().includes(searchLower) ||
-      (ord.productName || '').toLowerCase().includes(searchLower) ||
-      (ord.flavor || '').toLowerCase().includes(searchLower) ||
-      (ord.customColor || '').toLowerCase().includes(searchLower) ||
-      (ord.selectedDecoration || '').toLowerCase().includes(searchLower) ||
-      (ord.message || '').toLowerCase().includes(searchLower);
-
-    const matchesStatus = ordersStatusFilter === 'Todos' || ord.status === ordersStatusFilter;
-    const matchesSize = ordersSizeFilter === 'Todos' || ord.size.includes(ordersSizeFilter);
-    return matchesSearch && matchesStatus && matchesSize;
+    const matchStatus = statusFilter === 'Todos' || o.status === statusFilter;
+    return matchSearch && matchStatus;
   });
 
-  const sortedAndFilteredOrders = [...filteredOrders].sort((a, b) => {
-    if (!ordersSortField) return 0;
-    let aVal = a[ordersSortField] ?? '';
-    let bVal = b[ordersSortField] ?? '';
+  // Sort
+  const sorted = [...filtered].sort((a, b) => {
+    if (!sortField) return 0;
+    let aVal = a[sortField] ?? '';
+    let bVal = b[sortField] ?? '';
     if (typeof aVal === 'string') aVal = aVal.toLowerCase();
     if (typeof bVal === 'string') bVal = bVal.toLowerCase();
-    if (aVal < bVal) return ordersSortDirection === 'asc' ? -1 : 1;
-    if (aVal > bVal) return ordersSortDirection === 'asc' ? 1 : -1;
+    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
     return 0;
   });
 
-  const totalFilteredSales = filteredOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+  const totalSales = filtered.reduce((s, o) => s + (o.totalPrice || 0), 0);
+  const pendingCount = filtered.filter(o => o.status === 'Pendiente').length;
 
   const toggleSort = (field: keyof Order) => {
-    if (ordersSortField === field) setOrdersSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    else { setOrdersSortField(field); setOrdersSortDirection('desc'); }
+    if (sortField === field) setSortDirection(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortField(field); setSortDirection('desc'); }
   };
 
-  const handleUpdateOrderStatus = async (id: string, status: OrderStatus) => {
-    const previousOrders = [...orders];
-    if (setOrders) setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+  const SortIcon = ({ field }: { field: keyof Order }) => {
+    if (sortField !== field) return <ChevronsUpDown className="h-3 w-3 inline ml-1 opacity-30" />;
+    return sortDirection === 'asc'
+      ? <ChevronUp className="h-3 w-3 inline ml-1 text-brand-500" />
+      : <ChevronDown className="h-3 w-3 inline ml-1 text-brand-500" />;
+  };
+
+  const handleUpdateStatus = async (id: string, status: OrderStatus) => {
+    const prev = [...orders];
+    if (setOrders) setOrders(o => o.map(o => o.id === id ? { ...o, status } : o));
     try {
       await dbService.updateOrderStatus(id, status);
       onRefreshData();
-      showToast(`Pedido #${id.substring(0, 8)} actualizado a "${status}".`, 'success', 'Pedido de WhatsApp');
+      showToast(`Pedido #${id.slice(0, 8)} → ${status}`, 'success', 'Estado Actualizado');
     } catch {
-      if (setOrders) setOrders(previousOrders);
-      showToast('Error al actualizar el estado de pedido.', 'error', 'Error');
+      if (setOrders) setOrders(prev);
+      showToast('Error al actualizar estado', 'error', 'Error');
     }
   };
 
-  const handleDeleteOrder = async (id: string) => {
-    if (!confirm('¿Eliminar el registro de este pedido?')) return;
-    const previousOrders = [...orders];
-    if (setOrders) setOrders(prev => prev.filter(o => o.id !== id));
+  const handleDelete = async (id: string) => {
+    if (!confirm('¿Eliminar este pedido definitivamente?')) return;
+    const prev = [...orders];
+    if (setOrders) setOrders(o => o.filter(o => o.id !== id));
     try {
       await dbService.deleteOrder(id);
-      showToast(`Pedido #${id.substring(0, 8)} eliminado correctamente.`, 'info', 'Admin');
+      showToast(`Pedido #${id.slice(0, 8)} eliminado`, 'info', 'Eliminado');
     } catch {
-      if (setOrders) setOrders(previousOrders);
-      showToast('Error al eliminar el pedido.', 'error', 'Error');
+      if (setOrders) setOrders(prev);
+      showToast('Error al eliminar', 'error', 'Error');
     }
   };
 
-  const handleSaveInlineEdit = async (id: string) => {
-    const originalOrder = orders.find(o => o.id === id);
-    if (!originalOrder) return;
-    const updatedOrder: Order = { ...originalOrder, ...editingOrderData, id };
-    const previousOrders = [...orders];
-    if (setOrders) setOrders(prev => prev.map(o => o.id === id ? updatedOrder : o));
+  const handleSaveInline = async (id: string) => {
+    const original = orders.find(o => o.id === id);
+    if (!original) return;
+    const updated: Order = { ...original, ...editData, id };
+    const prev = [...orders];
+    if (setOrders) setOrders(o => o.map(o => o.id === id ? updated : o));
     try {
-      await dbService.updateOrder(updatedOrder);
-      setEditingOrderId(null);
-      setEditingOrderData({});
-      showToast(`Pedido #${id.substring(0, 8)} actualizado con éxito.`, 'success', 'Planilla Excel');
+      await dbService.updateOrder(updated);
+      setEditingId(null);
+      setEditData({});
+      showToast(`Pedido #${id.slice(0, 8)} actualizado`, 'success', 'Guardado');
     } catch {
-      if (setOrders) setOrders(previousOrders);
-      showToast('Error al actualizar el pedido.', 'error', 'Error Excel');
+      if (setOrders) setOrders(prev);
+      showToast('Error al guardar cambios', 'error', 'Error');
     }
   };
 
-  const handleInsertManualOrder = async (e: React.FormEvent) => {
+  const handleInsertOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newRowData.customerName || !newRowData.productName) {
-      showToast('Por favor, ingresa el nombre de cliente y el pastel elegido.', 'warning', 'Inserción inválida');
+    if (!newOrder.customerName || !newOrder.productName) {
+      showToast('Cliente y Pastel son obligatorios', 'warning', 'Campos requeridos');
       return;
     }
-    const manualId = 'ord-' + Date.now();
-    const manualOrder: Order = {
-      id: manualId, productName: newRowData.productName || '', productId: 'manual-cake',
-      size: newRowData.size || 'Mediano (20 porciones)', flavor: newRowData.flavor || 'Vainilla',
-      customerName: newRowData.customerName || '', customerEmail: newRowData.customerEmail || 'correo@simulado.com',
-      customerPhone: newRowData.customerPhone || '999999999', deliveryDate: newRowData.deliveryDate || new Date().toISOString().split('T')[0],
-      deliveryTime: newRowData.deliveryTime || '12:00', deliveryType: (newRowData.deliveryType as any) || 'recojo',
-      deliveryAddress: newRowData.deliveryAddress || undefined,
+    const id = 'ord-' + Date.now();
+    const order: Order = {
+      id, productName: newOrder.productName || '', productId: 'manual',
+      size: newOrder.size || 'Estándar', flavor: newOrder.flavor || 'Vainilla',
+      customerName: newOrder.customerName || '', customerEmail: newOrder.customerEmail || 'manual@pedido.com',
+      customerPhone: newOrder.customerPhone || '999999999',
+      deliveryDate: newOrder.deliveryDate || new Date().toISOString().split('T')[0],
+      deliveryTime: newOrder.deliveryTime || '12:00',
+      deliveryType: (newOrder.deliveryType as any) || 'recojo',
+      deliveryAddress: newOrder.deliveryAddress || undefined,
       trackingCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
-      customerAge: newRowData.customerAge || '', message: newRowData.message || '',
-      selectedDecoration: newRowData.selectedDecoration || 'Ninguna', customColor: newRowData.customColor || 'Estándar',
-      totalPrice: Number(newRowData.totalPrice) || 150, status: (newRowData.status as any) || 'Pendiente',
+      customerAge: newOrder.customerAge || '', message: newOrder.message || '',
+      selectedDecoration: newOrder.selectedDecoration || 'Ninguna',
+      customColor: newOrder.customColor || 'Estándar',
+      totalPrice: Number(newOrder.totalPrice) || 150,
+      status: (newOrder.status as any) || 'Pendiente',
       date: new Date().toISOString().split('T')[0],
     };
-    if (setOrders) setOrders(prev => [manualOrder, ...prev]);
+    if (setOrders) setOrders(p => [order, ...p]);
     try {
-      await dbService.addOrder(manualOrder);
-      setIsAddingRow(false);
-      setNewRowData({ customerName: '', productName: '', size: 'Mediano (20 porciones)', flavor: 'Vainilla', customColor: '', selectedDecoration: 'Ninguna', totalPrice: 150, status: 'Pendiente', message: '' });
-      showToast('Fila insertada correctamente en la planilla.', 'success', 'Excel Inserción');
-    } catch { showToast('Error al insertar fila en la planilla.', 'error', 'Error'); }
+      await dbService.addOrder(order);
+      setShowAddForm(false);
+      setNewOrder({ customerName: '', productName: '', size: 'Estándar (20-25 Porciones)', flavor: 'Vainilla Francesa', customColor: '', selectedDecoration: 'Ninguna', totalPrice: 150, status: 'Pendiente', message: '' });
+      showToast('Pedido insertado correctamente', 'success', 'Nuevo Pedido');
+    } catch {
+      showToast('Error al insertar pedido', 'error', 'Error');
+    }
   };
 
-  const statusColors: Record<string, string> = {
-    Pendiente: 'bg-amber-50 text-amber-700 border-amber-200',
-    Confirmado: 'bg-blue-50 text-blue-700 border-blue-200',
-    Preparando: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-    'Decoración': 'bg-pink-50 text-pink-700 border-pink-200',
-    Listo: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    'En camino': 'bg-purple-50 text-purple-700 border-purple-200',
-    Entregado: 'bg-green-50 text-green-700 border-green-200',
-    Cancelado: 'bg-red-50 text-red-700 border-red-200'
-  };
+  const clearFilters = () => { setSearch(''); setStatusFilter('Todos'); };
+
+  const hasActiveFilters = search || statusFilter !== 'Todos';
 
   return (
     <div className="space-y-6">
-      {/* Excel Ribbon Control Panel */}
-      <div className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-5 shadow-sm space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      {/* ── TOP BAR ── */}
+      <div className="bg-white dark:bg-zinc-900/80 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-5 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
           <div>
-            <h4 className="text-base font-serif font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-              <span className="bg-green-600 text-white px-2 py-0.5 rounded text-[10px] font-mono font-bold tracking-widest uppercase">EXCEL PRO</span>
-              Planilla Inteligente de Pedidos (Maison Sheet)
-            </h4>
-            <p className="text-xs text-zinc-400 mt-1">Soporta ordenamiento, filtros avanzados, inserción rápida, exportación a Excel Profesional con diseño y edición directa inline.</p>
+            <div className="flex items-center gap-3">
+              <span className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-2.5 py-1 rounded-lg text-[9px] font-mono font-bold tracking-[0.15em] uppercase shadow-sm">Excel Pro</span>
+              <h4 className="text-base font-serif font-bold text-zinc-900 dark:text-white">
+                Planilla de Pedidos
+              </h4>
+              <span className="text-[10px] font-mono text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
+                {orders.length} registros
+              </span>
+            </div>
+            <p className="text-[11px] text-zinc-400 mt-1.5 font-sans">
+              Ordena, filtra, edita inline y exporta a Excel profesional
+            </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <button onClick={() => exportOrdersToExcel(filteredOrders)}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-mono font-bold uppercase tracking-wider flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer">
-              <Layers className="h-3.5 w-3.5" />
-              <span>Exportar Excel Pro</span>
+          <div className="flex items-center gap-2.5">
+            <button onClick={() => exportOrdersToExcel(filtered)}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-2 shadow-sm transition-all duration-200 active:scale-[0.97] cursor-pointer">
+              <Download className="h-3.5 w-3.5" />
+              <span>Exportar Excel</span>
             </button>
-            <button onClick={() => setIsAddingRow(prev => !prev)}
-              className={`px-4 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer ${isAddingRow ? 'bg-zinc-500 hover:bg-zinc-600 text-white' : 'bg-brand-500 hover:bg-brand-600 text-white'}`}>
-              {isAddingRow ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-              <span>{isAddingRow ? 'Cancelar Fila' : 'Nueva Fila'}</span>
+            <button onClick={() => setShowAddForm(p => !p)}
+              className={`px-4 py-2.5 rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-2 shadow-sm transition-all duration-200 active:scale-[0.97] cursor-pointer ${
+                showAddForm ? 'bg-zinc-500 hover:bg-zinc-600 text-white' : 'bg-brand-500 hover:bg-brand-600 text-white'
+              }`}>
+              {showAddForm ? <Ban className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+              <span>{showAddForm ? 'Cancelar' : 'Nuevo Pedido'}</span>
             </button>
           </div>
         </div>
 
-        {/* Search and Filters Strip */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-zinc-200 dark:border-zinc-800">
-          <div>
-            <label className="block text-[9px] font-mono font-bold uppercase text-zinc-400 mb-1">Buscador General</label>
-            <input type="text" value={ordersSearch} onChange={(e) => setOrdersSearch(e.target.value)}
-              placeholder="Buscar por ID, Cliente, Pastel..."
-              className="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-brand-500 text-zinc-800 dark:text-white" />
-          </div>
-          <div>
-            <label className="block text-[9px] font-mono font-bold uppercase text-zinc-400 mb-1">Filtrar por Estado</label>
-            <select value={ordersStatusFilter} onChange={(e) => setOrdersStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-800 dark:text-white">
-              <option value="Todos">Todos los Estados</option>
-              <option value="Pendiente">Pendiente</option>
-              <option value="En conversación">Charlando</option>
-              <option value="Aceptado">Aceptado</option>
-              <option value="Preparando">Preparando</option>
-              <option value="Listo">Listo</option>
-              <option value="Entregado">Entregado</option>
-              <option value="Cancelado">Cancelado</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-[9px] font-mono font-bold uppercase text-zinc-400 mb-1">Filtrar por Tamaño</label>
-            <select value={ordersSizeFilter} onChange={(e) => setOrdersSizeFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-800 dark:text-white">
-              <option value="Todos">Todos los Tamaños</option>
-              <option value="Pequeño">Pequeño</option>
-              <option value="Mediano">Mediano</option>
-              <option value="Grande">Grande</option>
-            </select>
-          </div>
-          <div className="flex items-center justify-around bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-2">
-            <div className="text-center">
-              <span className="block text-[8px] font-mono uppercase text-zinc-400">Pedidos Filtrados</span>
-              <span className="text-xs font-mono font-bold text-zinc-800 dark:text-white">{filteredOrders.length}</span>
+        {/* ── FILTERS + STATS ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="lg:col-span-2">
+            <label className="block text-[9px] font-mono font-bold uppercase text-zinc-400 mb-1.5 tracking-wider">Buscar</label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
+              <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="ID, cliente, pastel, sabor, código..."
+                className="w-full pl-9 pr-3 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-zinc-800 dark:text-white transition-all" />
+              {search && (
+                <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 cursor-pointer">
+                  <X className="h-3 w-3" />
+                </button>
+              )}
             </div>
-            <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-800"></div>
-            <div className="text-center">
-              <span className="block text-[8px] font-mono uppercase text-zinc-400">Total S/. (Filtrado)</span>
-              <span className="text-xs font-mono font-bold text-brand-500">S/. {totalFilteredSales}</span>
+          </div>
+          <div>
+            <label className="block text-[9px] font-mono font-bold uppercase text-zinc-400 mb-1.5 tracking-wider">Estado</label>
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+              className="w-full px-3 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all cursor-pointer">
+              <option value="Todos">Todos los estados</option>
+              {ALL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[9px] font-mono font-bold uppercase text-zinc-400 mb-1.5 tracking-wider">Acción</label>
+            {hasActiveFilters ? (
+              <button onClick={clearFilters}
+                className="w-full py-2.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+                <FilterX className="h-3 w-3" />
+                <span>Limpiar filtros</span>
+              </button>
+            ) : (
+              <div className="w-full py-2.5 bg-zinc-50/50 dark:bg-zinc-950/50 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center gap-4 text-[10px] font-mono text-zinc-400">
+                <span>{filtered.length} pedidos</span>
+                <span className="w-px h-3 bg-zinc-200 dark:bg-zinc-800" />
+                <span className="text-emerald-600 font-bold">S/. {totalSales}</span>
+              </div>
+            )}
+          </div>
+          <div className="hidden lg:flex items-center gap-3 bg-gradient-to-br from-amber-50 to-amber-50/50 dark:from-zinc-800 dark:to-zinc-900 border border-amber-100 dark:border-zinc-700 rounded-xl px-4 py-2.5">
+            <div className="text-center flex-1">
+              <span className="block text-[8px] font-mono uppercase tracking-wider text-zinc-400">Pendientes</span>
+              <span className="text-lg font-bold text-amber-600">{pendingCount}</span>
+            </div>
+            <div className="w-px h-8 bg-amber-200 dark:bg-zinc-700" />
+            <div className="text-center flex-1">
+              <span className="block text-[8px] font-mono uppercase tracking-wider text-zinc-400">Total S/.</span>
+              <span className="text-lg font-bold text-brand-500">S/.{totalSales}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Manual Insertion Row */}
-      {isAddingRow && (
-        <form onSubmit={handleInsertManualOrder} className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-dashed border-brand-300 space-y-3">
-          <h5 className="text-xs font-mono font-bold uppercase tracking-wider text-brand-500 flex items-center gap-1.5">
-            <Plus className="h-3.5 w-3.5" /> Insertar Fila Manual
-          </h5>
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <input type="text" placeholder="Cliente *" value={newRowData.customerName} onChange={(e) => setNewRowData(p => ({ ...p, customerName: e.target.value }))}
-              className="px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-brand-500 text-zinc-800" />
-            <input type="text" placeholder="Pastel *" value={newRowData.productName} onChange={(e) => setNewRowData(p => ({ ...p, productName: e.target.value }))}
-              className="px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-brand-500 text-zinc-800" />
-            <input type="number" placeholder="Precio S/." value={newRowData.totalPrice} onChange={(e) => setNewRowData(p => ({ ...p, totalPrice: Number(e.target.value) }))}
-              className="px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-brand-500 text-zinc-800" />
-            <button type="submit"
-              className="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-mono font-bold uppercase cursor-pointer">
-              Insertar Fila
-            </button>
+      {/* ── ADD FORM ── */}
+      {showAddForm && (
+        <form onSubmit={handleInsertOrder} className="bg-white dark:bg-zinc-900/80 border border-dashed border-brand-300 dark:border-brand-700 rounded-2xl p-5 shadow-sm space-y-4 animate-fadeIn">
+          <div className="flex items-center gap-2 text-brand-600">
+            <Plus className="h-4 w-4" />
+            <span className="text-xs font-mono font-bold uppercase tracking-wider">Insertar Pedido Manual</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <input type="text" placeholder="Cliente *" value={newOrder.customerName} onChange={e => setNewOrder(p => ({ ...p, customerName: e.target.value }))}
+              className="px-3 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-zinc-800 dark:text-white" />
+            <input type="text" placeholder="Pastel *" value={newOrder.productName} onChange={e => setNewOrder(p => ({ ...p, productName: e.target.value }))}
+              className="px-3 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-zinc-800 dark:text-white" />
+            <input type="text" placeholder="Sabor" value={newOrder.flavor} onChange={e => setNewOrder(p => ({ ...p, flavor: e.target.value }))}
+              className="px-3 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-zinc-800 dark:text-white" />
+            <div className="flex gap-2">
+              <input type="number" placeholder="S/. Precio" value={newOrder.totalPrice} onChange={e => setNewOrder(p => ({ ...p, totalPrice: Number(e.target.value) }))}
+                className="flex-1 px-3 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-zinc-800 dark:text-white" />
+              <button type="submit"
+                className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider transition-all active:scale-[0.97] shadow-sm cursor-pointer">
+                <Save className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </form>
       )}
 
-      {/* Spreadsheet Table */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-md">
+      {/* ── TABLE ── */}
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-xs table-fixed min-w-[1200px]">
+          <table className="w-full border-collapse text-xs min-w-[1100px]">
             <thead>
-              <tr className="bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 text-[10px] font-mono text-zinc-400">
-                <th className="w-12 border-r border-zinc-200 dark:border-zinc-800/60 p-1 text-center font-normal">#</th>
-                <th className="w-24 border-r border-zinc-200 dark:border-zinc-800/60 p-1 text-center font-normal">A (ID)</th>
-                <th className="w-28 border-r border-zinc-200 dark:border-zinc-800/60 p-1 text-center font-normal">B (Fecha)</th>
-                <th className="w-44 border-r border-zinc-200 dark:border-zinc-800/60 p-1 text-center font-normal">C (Cliente)</th>
-                <th className="w-48 border-r border-zinc-200 dark:border-zinc-800/60 p-1 text-center font-normal">D (Pastel)</th>
-                <th className="w-32 border-r border-zinc-200 dark:border-zinc-800/60 p-1 text-center font-normal">E (Tamaño)</th>
-                <th className="w-32 border-r border-zinc-200 dark:border-zinc-800/60 p-1 text-center font-normal">F (Sabor)</th>
-                <th className="w-36 border-r border-zinc-200 dark:border-zinc-800/60 p-1 text-center font-normal">G (Detalles)</th>
-                <th className="w-48 border-r border-zinc-200 dark:border-zinc-800/60 p-1 text-center font-normal">H (Mensaje)</th>
-                <th className="w-28 border-r border-zinc-200 dark:border-zinc-800/60 p-1 text-center font-normal">I (Precio)</th>
-                <th className="w-36 border-r border-zinc-200 dark:border-zinc-800/60 p-1 text-center font-normal">J (Estado)</th>
-                <th className="w-36 border-r border-zinc-200 dark:border-zinc-800/60 p-1 text-center font-normal">K (Pago)</th>
-                <th className="w-24 p-1 text-center font-normal">L (Acción)</th>
-              </tr>
-              <tr className="bg-zinc-100/80 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 font-mono text-zinc-500 select-none">
-                <th className="border-r border-zinc-200 dark:border-zinc-800/60 p-2 text-center text-[10px]">Row</th>
-                {(['id', 'date', 'customerName', 'productName', 'size', 'flavor', null, null, 'totalPrice', 'status', 'paymentStatus'] as (keyof Order | null)[]).map((field, i) => (
-                  <th key={i} className={`border-r border-zinc-200 dark:border-zinc-800/60 p-2 ${field === null ? 'text-left' : 'text-left cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-850'}`}
-                    onClick={() => field && toggleSort(field)}>
-                    {field === null ? 'Decor / Color / Msg' : `${String(field)} ${ordersSortField === field ? (ordersSortDirection === 'asc' ? '▲' : '▼') : ''}`}
-                  </th>
-                ))}
-                <th className="p-2 text-center">Acción</th>
+              <tr className="bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-100 dark:border-zinc-800 sticky top-0 z-10">
+                <th className="w-10 px-3 py-3 text-center text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider bg-zinc-50 dark:bg-zinc-950 sticky left-0 z-20 border-r border-zinc-100 dark:border-zinc-800">#</th>
+                <th className="px-3 py-3 text-left text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-700 dark:hover:text-zinc-200 select-none border-r border-zinc-100 dark:border-zinc-800"
+                  onClick={() => toggleSort('customerName')}>
+                  Cliente <SortIcon field="customerName" />
+                </th>
+                <th className="px-3 py-3 text-left text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-700 dark:hover:text-zinc-200 select-none border-r border-zinc-100 dark:border-zinc-800"
+                  onClick={() => toggleSort('productName')}>
+                  Pastel <SortIcon field="productName" />
+                </th>
+                <th className="px-3 py-3 text-left text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider border-r border-zinc-100 dark:border-zinc-800">
+                  Sabor / Detalles
+                </th>
+                <th className="px-3 py-3 text-left text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-700 dark:hover:text-zinc-200 select-none border-r border-zinc-100 dark:border-zinc-800 w-20"
+                  onClick={() => toggleSort('totalPrice')}>
+                  Total <SortIcon field="totalPrice" />
+                </th>
+                <th className="px-3 py-3 text-left text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider border-r border-zinc-100 dark:border-zinc-800 w-28">
+                  Estado
+                </th>
+                <th className="px-3 py-3 text-left text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider border-r border-zinc-100 dark:border-zinc-800 w-20">
+                  Pago
+                </th>
+                <th className="px-3 py-3 text-center text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider w-36">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody>
-              {sortedAndFilteredOrders.map((ord, idx) => (
-                <tr key={ord.id} className={`${idx % 2 === 0 ? 'bg-white dark:bg-zinc-950' : 'bg-zinc-50/50 dark:bg-zinc-900/50'} hover:bg-brand-50/30 dark:hover:bg-brand-950/20 transition-colors border-b border-zinc-100 dark:border-zinc-800/50`}>
-                  <td className="p-2 text-center text-zinc-400 font-mono text-[10px] border-r border-zinc-100 dark:border-zinc-800/50">{idx + 1}</td>
-                  <td className="p-2 border-r border-zinc-100 dark:border-zinc-800/50">
-                    {editingOrderId === ord.id ? (
-                      <input value={editingOrderData.id || ord.id} onChange={(e) => setEditingOrderData(p => ({ ...p, id: e.target.value }))}
-                        className="w-full px-1.5 py-1 bg-white border border-brand-500 rounded text-xs font-mono" />
-                    ) : <span className="font-mono text-[10px]">{ord.id.substring(0, 12)}...</span>}
-                  </td>
-                  <td className="p-2 border-r border-zinc-100 dark:border-zinc-800/50 text-[10px]">{ord.date || '-'}</td>
-                  <td className="p-2 border-r border-zinc-100 dark:border-zinc-800/50">
-                    {editingOrderId === ord.id ? (
-                      <input value={editingOrderData.customerName ?? ord.customerName} onChange={(e) => setEditingOrderData(p => ({ ...p, customerName: e.target.value }))}
-                        className="w-full px-1.5 py-1 bg-white border border-brand-500 rounded text-xs" />
-                    ) : <span className="font-semibold text-zinc-800 dark:text-zinc-200">{ord.customerName}</span>}
-                  </td>
-                  <td className="p-2 border-r border-zinc-100 dark:border-zinc-800/50">
-                    {editingOrderId === ord.id ? (
-                      <input value={editingOrderData.productName ?? ord.productName} onChange={(e) => setEditingOrderData(p => ({ ...p, productName: e.target.value }))}
-                        className="w-full px-1.5 py-1 bg-white border border-brand-500 rounded text-xs" />
-                    ) : <span className="text-brand-700">{ord.productName}</span>}
-                  </td>
-                  <td className="p-2 border-r border-zinc-100 dark:border-zinc-800/50 text-[10px]">{ord.size || '-'}</td>
-                  <td className="p-2 border-r border-zinc-100 dark:border-zinc-800/50 text-[10px]">{ord.flavor || '-'}</td>
-                  <td className="p-2 border-r border-zinc-100 dark:border-zinc-800/50 text-[10px]">{ord.customColor || ord.selectedDecoration || '-'}</td>
-                  <td className="p-2 border-r border-zinc-100 dark:border-zinc-800/50 text-[10px] italic truncate max-w-[140px]">{ord.message ? `"${ord.message}"` : '-'}</td>
-                  <td className="p-2 border-r border-zinc-100 dark:border-zinc-800/50 text-right font-mono font-bold">S/. {ord.totalPrice}</td>
-                  <td className="p-2 border-r border-zinc-100 dark:border-zinc-800/50">
-                    {editingOrderId === ord.id ? (
-                      <select value={(editingOrderData.status as string) || ord.status} onChange={(e) => setEditingOrderData(p => ({ ...p, status: e.target.value as any }))}
-                        className="w-full px-1 py-1 bg-white border border-brand-500 rounded text-xs">
-                        {['Pendiente', 'Confirmado', 'Preparando', 'Decoración', 'Listo', 'En camino', 'Entregado', 'Cancelado'].map(s => (
-                          <option key={s} value={s}>{s}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-bold border ${statusColors[ord.status] || 'bg-zinc-50 text-zinc-600 border-zinc-200'}`}>
-                        {ord.status}
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-2 border-r border-zinc-100 dark:border-zinc-800/50">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-bold border ${ord.paymentStatus === 'confirmado' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-                      {ord.paymentStatus || 'pendiente'}
-                    </span>
-                  </td>
-                  <td className="p-2 text-center">
-                    <div className="flex items-center space-x-1 justify-center">
-                      {editingOrderId === ord.id ? (
-                        <button onClick={() => handleSaveInlineEdit(ord.id)}
-                          className="p-1.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 cursor-pointer" title="Guardar">
-                          <Check className="h-3 w-3" />
-                        </button>
+              {sorted.map((ord, idx) => {
+                const isEditing = editingId === ord.id;
+                const statusStyle = STATUS_STYLES[ord.status] || STATUS_STYLES['Pendiente'];
+
+                return (
+                  <tr key={ord.id}
+                    className={`group transition-all duration-150 border-b border-zinc-50 dark:border-zinc-800/30 ${
+                      idx % 2 === 0 ? 'bg-white dark:bg-zinc-950/40' : 'bg-zinc-50/30 dark:bg-zinc-900/20'
+                    } hover:bg-brand-50/40 dark:hover:bg-brand-950/10`}>
+                    
+                    {/* Row number - sticky */}
+                    <td className="px-3 py-3 text-center text-[10px] font-mono text-zinc-400 border-r border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 sticky left-0 z-10 group-hover:bg-brand-50/40 dark:group-hover:bg-brand-950/10 transition-all">
+                      {idx + 1}
+                    </td>
+
+                    {/* Cliente */}
+                    <td className="px-3 py-3 border-r border-zinc-100 dark:border-zinc-800/50">
+                      {isEditing ? (
+                        <input value={editData.customerName ?? ord.customerName} onChange={e => setEditData(p => ({ ...p, customerName: e.target.value }))}
+                          className="w-full px-2 py-1.5 bg-white border-2 border-brand-400 rounded-lg text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-brand-500/30 shadow-sm" autoFocus />
                       ) : (
-                        <button onClick={() => { setEditingOrderId(ord.id); setEditingOrderData({}); }}
-                          className="p-1.5 bg-zinc-100 hover:bg-zinc-200 rounded-lg text-zinc-500 cursor-pointer" title="Editar inline">
-                          ✏️
-                        </button>
+                        <div>
+                          <span className="font-semibold text-zinc-800 dark:text-zinc-200 text-xs">{ord.customerName}</span>
+                          <span className="block text-[9px] font-mono text-zinc-400 mt-0.5">{ord.customerPhone || ''}</span>
+                        </div>
                       )}
-                      <select value={ord.status} onChange={(e) => handleUpdateOrderStatus(ord.id, e.target.value as OrderStatus)}
-                        className="px-1.5 py-1 bg-white border border-zinc-200 rounded-lg text-[10px] cursor-pointer">
-                        {['Pendiente', 'Confirmado', 'Preparando', 'Decoración', 'Listo', 'En camino', 'Entregado', 'Cancelado'].map(s => (
-                          <option key={s} value={s}>{s}</option>
-                        ))}
-                      </select>
-                      {onOpenPaymentModal && (
-                        <button onClick={() => onOpenPaymentModal(ord)}
-                          className="p-1.5 bg-amber-50 hover:bg-amber-100 rounded-lg text-amber-600 cursor-pointer" title="Gestionar Pago">
-                          💰
-                        </button>
+                    </td>
+
+                    {/* Pastel */}
+                    <td className="px-3 py-3 border-r border-zinc-100 dark:border-zinc-800/50">
+                      {isEditing ? (
+                        <input value={editData.productName ?? ord.productName} onChange={e => setEditData(p => ({ ...p, productName: e.target.value }))}
+                          className="w-full px-2 py-1.5 bg-white border-2 border-brand-400 rounded-lg text-xs text-zinc-800 focus:outline-none" />
+                      ) : (
+                        <div>
+                          <span className="text-brand-700 dark:text-brand-300 font-medium text-xs">{ord.productName}</span>
+                          <span className="block text-[9px] font-mono text-zinc-400 mt-0.5">#{ord.trackingCode || ord.id.slice(0, 8)}</span>
+                        </div>
                       )}
-                      <button onClick={() => handleDeleteOrder(ord.id)}
-                        className="p-1.5 hover:bg-red-50 rounded-lg text-zinc-400 hover:text-red-500 cursor-pointer" title="Eliminar">
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+
+                    {/* Sabor / Detalles */}
+                    <td className="px-3 py-3 border-r border-zinc-100 dark:border-zinc-800/50">
+                      {isEditing ? (
+                        <div className="space-y-1.5">
+                          <input value={editData.flavor ?? ord.flavor} onChange={e => setEditData(p => ({ ...p, flavor: e.target.value }))}
+                            placeholder="Sabor" className="w-full px-2 py-1 bg-white border border-zinc-300 rounded text-[10px] focus:outline-none focus:border-brand-400" />
+                          <input value={editData.size ?? ord.size} onChange={e => setEditData(p => ({ ...p, size: e.target.value }))}
+                            placeholder="Tamaño" className="w-full px-2 py-1 bg-white border border-zinc-300 rounded text-[10px] focus:outline-none focus:border-brand-400" />
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                          <span className="font-medium text-zinc-700 dark:text-zinc-300">{ord.flavor || '—'}</span>
+                          {ord.size && <span className="block text-zinc-400">{ord.size}</span>}
+                          {(ord.customColor || ord.selectedDecoration) && (
+                            <span className="block text-zinc-400 truncate max-w-[160px]" title={`${ord.customColor || ''} · ${ord.selectedDecoration || ''}`}>
+                              🎨 {ord.customColor || ''}{ord.customColor && ord.selectedDecoration ? ' · ' : ''}{ord.selectedDecoration || ''}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Total */}
+                    <td className="px-3 py-3 border-r border-zinc-100 dark:border-zinc-800/50 text-right">
+                      {isEditing ? (
+                        <input type="number" value={editData.totalPrice ?? ord.totalPrice} onChange={e => setEditData(p => ({ ...p, totalPrice: Number(e.target.value) }))}
+                          className="w-full px-2 py-1.5 bg-white border-2 border-brand-400 rounded-lg text-xs font-mono text-right focus:outline-none" />
+                      ) : (
+                        <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100 text-xs">S/.{ord.totalPrice}</span>
+                      )}
+                    </td>
+
+                    {/* Estado */}
+                    <td className="px-3 py-3 border-r border-zinc-100 dark:border-zinc-800/50">
+                      {isEditing ? (
+                        <select value={(editData.status as string) || ord.status} onChange={e => setEditData(p => ({ ...p, status: e.target.value as any }))}
+                          className="w-full px-2 py-1.5 bg-white border-2 border-brand-400 rounded-lg text-[10px] focus:outline-none cursor-pointer">
+                          {ALL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-bold border ${statusStyle.bg}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
+                            {statusStyle.label}
+                          </span>
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Pago */}
+                    <td className="px-3 py-3 border-r border-zinc-100 dark:border-zinc-800/50">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-bold border ${
+                        ord.paymentStatus === 'confirmado'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : ord.paymentStatus === 'rechazado'
+                            ? 'bg-red-50 text-red-700 border-red-200'
+                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                          ord.paymentStatus === 'confirmado' ? 'bg-emerald-500' :
+                          ord.paymentStatus === 'rechazado' ? 'bg-red-500' : 'bg-amber-400'
+                        }`} />
+                        {ord.paymentStatus === 'confirmado' ? 'Pagado' : ord.paymentStatus === 'rechazado' ? 'Rechazado' : 'Pendiente'}
+                      </span>
+                    </td>
+
+                    {/* Acciones */}
+                    <td className="px-3 py-3 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        {isEditing ? (
+                          <>
+                            <button onClick={() => handleSaveInline(ord.id)}
+                              className="p-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-all shadow-sm active:scale-90 cursor-pointer" title="Guardar cambios">
+                              <Check className="h-3.5 w-3.5" />
+                            </button>
+                            <button onClick={() => { setEditingId(null); setEditData({}); }}
+                              className="p-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-500 rounded-lg transition-all active:scale-90 cursor-pointer" title="Cancelar edición">
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </>
+                        ) : (
+                          <button onClick={() => { setEditingId(ord.id); setEditData({}); }}
+                            className="p-1.5 bg-zinc-100 hover:bg-brand-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-500 hover:text-brand-600 rounded-lg transition-all active:scale-90 opacity-0 group-hover:opacity-100 cursor-pointer" title="Editar inline">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+
+                        <select value={ord.status} onChange={e => handleUpdateStatus(ord.id, e.target.value as OrderStatus)}
+                          className="px-2 py-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-[9px] font-mono cursor-pointer hover:border-brand-300 transition-colors focus:outline-none focus:ring-1 focus:ring-brand-500"
+                          title="Cambiar estado">
+                          {ALL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+
+                        {onOpenPaymentModal && (
+                          <button onClick={() => onOpenPaymentModal(ord)}
+                            className="p-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-950/50 text-amber-600 rounded-lg transition-all active:scale-90 cursor-pointer" title="Gestionar pago">
+                            <Eye className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+
+                        <button onClick={() => handleDelete(ord.id)}
+                          className="p-1.5 bg-zinc-100 hover:bg-red-50 dark:bg-zinc-800 dark:hover:bg-red-950/30 text-zinc-400 hover:text-red-500 rounded-lg transition-all active:scale-90 opacity-0 group-hover:opacity-100 cursor-pointer" title="Eliminar pedido">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
-        {filteredOrders.length === 0 && (
-          <div className="text-center py-12 text-zinc-400 text-xs font-mono">No se encontraron pedidos con los filtros actuales.</div>
+
+        {filtered.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16 text-zinc-400">
+            <span className="text-3xl mb-3">📋</span>
+            <p className="text-sm font-medium text-zinc-500">No hay pedidos con estos filtros</p>
+            {hasActiveFilters && (
+              <button onClick={clearFilters} className="mt-3 px-4 py-2 bg-zinc-100 hover:bg-zinc-200 rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-500 transition-all cursor-pointer">
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Bottom bar */}
+        {filtered.length > 0 && (
+          <div className="flex items-center justify-between px-5 py-3 bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-800 text-[10px] font-mono text-zinc-400">
+            <span>
+              Mostrando <strong className="text-zinc-600 dark:text-zinc-300">{filtered.length}</strong> de <strong className="text-zinc-600 dark:text-zinc-300">{orders.length}</strong> pedidos
+            </span>
+            <span className="text-emerald-600 font-bold">
+              Total S/.{totalSales}
+            </span>
+          </div>
         )}
       </div>
     </div>

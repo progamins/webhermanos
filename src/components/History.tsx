@@ -18,7 +18,7 @@ const timelineItemVariants = {
     opacity: 1,
     y: 0,
     transition: {
-      type: 'spring',
+      type: 'spring' as const,
       stiffness: 60,
       damping: 14,
     },
@@ -65,7 +65,13 @@ export default function History({ config }: HistoryProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Header Block */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
+        <motion.div 
+          initial={{ opacity: 0, y: 30, filter: 'blur(4px)' }}
+          whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ type: 'spring', stiffness: 80, damping: 16, mass: 0.8 }}
+          className="text-center max-w-3xl mx-auto mb-16"
+        >
           <span className="text-[10px] tracking-[0.3em] uppercase opacity-75 text-brand-secondary dark:text-brand-300 block font-semibold">
             TRADICIÓN & EXCLUSIVIDAD
           </span>
@@ -84,7 +90,7 @@ export default function History({ config }: HistoryProps) {
               <strong> Edwin Raúl Rosas Albines</strong>. Cada pastel es una obra maestra exclusiva que combina tradición familiar, amor y elegancia suprema.
             </p>
           )}
-        </div>
+        </motion.div>
 
         {/* Info Grid (Carol & Edwin splits) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-24">
@@ -133,10 +139,10 @@ export default function History({ config }: HistoryProps) {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, x: 30, filter: 'blur(4px)' }}
+            whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            transition={{ type: 'spring', stiffness: 70, damping: 14, mass: 0.8 }}
             className="relative"
             id="history-chef-photo"
           >
@@ -146,6 +152,8 @@ export default function History({ config }: HistoryProps) {
               alt="Carol horneando con amor"
               className="relative w-full aspect-[4/3] object-cover rounded-3xl shadow-xl border border-white/20"
               referrerPolicy="no-referrer"
+              loading="lazy"
+              decoding="async"
             />
             <div className="absolute -bottom-4 -left-4 glass-panel p-4 rounded-none shadow-lg border border-white/30 bg-white/70 backdrop-blur-md">
               <span className="block text-[9px] font-mono font-bold uppercase tracking-widest text-brand-secondary dark:text-brand-400">Pastelera Principal</span>

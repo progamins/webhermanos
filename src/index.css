@@ -22,6 +22,26 @@
   --color-brand-950: #2D1C1A;
 }
 
+/* ============= PERFORMANCE OPTIMIZATIONS ============= */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Content-visibility for below-fold sections speeds up initial render */
+section[id], footer {
+  content-visibility: auto;
+  contain-intrinsic-size: 600px;
+}
+
+/* Hero is above-fold - render immediately */
+#inicio {
+  content-visibility: visible;
+}
+
+#hero-badge, #hero-title, #hero-desc, #hero-actions, #hero-stats, #hero-image-container, #hero-review-floater {
+  content-visibility: visible;
+}
+
 /* Set base font configurations to enforce artisanal aesthetic */
 html, body {
   font-family: "Inter", system-ui, sans-serif;
@@ -133,6 +153,7 @@ h1, h2, h3, h4, h5, h6 {
   backdrop-filter: blur(8px);
   border-radius: 14px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, box-shadow, border-color;
 }
 
 .liquid-glass-input:focus {
@@ -158,7 +179,62 @@ h1, h2, h3, h4, h5, h6 {
   transform: translateY(-0.5px);
 }
 
-/* Fluid glow keyframes and classes for background moving bubbles */
+/* ============= LOADING SCREEN ANIMATIONS ============= */
+@keyframes loading-pulse-ring {
+  0% { transform: scale(0.8); opacity: 0.4; }
+  50% { transform: scale(1.3); opacity: 0.1; }
+  100% { transform: scale(0.8); opacity: 0.4; }
+}
+
+@keyframes loading-progress {
+  0% { width: 0%; }
+  20% { width: 22%; }
+  40% { width: 45%; }
+  60% { width: 62%; }
+  80% { width: 82%; }
+  100% { width: 100%; }
+}
+
+@keyframes loading-text-fade {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+@keyframes cake-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  25% { transform: translateY(-6px) rotate(1deg); }
+  50% { transform: translateY(-2px) rotate(-0.5deg); }
+  75% { transform: translateY(-8px) rotate(0.5deg); }
+}
+
+@keyframes sparkle-twinkle {
+  0%, 100% { opacity: 0; transform: scale(0); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes logo-gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ============= MODERN ENTRANCE/SCROLL ANIMATIONS ============= */
+@keyframes float-up {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes scale-in {
+  0% { transform: scale(0.95); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ============= FLUID BLOB ANIMATIONS ============= */
 @keyframes fluid-blob-bounce {
   0% {
     transform: translate(0px, 0px) scale(1);
@@ -176,24 +252,32 @@ h1, h2, h3, h4, h5, h6 {
 
 .animate-blob-1 {
   animation: fluid-blob-bounce 15s infinite alternate ease-in-out;
+  will-change: transform;
 }
 
 .animate-blob-2 {
   animation: fluid-blob-bounce 20s infinite alternate-reverse ease-in-out 3s;
+  will-change: transform;
 }
 
 .animate-blob-3 {
   animation: fluid-blob-bounce 18s infinite alternate ease-in-out 6s;
+  will-change: transform;
 }
 
 .glow-btn, .btn-glow {
   box-shadow: 0 4px 15px rgba(196, 132, 125, 0.4);
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  will-change: transform, box-shadow;
 }
 
 .glow-btn:hover, .btn-glow:hover {
   box-shadow: 0 8px 25px rgba(196, 132, 125, 0.7);
   transform: translateY(-1.5px);
+}
+
+.glow-btn:active, .btn-glow:active {
+  transform: translateY(0px) scale(0.98);
 }
 
 .dot-pattern {
@@ -211,4 +295,45 @@ h1, h2, h3, h4, h5, h6 {
     transform: translateY(100vh) rotate(720deg);
     opacity: 0;
   }
+}
+
+/* ============= UTILITY CLASSES ============= */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+/* Force GPU acceleration for smoother animations */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Loading shimmer skeleton effect */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(196, 132, 125, 0.06) 25%,
+    rgba(196, 132, 125, 0.12) 50%,
+    rgba(196, 132, 125, 0.06) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite ease-in-out;
+}
+
+/* Smooth image loading */
+img {
+  color: transparent;
+}
+
+img[loading="lazy"] {
+  transition: opacity 0.3s ease;
+}
+
+img[loading="lazy"]:not([src]) {
+  opacity: 0;
 }

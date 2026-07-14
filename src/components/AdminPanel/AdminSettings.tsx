@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Cake } from 'lucide-react';
+import { Cake, Globe } from 'lucide-react';
 import { AppConfig } from '../../types';
 import { dbService } from '../../dbService';
 import ImageUploader from './ImageUploader';
@@ -20,6 +20,7 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
   const [setSeoTitle, setSetSeoTitle] = useState(config.seoTitle);
   const [setSeoDesc, setSetSeoDesc] = useState(config.seoDescription);
   const [logoUrl, setLogoUrl] = useState(config.logoUrl || '');
+  const [faviconUrl, setFaviconUrl] = useState(config.faviconUrl || '');
 
   useEffect(() => {
     if (config) {
@@ -32,6 +33,7 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
       setSetSeoTitle(config.seoTitle);
       setSetSeoDesc(config.seoDescription);
       setLogoUrl(config.logoUrl || '');
+      setFaviconUrl(config.faviconUrl || '');
     }
   }, [config]);
 
@@ -47,7 +49,8 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
       openingHours: setHours,
       seoTitle: setSeoTitle,
       seoDescription: setSeoDesc,
-      logoUrl
+      logoUrl,
+      faviconUrl
     };
     try {
       await dbService.saveConfig(newConfig);
@@ -81,6 +84,27 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
           <div className="flex-1 space-y-1">
             <span className="block text-[10px] font-mono uppercase text-zinc-400">Personalizar Ícono / Logo de la Tienda</span>
             <ImageUploader value={logoUrl} onChange={(val) => setLogoUrl(val)} placeholder="URL de tu logo o sube uno" />
+          </div>
+        </div>
+      </div>
+
+      {/* Favicon */}
+      <div className="bg-zinc-50 dark:bg-zinc-950 p-5 rounded-2xl border border-zinc-150 dark:border-zinc-800/60 mb-6" id="favicon-customizer-section">
+        <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-brand-500 mb-3 flex items-center gap-1.5">
+          <Globe className="h-4 w-4" />
+          Favicon de la Web (ícono de pestaña)
+        </h4>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex items-center justify-center bg-white dark:bg-zinc-900 h-12 w-12 rounded-xl overflow-hidden shrink-0 border border-zinc-200 dark:border-zinc-800 shadow-sm ring-1 ring-zinc-100 dark:ring-zinc-800">
+            {faviconUrl ? (
+              <img src={faviconUrl} alt="Favicon Preview" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-lg">🧁</span>
+            )}
+          </div>
+          <div className="flex-1 space-y-1">
+            <span className="block text-[10px] font-mono uppercase text-zinc-400">Ícono que aparece en la pestaña del navegador</span>
+            <ImageUploader value={faviconUrl} onChange={(val) => setFaviconUrl(val)} placeholder="URL de tu favicon (ico, png, svg) o sube uno" />
           </div>
         </div>
       </div>

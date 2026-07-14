@@ -1,0 +1,17 @@
+{
+  "name": "Maison Rosas - Pastelería de Autor",
+  "short_name": "Maison Rosas",
+  "description": "Pastelería de autor y repostería fina en Sullana, Piura. Pasteles personalizados.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDF8F5",
+  "theme_color": "#C4847D",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

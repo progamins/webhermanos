@@ -328,23 +328,48 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
 
             {/* SECURE EMAIL / OTP LOGIN */}
             <div className="space-y-4">
-              <div style={{background:"#F8F6EF", borderRadius:"12px", border:"1px solid #E8E4D8", padding:"32px", fontFamily:"'Georgia', serif"}}>
-                <div style={{display:"flex", alignItems:"center", gap:"10px", marginBottom:"14px"}}>
-                  <div style={{width:"36px", height:"36px", borderRadius:"8px", background:"#F3EAD9", display:"flex", alignItems:"center", justifyContent:"center"}}>
-                    <span style={{fontSize:"18px"}}>✉️</span>
-                  </div>
-                  <h3 style={{margin:0, fontSize:"20px", color:"#2E2A22", fontWeight:600}}>Ver mis Pedidos</h3>
+              <div className="flex items-center space-x-3 text-brand-700">
+                <div className="p-2 bg-brand-50 rounded-xl">
+                  <Mail className="h-5 w-5" />
                 </div>
-
-                <div style={{border:"1px dashed #CFC8B4", borderRadius:"10px", padding:"24px", textAlign:"center", background:"#FBFAF6"}}>
-                  <p style={{margin:"0 0 8px", fontSize:"15px", letterSpacing:"1px", textTransform:"uppercase", color:"#7A6A4E", fontFamily:"sans-serif", fontWeight:600}}>
-                    En horneado 🍰
-                  </p>
-                  <p style={{margin:0, fontSize:"15px", color:"#5C5648", lineHeight:1.6, fontFamily:"sans-serif"}}>
-                    Estamos preparando una experiencia más dulce para consultar tus pedidos por correo.<br />
-                    Vuelve pronto — mientras tanto, usa tu <strong>código de seguimiento</strong> aquí al lado.
-                  </p>
+                <h3 className="font-serif text-lg font-bold text-zinc-900">Ver mis Pedidos</h3>
+              </div>
+              <p className="text-xs text-zinc-500 leading-relaxed font-sans">
+                Ingresa tu correo electrónico registrado al hacer tu pedido. Te enviaremos un código de verificación para acceder a todos tus pedidos al instante.
+              </p>
+              
+              <div className="space-y-3 pt-2">
+                <label className="text-xs font-mono font-bold text-zinc-400 uppercase tracking-wider block">
+                  Correo Electrónico
+                </label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="tucorreo@ejemplo.com"
+                    className="w-full pl-4 pr-12 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    onKeyDown={(e) => e.key === 'Enter' && handleRequestOtp()}
+                  />
+                  <button
+                    onClick={handleRequestOtp}
+                    disabled={loading}
+                    className="absolute right-2 top-2 p-1.5 bg-brand-500 hover:bg-brand-600 disabled:bg-brand-400 text-white rounded-lg transition-colors"
+                  >
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                  </button>
                 </div>
+                <button
+                  onClick={handleRequestOtp}
+                  disabled={loading}
+                  className="w-full py-3 bg-brand-500 hover:bg-brand-600 disabled:bg-brand-400 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shadow-sm flex items-center justify-center space-x-2"
+                >
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
+                  <span>{loading ? 'Enviando...' : 'Solicitar Código de Acceso'}</span>
+                </button>
+                <span className="text-[10px] text-zinc-400 block font-sans">
+                  Recibirás un código de 6 dígitos en tu correo. Válido por 10 minutos.
+                </span>
               </div>
             </div>
 
@@ -788,6 +813,8 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                                         alt="WhatsApp Screenshot"
                                         className="w-full h-full object-cover"
                                         referrerPolicy="no-referrer"
+                                        loading="lazy"
+                                        decoding="async"
                                       />
                                     </div>
                                     <div className="truncate flex-1">

@@ -52,12 +52,16 @@ export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, o
     }, 100);
   };
 
-  return (
-    <motion.nav
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.5 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+  return (        <motion.nav
+      initial={{ y: -80, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ 
+        type: 'spring',
+        stiffness: 120,
+        damping: 20,
+        mass: 0.8,
+      }}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 will-change-transform ${
         scrolled 
           ? 'bg-white/70 dark:bg-zinc-950/75 backdrop-blur-md border-b border-white/20 dark:border-white/5 shadow-sm py-3' 
           : 'bg-transparent py-5'
@@ -78,6 +82,8 @@ export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, o
                   alt="Maison Rosas Logo" 
                   referrerPolicy="no-referrer" 
                   className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
                 />
               </div>
             ) : (

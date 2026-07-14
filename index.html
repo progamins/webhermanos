@@ -1,13 +1,78 @@
 <!doctype html>
-<html lang="en">
+<html lang="es-PE">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
+
+    <!-- SEO Primary -->
+    <title>Maison Rosas | Pastelería de Autor & Repostería Fina</title>
+    <meta name="description" content="Deléitate con los pasteles personalizados de Carol Rosas Albines. Modelos exclusivos, ingredientes premium de alta repostería artesanal en Sullana, Piura. Haz tu pedido por WhatsApp." />
+    <meta name="keywords" content="pastelería, repostería fina, pasteles personalizados, Sullana, Piura, tortas, cumpleaños, bodas, Maison Rosas, Carol Rosas" />
+    <meta name="author" content="Carol & Edwin Rosas Albines - Maison Rosas" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#C4847D" />
+    <!-- 🔧 CAMBIA ESTA URL por tu dominio real al desplegar -->
+    <!-- <link rel="canonical" href="https://tudominio.com/" /> -->
+
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Maison Rosas | Pastelería de Autor & Repostería Fina" />
+    <meta property="og:description" content="Pasteles personalizados de diseño exclusivo. Ingredientes premium, amor artesanal. Haz tu pedido por WhatsApp." />
+    <meta property="og:url" content="https://maisonrosas.com/" />
+    <meta property="og:site_name" content="Maison Rosas" />
+    <meta property="og:locale" content="es_PE" />
+    <meta property="og:image" content="https://images.unsplash.com/photo-1535141192574-5d4897c13636?w=1200&auto=format&fit=crop&q=80" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Pastel artesanal Maison Rosas" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Maison Rosas | Pastelería de Autor" />
+    <meta name="twitter:description" content="Pasteles personalizados de diseño exclusivo en Sullana, Piura." />
+    <meta name="twitter:image" content="https://images.unsplash.com/photo-1535141192574-5d4897c13636?w=1200&auto=format&fit=crop&q=80" />
+
+    <!-- Dynamic Favicon (overwritten by App.tsx from Firestore config) -->
+    <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Preconnect to performance-critical origins -->
+    <link rel="preconnect" href="https://firestore.googleapis.com" />
+    <link rel="preconnect" href="https://firebasestorage.googleapis.com" />
+    <link rel="preconnect" href="https://images.unsplash.com" />
+    <link rel="dns-prefetch" href="https://images.unsplash.com" />
+
+    <!-- Manifest for PWA support -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- JSON-LD Structured Data for Local Business SEO -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Bakery",
+        "name": "Maison Rosas",
+        "image": "https://images.unsplash.com/photo-1535141192574-5d4897c13636?w=800&auto=format&fit=crop&q=80",
+        "description": "Pastelería de autor y repostería fina en Sullana, Piura. Pasteles personalizados para bodas, cumpleaños y eventos especiales.",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Av. Ricardo Palma 213, Urb. Sánchez Cerro",
+          "addressLocality": "Sullana",
+          "addressRegion": "Piura",
+          "addressCountry": "PE"
+        },
+        "telephone": "+51 902 568 187",
+        "email": "edwinraulrosasalbines@gmail.com",
+        "openingHours": "Mo-Sa 09:00-19:00, Su 10:00-14:00",
+        "priceRange": "S/. 95 - S/. 150",
+        "servesCuisine": "Repostería Fina",
+        "founders": [
+          { "@type": "Person", "name": "Carol Rosas Albines" },
+          { "@type": "Person", "name": "Edwin Raúl Rosas Albines" }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

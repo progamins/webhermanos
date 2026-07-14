@@ -310,7 +310,8 @@ const DEFAULT_CONFIG: AppConfig = {
   heroImage: 'https://images.unsplash.com/photo-1535141192574-5d4897c13636?w=600&auto=format&fit=crop&q=80',
   aboutTitle: 'Nuestra Esencia Familiar',
   aboutDescription: 'En Maison Rosas, la repostería no es solo un oficio, sino un legado familiar de amor y dedicación. Cada pastel es esculpido a mano por Carol, cuidando texturas finas e ingredientes orgánicos de la más alta selección, mientras que Edwin garantiza una atención segura, coordinada y personalizada para que cada celebración en Piura y Sullana sea perfecta.',
-  aboutImage: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80'
+  aboutImage: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80',
+  faviconUrl: ''
 };
 
 // Seeding inicial si la base de datos está vacía

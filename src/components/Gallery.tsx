@@ -65,10 +65,10 @@ export default function Gallery({ galleryItems }: GalleryProps) {
               <motion.div
                 key={item.id}
                 layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.4 }}
+                initial={{ opacity: 0, scale: 0.9, filter: 'blur(4px)' }}
+                animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, scale: 0.9, filter: 'blur(4px)' }}
+                transition={{ type: 'spring', stiffness: 80, damping: 14, mass: 0.8 }}
                 onClick={() => setSelectedItem(item)}
                 className="group relative aspect-[4/5] rounded-[24px] overflow-hidden shadow-sm hover:shadow-xl border border-white/30 dark:border-white/5 cursor-pointer bg-zinc-100 dark:bg-zinc-900"
                 id={`gallery-card-${item.id}`}
@@ -79,6 +79,8 @@ export default function Gallery({ galleryItems }: GalleryProps) {
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   id={`gallery-img-${item.id}`}
                   referrerPolicy="no-referrer"
+                  loading="lazy"
+                  decoding="async"
                 />
                 
                 {/* Dark Hover Overlay */}
@@ -149,9 +151,10 @@ function GalleryLightbox({ item, onClose }: GalleryLightboxProps) {
       </button>
 
       <motion.div
-        initial={{ scale: 0.9, y: 15 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.9, y: 15 }}
+        initial={{ scale: 0.9, y: 15, filter: 'blur(4px)' }}
+        animate={{ scale: 1, y: 0, filter: 'blur(0px)' }}
+        exit={{ scale: 0.9, y: 15, filter: 'blur(4px)' }}
+        transition={{ type: 'spring', stiffness: 100, damping: 18 }}
         onClick={(e) => e.stopPropagation()}
         className="relative max-w-4xl w-full bg-zinc-950/80 dark:bg-black/80 rounded-[32px] overflow-hidden border border-white/10 flex flex-col md:flex-row shadow-2xl backdrop-blur-xl"
       >
@@ -163,6 +166,7 @@ function GalleryLightbox({ item, onClose }: GalleryLightboxProps) {
             className="w-full h-full object-cover"
             id="lightbox-main-img"
             referrerPolicy="no-referrer"
+            decoding="async"
           />
           {/* Glass indicator on image */}
           <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/40 backdrop-blur-md border border-white/10 text-[9px] font-mono tracking-widest text-brand-200 uppercase">

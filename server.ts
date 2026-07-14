@@ -74,11 +74,11 @@ const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/x-icon", "image/svg+xml", "image/vnd.microsoft.icon"];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("Formato de archivo no soportado. Sube JPEG, PNG, WEBP o GIF."));
+      cb(new Error(`Formato "${file.mimetype}" no soportado. Sube JPEG, PNG, WEBP, GIF, SVG o ICO.`));
     }
   }
 });
@@ -432,19 +432,93 @@ async function startServer() {
     `;
   }
 
-  function getOTPEmailHTML(customerName: string, email: string, otp: string) {
+  function getContactEmailHTML(name: string, email: string | undefined, message: string) {
+    return `
+      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #F0D6CE; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; color: #27272a;">
+        ${getEmailHeader()}
+        <div style="padding: 30px;">
+          <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 20px; color: #523531; margin: 0 0 15px 0; font-weight: normal;">Nuevo mensaje del formulario de contacto</h2>
+          <p style="font-size: 13px; color: #8A5550; line-height: 1.6; margin: 0 0 20px 0;">Has recibido un nuevo mensaje desde el formulario de contacto de la web Maison Rosas.</p>
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin: 20px 0;">
+            <tr>
+              <td style="padding: 8px 0; color: #C4A8A0; font-weight: 500; width: 100px; vertical-align: top;">Nombre:</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #8A5550;">${name}</td>
+            </tr>
+            ${email ? `<tr>
+              <td style="padding: 8px 0; color: #C4A8A0; font-weight: 500; vertical-align: top;">Email:</td>
+              <td style="padding: 8px 0; font-weight: bold; color: #8A5550;">${email}</td>
+            </tr>` : ''}
+            <tr>
+              <td style="padding: 8px 0; color: #C4A8A0; font-weight: 500; vertical-align: top;">Fecha:</td>
+              <td style="padding: 8px 0; color: #8A5550;">${new Date().toLocaleString('es-PE')}</td>
+            </tr>
+          </table>
+          <div style="background-color: #FFF9F5; border: 1px solid #F0D6CE; border-radius: 12px; padding: 20px; margin-top: 10px;">
+            <p style="font-size: 13px; color: #8A5550; margin: 0 0 10px 0; font-weight: bold;">Mensaje:</p>
+            <p style="font-size: 13px; color: #8A5550; line-height: 1.6; white-space: pre-wrap;">${message}</p>
+          </div>
+          <p style="font-size: 11px; color: #C4A8A0; margin-top: 20px; text-align: center;">
+            Este mensaje fue enviado automáticamente desde el formulario de contacto de <strong>Maison Rosas</strong>.
+          </p>
+        </div>
+        ${getEmailFooter()}
+      </div>
+    `;
+  }
+
+  function getOTPEmailHTML(customerName: string, email: string, otp: string, orders?: any[]) {
+    const orderSummaryRows = orders && orders.length > 0
+      ? orders.map(o => {
+          const statusColor: any = {
+            'Pendiente': '#D4A373', 'Confirmado': '#3B82F6', 'Preparando': '#8B5CF6',
+            'Decoración': '#EC4899', 'Listo': '#10B981', 'En camino': '#F59E0B',
+            'Entregado': '#16A34A', 'Cancelado': '#EF4444'
+          };
+          const color = statusColor[o.status] || '#A1A1AA';
+          return `
+            <tr style="border-bottom: 1px solid #F0D6CE;">
+              <td style="padding: 10px 8px; font-size: 12px; color: #8A5550;">${o.productName || 'Pastel'}</td>
+              <td style="padding: 10px 8px; font-size: 12px; color: #8A5550;">S/. ${o.totalPrice || '—'}</td>
+              <td style="padding: 10px 8px; font-size: 12px;">
+                <span style="display: inline-block; background-color: ${color}; color: #ffffff; padding: 2px 10px; border-radius: 12px; font-size: 9px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em;">${o.status || '—'}</span>
+              </td>
+              <td style="padding: 10px 8px; font-size: 11px; font-family: monospace; color: #C4A8A0; letter-spacing: 1px;">${o.trackingCode || '—'}</td>
+            </tr>
+          `;
+        }).join('')
+      : '';
+
+    const orderSummarySection = orders && orders.length > 0 ? `
+      <h3 style="font-family: 'Playfair Display', Georgia, serif; font-size: 16px; color: #523531; margin: 25px 0 10px 0; font-weight: normal;">📋 Resumen de tus Pedidos</h3>
+      <table style="width: 100%; border-collapse: collapse; border: 1px solid #F0D6CE; border-radius: 8px; overflow: hidden; font-family: 'Inter', sans-serif; margin-bottom: 25px;">
+        <thead>
+          <tr style="background-color: #FFF9F5;">
+            <th style="padding: 10px 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #8A5550; text-align: left; font-weight: bold;">Pastel</th>
+            <th style="padding: 10px 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #8A5550; text-align: left; font-weight: bold;">Total</th>
+            <th style="padding: 10px 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #8A5550; text-align: left; font-weight: bold;">Estado</th>
+            <th style="padding: 10px 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #8A5550; text-align: left; font-weight: bold;">Código</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${orderSummaryRows}
+        </tbody>
+      </table>
+      <p style="font-family: 'Inter', sans-serif; font-size: 11px; color: #C4A8A0; text-align: center; margin: 0 0 10px 0;">
+        Ingresa el código de verificación en la web de Maison Rosas para ver los detalles completos de cada pedido y su timeline de preparación.
+      </p>` : '';
+
     return `
       <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #F0D6CE; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; color: #27272a;">
         ${getEmailHeader()}
         <div style="padding: 40px 30px; background-color: #ffffff;">
-          <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 22px; color: #523531; margin: 0 0 20px 0; text-align: center; font-style: italic; font-weight: normal;">Acceso a tus Pedidos 🎂</h2>
+          <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 22px; color: #523531; margin: 0 0 20px 0; text-align: center; font-style: italic; font-weight: normal;">🔐 Acceso a tus Pedidos</h2>
           
           <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: #8A5550; line-height: 1.6; margin: 0 0 15px 0;">
             Hola, <strong>${customerName}</strong>.
           </p>
           
           <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: #8A5550; line-height: 1.6; margin: 0 0 20px 0;">
-            Tu código para consultar el estado de tu pedido es:
+            Has solicitado acceso a tus pedidos. Ingresa este código en la web de Maison Rosas:
           </p>
           
           <div style="background-color: #FFF9F5; border: 1px dashed #C4847D; border-radius: 12px; padding: 25px; margin-bottom: 25px; text-align: center;">
@@ -452,6 +526,8 @@ async function startServer() {
             <strong style="font-size: 38px; font-family: monospace; color: #C4847D; letter-spacing: 5px;">${otp}</strong>
             <span style="font-size: 11px; color: #C4A8A0; display: block; margin-top: 10px;">Este código es válido durante 10 minutos.</span>
           </div>
+          
+          ${orderSummarySection}
           
           <p style="font-family: 'Inter', sans-serif; font-size: 13px; color: #C4A8A0; text-align: center; margin: 0; line-height: 1.5;">
             Si no solicitaste este código, puedes ignorar este correo de forma segura.
@@ -591,84 +667,22 @@ async function startServer() {
     }
   }
 
-  // 5b. Contact Form API — sends real email via Resend when user submits contact form
+  // 5b. Contact Form API — sends real email via complete fallback chain: Resend → SMTP → simulated
   app.post("/api/contact", async (req, res) => {
     const { name, email, message } = req.body;
     if (!name || !message) {
       return res.status(400).json({ success: false, error: "Nombre y mensaje son requeridos." });
     }
 
-    const resendApiKey = process.env.RESEND_API_KEY;
-    if (!resendApiKey) {
-      console.warn("[CONTACT] RESEND_API_KEY no configurado. Guardando mensaje simulado.");
-      // Save to simulated_emails as fallback so it's visible in admin panel
-      const emailId = `contact-${Date.now()}-${Math.round(Math.random() * 1000)}`;
-      const htmlContent = `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 20px auto;">
-          <h2>Nuevo mensaje del formulario de contacto</h2>
-          <p><strong>Nombre:</strong> ${name}</p>
-          ${email ? `<p><strong>Email:</strong> ${email}</p>` : ''}
-          <p><strong>Mensaje:</strong></p>
-          <blockquote style="border-left: 4px solid #C4847D; padding-left: 15px; margin: 10px 0; color: #333;">
-            ${message}
-          </blockquote>
-          <p><em>Recibido el ${new Date().toLocaleString('es-PE')}</em></p>
-        </div>
-      `;
-      try {
-        await setDoc(doc(db, "simulated_emails", emailId), {
-          id: emailId,
-          recipient: "edwinraulrosasalbines@gmail.com",
-          subject: `Nuevo mensaje de ${name} - Formulario de Contacto`,
-          htmlContent,
-          date: new Date().toISOString(),
-          read: false,
-          sentReal: false,
-          sendError: "RESEND_API_KEY no configurado"
-        });
-      } catch (e) { /* ignore */ }
-      return res.json({ success: true, message: "Mensaje recibido con éxito." });
-    }
-
     try {
-      const rawSenderEmail = process.env.RESEND_SENDER_EMAIL || "edwinraulrosasalbines@gmail.com";
-      const cleanSenderEmail = rawSenderEmail.replace(/^["']|["']$/g, "").trim();
+      const htmlContent = getContactEmailHTML(name, email, message);
+      const subject = `Nuevo mensaje de ${name} - Formulario de Contacto`;
+      await sendSimulatedEmail(
+        "edwinraulrosasalbines@gmail.com",
+        subject,
+        htmlContent
+      );
 
-      const resend = new Resend(resendApiKey);
-      const { data, error } = await resend.emails.send({
-        from: `Formulario Web Maison Rosas <${cleanSenderEmail}>`,
-        to: "edwinraulrosasalbines@gmail.com",
-        subject: `Nuevo mensaje de ${name} - Formulario de Contacto`,
-        html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 20px auto; border: 1px solid #F0D6CE; border-radius: 16px; overflow: hidden;">
-            <div style="background-color: #FFF9F5; padding: 30px 20px; text-align: center; border-bottom: 2px solid #F0D6CE;">
-              <h1 style="font-family: Georgia, serif; font-size: 28px; color: #8A5550; margin: 0;">Maison Rosas</h1>
-              <p style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.2em; color: #D4A373; margin: 8px 0 0 0;">Notificación de Contacto Web</p>
-            </div>
-            <div style="padding: 30px;">
-              <h2 style="font-family: Georgia, serif; font-size: 20px; color: #523531;">Nuevo mensaje del formulario de contacto</h2>
-              <p style="font-size: 13px; color: #8A5550; line-height: 1.6;">Has recibido un nuevo mensaje desde el formulario de contacto de la web.</p>
-              <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin: 20px 0;">
-                <tr><td style="padding: 8px 0; color: #C4A8A0; font-weight: 500;">Nombre:</td><td style="padding: 8px 0; font-weight: bold; color: #8A5550;">${name}</td></tr>
-                ${email ? `<tr><td style="padding: 8px 0; color: #C4A8A0; font-weight: 500;">Email:</td><td style="padding: 8px 0; font-weight: bold; color: #8A5550;">${email}</td></tr>` : ''}
-                <tr><td style="padding: 8px 0; color: #C4A8A0; font-weight: 500;">Fecha:</td><td style="padding: 8px 0; color: #8A5550;">${new Date().toLocaleString('es-PE')}</td></tr>
-              </table>
-              <div style="background-color: #FFF9F5; border: 1px solid #F0D6CE; border-radius: 12px; padding: 20px; margin-top: 10px;">
-                <p style="font-size: 13px; color: #8A5550; margin: 0 0 10px 0; font-weight: bold;">Mensaje:</p>
-                <p style="font-size: 13px; color: #8A5550; line-height: 1.6; white-space: pre-wrap;">${message}</p>
-              </div>
-              <p style="font-size: 11px; color: #C4A8A0; margin-top: 20px; text-align: center;">Este mensaje fue enviado automáticamente desde el formulario de contacto de <strong>Maison Rosas</strong>.</p>
-            </div>
-          </div>
-        `
-      });
-
-      if (error) {
-        console.warn(`[CONTACT] Error de Resend:`, error);
-        return res.status(500).json({ success: false, error: "No se pudo enviar el mensaje. Intenta de nuevo más tarde." });
-      }
-
-      console.log(`[CONTACT] Mensaje de ${name} enviado por Resend. ID:`, data?.id);
       return res.json({ success: true, message: "¡Mensaje enviado con éxito!" });
     } catch (err: any) {
       console.error(`[CONTACT] Error inesperado:`, err);
@@ -735,20 +749,35 @@ async function startServer() {
         });
       }
 
-      // 2. Generate 6 digit random number
+      // 2. Collect a brief summary of all orders for this email
+      const customerOrders: any[] = [];
+      querySnapshot.docs.forEach(doc => {
+        const orderData = doc.data();
+        const customerEmail = orderData?.customerEmail;
+        if (customerEmail && customerEmail.toLowerCase() === normalizedEmail) {
+          customerOrders.push({
+            productName: orderData.productName || 'Pastel',
+            totalPrice: orderData.totalPrice || '—',
+            status: orderData.status || 'Pendiente',
+            trackingCode: orderData.trackingCode || '—'
+          });
+        }
+      });
+
+      // 3. Generate 6 digit random number
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
 
-      // 3. Save in Firestore for verification
+      // 4. Save in Firestore for verification
       await setDoc(doc(db, "otps", normalizedEmail), {
         email: normalizedEmail,
         otp,
         expiresAt
       });
 
-      // 4. Send email using Resend API / SMTP / Simulator
-      const htmlContent = getOTPEmailHTML(customerName, normalizedEmail, otp);
-      await sendSimulatedEmail(normalizedEmail, "Tu código de acceso para consultar tu pedido 🎂", htmlContent);
+      // 5. Send email using SMTP with order summary included
+      const htmlContent = getOTPEmailHTML(customerName, normalizedEmail, otp, customerOrders);
+      await sendSimulatedEmail(normalizedEmail, `🔐 Tu código de acceso - Maison Rosas (${customerOrders.length} pedido${customerOrders.length !== 1 ? 's' : ''})`, htmlContent);
 
       return res.json({ success: true, message: "Código OTP generado con éxito.", otpForTesting: otp });
     } catch (error) {
@@ -1000,12 +1029,30 @@ async function startServer() {
   });
 
   // 8. Admin Secure File Upload API — stores images on disk and returns local URL
-  app.post("/api/upload", verifyAdminSession, upload.single("image"), async (req, res) => {
-    if (!req.file) {
-      return res.status(400).json({ success: false, error: "No se seleccionó ningún archivo." });
-    }
-    const localUrl = `/uploads/${req.file.filename}`;
-    res.json({ success: true, imageUrl: localUrl });
+  app.post("/api/upload", verifyAdminSession, (req, res) => {
+    upload.single("image")(req, res, async (err) => {
+      if (err) {
+        console.error("[UPLOAD] Multer error:", err.message || err);
+        if (err instanceof multer.MulterError) {
+          if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ success: false, error: "El archivo excede el tamaño máximo de 10MB." });
+          }
+          return res.status(400).json({ success: false, error: `Error de subida: ${err.message}` });
+        }
+        return res.status(400).json({ success: false, error: err.message || "Error al procesar el archivo." });
+      }
+
+      try {
+        if (!req.file) {
+          return res.status(400).json({ success: false, error: "No se seleccionó ningún archivo." });
+        }
+        const localUrl = `/uploads/${req.file.filename}`;
+        res.json({ success: true, imageUrl: localUrl });
+      } catch (error) {
+        console.error("[UPLOAD] Error inesperado:", error);
+        res.status(500).json({ success: false, error: "Error interno del servidor al subir la imagen." });
+      }
+    });
   });
 
   // Memory storage for vouchers (uploaded to Firebase Storage for persistence)

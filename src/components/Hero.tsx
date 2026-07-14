@@ -9,21 +9,48 @@ interface HeroProps {
 }
 
 export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps) {
+  // Modern spring-based animation variants
+  const heroContainerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.15,
+      },
+    },
+  };
+
+  const heroItemVariants = {
+    hidden: { opacity: 0, y: 30, filter: 'blur(4px)' },
+    show: {
+      opacity: 1,
+      y: 0,
+      filter: 'blur(0px)',
+      transition: {
+        type: 'spring' as const,
+        stiffness: 100,
+        damping: 18,
+        mass: 0.8,
+      },
+    },
+  };
+
   return (
     <section 
       id="inicio" 
       className="relative min-h-[92vh] flex items-center justify-center pt-24 overflow-hidden bg-gradient-to-b from-brand-50/50 via-white to-white dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900"
     >
       {/* Decorative background ambient blobs */}
-      <div className="absolute top-20 left-1/10 w-72 h-72 rounded-full bg-brand-100/40 dark:bg-brand-950/10 blur-3xl" />
-      <div className="absolute bottom-10 right-1/10 w-96 h-96 rounded-full bg-brand-200/20 dark:bg-brand-900/5 blur-3xl" />
+      <div className="absolute top-20 left-1/10 w-72 h-72 rounded-full bg-brand-100/40 dark:bg-brand-950/10 blur-3xl will-change-transform animate-blob-1" />
+      <div className="absolute bottom-10 right-1/10 w-96 h-96 rounded-full bg-brand-200/20 dark:bg-brand-900/5 blur-3xl will-change-transform animate-blob-2" />
 
       {/* Floating particles background effect */}
       <div className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-20">
         {[...Array(12)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute rounded-full bg-brand-300"
+            className="absolute rounded-full bg-brand-300 will-change-transform"
             style={{
               width: Math.random() * 8 + 4,
               height: Math.random() * 8 + 4,
@@ -48,11 +75,14 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
           {/* Text Content */}
-          <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
+          <motion.div 
+            className="lg:col-span-7 space-y-6 text-center lg:text-left"
+            variants={heroContainerVariants}
+            initial="hidden"
+            animate="show"
+          >
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
+              variants={heroItemVariants}
               className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-brand-100/70 dark:bg-brand-950/30 border border-brand-200/50 dark:border-brand-900/30 text-brand-700 dark:text-brand-300 text-xs font-mono font-semibold uppercase tracking-wider"
               id="hero-badge"
             >
@@ -61,9 +91,7 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
             </motion.div>
 
             <motion.h1
-              initial={{ opacity: 0, y: 25 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.1 }}
+              variants={heroItemVariants}
               className="text-5xl sm:text-6xl lg:text-7xl font-serif font-light italic text-zinc-900 dark:text-white leading-tight"
               id="hero-title"
             >
@@ -85,9 +113,7 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
             </motion.h1>
 
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.2 }}
+              variants={heroItemVariants}
               className="text-lg text-zinc-600 dark:text-zinc-300 max-w-sm mx-auto lg:mx-0 leading-relaxed font-light"
               id="hero-desc"
             >
@@ -95,34 +121,34 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
             </motion.p>
 
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.3 }}
+              variants={heroItemVariants}
               className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4"
               id="hero-actions"
             >
-              <button
+              <motion.button
                 onClick={onViewCatalog}
-                className="btn-glow w-full sm:w-auto px-8 py-4 bg-brand-500 hover:bg-brand-600 text-white uppercase text-[10px] tracking-widest font-bold transition-all duration-300 active:scale-95 cursor-pointer"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="btn-glow w-full sm:w-auto px-8 py-4 bg-brand-500 hover:bg-brand-600 text-white uppercase text-[10px] tracking-widest font-bold transition-colors duration-200 cursor-pointer"
                 id="hero-btn-catalog"
               >
                 Ver Catálogo
-              </button>
+              </motion.button>
 
-              <button
+              <motion.button
                 onClick={onViewHistory}
-                className="w-full sm:w-auto px-8 py-4 border border-brand-500 text-brand-500 dark:border-brand-300 dark:text-brand-300 uppercase text-[10px] tracking-widest font-bold bg-transparent transition-all duration-300 active:scale-95 hover:bg-brand-500/5 cursor-pointer"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full sm:w-auto px-8 py-4 border border-brand-500 text-brand-500 dark:border-brand-300 dark:text-brand-300 uppercase text-[10px] tracking-widest font-bold bg-transparent transition-colors duration-200 hover:bg-brand-500/5 cursor-pointer"
                 id="hero-btn-history"
               >
                 Nuestra Historia
-              </button>
+              </motion.button>
             </motion.div>
 
             {/* Micro stats banner / Trust indicators */}
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
+              variants={heroItemVariants}
               className="mt-12 flex items-center justify-center lg:justify-start gap-6 opacity-80"
               id="hero-stats"
             >
@@ -141,14 +167,20 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
                 <span className="text-[9px] uppercase tracking-tighter text-zinc-500 dark:text-zinc-400">Owned</span>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
 
           {/* Visual Showcase (Cake mockup & presentation) */}
           <div className="lg:col-span-5 relative flex justify-center">
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, rotate: -2 }}
-              animate={{ opacity: 1, scale: 1, rotate: 0 }}
-              transition={{ duration: 0.8, ease: 'easeOut' }}
+              initial={{ opacity: 0, scale: 0.85, rotate: -3, filter: 'blur(6px)' }}
+              animate={{ opacity: 1, scale: 1, rotate: 0, filter: 'blur(0px)' }}
+              transition={{ 
+                type: 'spring',
+                stiffness: 60,
+                damping: 14,
+                mass: 1,
+                delay: 0.2,
+              }}
               className="glass-panel relative w-full max-w-[420px] aspect-[4/5] rounded-[40px] p-4 overflow-hidden shadow-xl border border-white/30 dark:border-white/5 bg-white/40 dark:bg-zinc-900/40"
               id="hero-image-container"
             >
@@ -159,6 +191,8 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                   id="hero-cake-image"
                   referrerPolicy="no-referrer"
+                  fetchPriority="high"
+                  decoding="async"
                 />
                 
                 {/* Overlay labels / floaters on image */}
@@ -171,9 +205,14 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
 
               {/* Floating review card */}
               <motion.div
-                initial={{ x: 50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.6, duration: 0.5 }}
+                initial={{ x: 60, opacity: 0, scale: 0.9 }}
+                animate={{ x: 0, opacity: 1, scale: 1 }}
+                transition={{ 
+                  type: 'spring',
+                  stiffness: 80,
+                  damping: 15,
+                  delay: 0.6,
+                }}
                 className="absolute top-8 -right-4 glass-panel p-4 rounded-2xl shadow-xl max-w-[200px] border border-white/40 text-left z-20"
                 id="hero-review-floater"
               >

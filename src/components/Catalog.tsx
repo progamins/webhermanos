@@ -13,21 +13,24 @@ const containerVariants = {
   show: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.06,
+      staggerChildren: 0.08,
+      delayChildren: 0.1,
     },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 24, scale: 0.98 },
+  hidden: { opacity: 0, y: 30, scale: 0.95, filter: 'blur(4px)' },
   show: { 
     opacity: 1, 
     y: 0, 
     scale: 1,
+    filter: 'blur(0px)',
     transition: { 
-      type: 'spring',
-      stiffness: 80,
-      damping: 15,
+      type: 'spring' as const,
+      stiffness: 100,
+      damping: 16,
+      mass: 0.8,
     } 
   },
 };
@@ -158,12 +161,14 @@ export default function Catalog({ products, onSelectCustomize }: CatalogProps) {
                   onClick={() => product.stock && onSelectCustomize(product)}
                   className="relative aspect-[4/3] overflow-hidden bg-zinc-100 dark:bg-zinc-900 cursor-pointer group/img"
                 >
-                  <img
-                    src={(product.images && product.images[0]) || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80'}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    id={`catalog-img-${product.id}`}
-                  />
+                <img
+                  src={(product.images && product.images[0]) || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80'}
+                  alt={product.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  id={`catalog-img-${product.id}`}
+                  loading="lazy"
+                  decoding="async"
+                />
                   
                   {/* Eye preview/Customize overlay with glass effect on hover */}
                   {product.stock && (

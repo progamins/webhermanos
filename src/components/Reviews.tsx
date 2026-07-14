@@ -88,9 +88,10 @@ export default function Reviews({ reviews, onRefreshReviews }: ReviewsProps) {
           {approvedReviews.map((review) => (
             <motion.div
               key={review.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              initial={{ opacity: 0, y: 30, filter: 'blur(4px)' }}
+              whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              viewport={{ once: true, margin: "-30px" }}
+              transition={{ type: 'spring', stiffness: 70, damping: 14, mass: 0.8 }}
               className="glass-panel p-6 rounded-[24px] border border-white/30 dark:border-white/5 bg-white/40 dark:bg-zinc-950/30 backdrop-blur-md shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
               id={`review-card-${review.id}`}
             >

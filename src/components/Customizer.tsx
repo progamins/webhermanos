@@ -357,6 +357,7 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                     alt={product.name} 
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     referrerPolicy="no-referrer"
+                    decoding="async"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/85 via-zinc-950/20 to-zinc-950/10 pointer-events-none" />
 

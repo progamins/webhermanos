@@ -1,28 +1,42 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Moon, Sun, AlertCircle, ShoppingBag, Eye, LogOut } from 'lucide-react';
+import { Sparkles, Moon, Sun, AlertCircle, ShoppingBag, Eye, LogOut, Cake } from 'lucide-react';
 
 // Database service & types
 import { dbService, seedDatabaseIfNeeded } from './dbService';
 import { Product, Order, Review, GalleryItem, AppConfig } from './types';
 
-// Components
+// Eager-loaded components (above the fold)
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import RecentPurchases from './components/RecentPurchases';
-import History from './components/History';
-import Catalog from './components/Catalog';
-import Customizer from './components/Customizer';
-import Gallery from './components/Gallery';
-import Reviews from './components/Reviews';
-import FAQ from './components/FAQ';
-import Contact from './components/Contact';
-import AdminPanel from './components/AdminPanel';
-import OrderTracking from './components/OrderTracking';
+
+// Lazy-loaded components (below the fold / heavy)
+const History = lazy(() => import('./components/History'));
+const Catalog = lazy(() => import('./components/Catalog'));
+const Customizer = lazy(() => import('./components/Customizer'));
+const Gallery = lazy(() => import('./components/Gallery'));
+const Reviews = lazy(() => import('./components/Reviews'));
+const FAQ = lazy(() => import('./components/FAQ'));
+const Contact = lazy(() => import('./components/Contact'));
+const AdminPanel = lazy(() => import('./components/AdminPanel'));
+const OrderTracking = lazy(() => import('./components/OrderTracking'));
+
+// Loading messages for the splash screen
+const LOADING_MESSAGES = [
+  'Preparando recetas familiares...',
+  'Caramelizando ingredientes frescos...',
+  'Decorando con amor artesanal...',
+  'Horneando el bizcocho perfecto...',
+  'Espolvoreando polvo de estrellas...',
+  '¡Bienvenido a Maison Rosas! ✨',
+];
 
 export default function App() {
   // Page load screen state
   const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+  const [loadingProgress, setLoadingProgress] = useState(0);
 
   // Core App states loaded from Firestore
   const [products, setProducts] = useState<Product[]>([]);
@@ -31,7 +45,7 @@ export default function App() {
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
   const [config, setConfig] = useState<AppConfig | null>(null);
 
-  // Active view states ('inicio' / 'admin')
+  // Active view states ('inicio' / 'admin' / 'tracking')
   const [currentView, setCurrentView] = useState<string>('inicio');
 
   // Customizer pop-up trigger
@@ -43,11 +57,53 @@ export default function App() {
   // Admin authentication state saved locally
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
 
+  // Cycle loading messages
+  useEffect(() => {
+    if (!initialLoading) return;
+    const interval = setInterval(() => {
+      setLoadingMessageIndex(prev => (prev + 1) % LOADING_MESSAGES.length);
+      setLoadingProgress(prev => Math.min(prev + Math.random() * 18 + 5, 98));
+    }, 900);
+    return () => clearInterval(interval);
+  }, [initialLoading]);
+
+  // Note: Hero image preload removed intentionally.
+  // The Hero component already uses fetchPriority="high" and decoding="async"
+  // on its <img> tag, which is sufficient for LCP optimization.
+  // A separate <link rel="preload"> caused browser warnings about unused preloads.
+
+  // Dynamic favicon & document title from Firestore config
+  useEffect(() => {
+    if (!config) return;
+
+    // Update document title
+    document.title = config.seoTitle || 'Maison Rosas | Pastelería de Autor & Repostería Fina';
+
+    // Update favicon with cache-busting to force browser refresh
+    const faviconLink = document.getElementById('dynamic-favicon') as HTMLLinkElement;
+    if (faviconLink) {
+      if (config.faviconUrl) {
+        // Add cache-busting query param so the browser re-downloads the favicon
+        const cacheBuster = `?v=${Date.now()}`;
+        const cleanUrl = config.faviconUrl.split('?')[0];
+        faviconLink.href = cleanUrl + cacheBuster;
+        faviconLink.type = ''; // Let browser auto-detect type from URL
+      } else {
+        // Reset to default favicon when none is configured
+        faviconLink.href = '/favicon.svg';
+        faviconLink.type = 'image/svg+xml';
+      }
+    }
+  }, [config]);
+
   // Initialize and load data from Firestore
   const loadDataFromFirestore = async () => {
     try {
       // 1. Seed if empty
       await seedDatabaseIfNeeded();
+
+      // Set progress after seed
+      setLoadingProgress(20);
 
       // 2. Fetch everything parallelly for high-speed performance
       const [fetchedProducts, fetchedReviews, fetchedGallery, fetchedConfig, fetchedOrders] = await Promise.all([
@@ -63,13 +119,15 @@ export default function App() {
       setGalleryItems(fetchedGallery);
       setConfig(fetchedConfig);
       setOrders(fetchedOrders);
+      setLoadingProgress(85);
     } catch (error) {
       console.error('Error fetching data from Firestore:', error);
     } finally {
-      // Delay slightly for premium entry animation
+      setLoadingProgress(100);
+      // Small delay for the final message to show
       setTimeout(() => {
         setInitialLoading(false);
-      }, 1500);
+      }, 600);
     }
   };
 
@@ -104,8 +162,8 @@ export default function App() {
 
     // 4. Load initial orders and setup dual SSE/polling fallback
     let sse: EventSource | null = null;
-    let reconnectTimeout: any = null;
-    let fallbackPollInterval: any = null;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+    let fallbackPollInterval: ReturnType<typeof setInterval> | null = null;
 
     const loadOrdersFallback = async () => {
       try {
@@ -168,10 +226,10 @@ export default function App() {
 
     connectSSE();
 
-    // Safety fallback: force-disable loading screen after 6 seconds to prevent infinite loader
+    // Safety fallback: force-disable loading screen after 8 seconds to prevent infinite loader
     const fallbackTimeout = setTimeout(() => {
       setInitialLoading(false);
-    }, 6000);
+    }, 8000);
 
     return () => {
       window.removeEventListener('popstate', handleLocationChange);
@@ -229,38 +287,162 @@ export default function App() {
     }
   };
 
+  // Page transition variants
+  const pageVariants = {
+    initial: { opacity: 0, y: 20, scale: 0.99 },
+    animate: { 
+      opacity: 1, 
+      y: 0, 
+      scale: 1,
+      transition: {
+        type: 'spring' as const,
+        stiffness: 100,
+        damping: 20,
+        mass: 0.5,
+      }
+    },
+    exit: { 
+      opacity: 0, 
+      y: -10, 
+      scale: 0.99,
+      transition: {
+        duration: 0.25,
+        ease: 'easeInOut' as const,
+      }
+    },
+  };
+
+  // Fallback component for Suspense
+  const SectionFallback = () => (
+    <div className="py-24 flex items-center justify-center">
+      <div className="flex flex-col items-center space-y-3">
+        <div className="w-8 h-8 rounded-full border-2 border-brand-200 border-t-brand-500 animate-spin" />
+        <span className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase">Cargando sección...</span>
+      </div>
+    </div>
+  );
+
   // Render Premium Initial Loader Screen
   if (initialLoading) {
     return (
-      <div className="fixed inset-0 z-100 flex flex-col items-center justify-center bg-white dark:bg-zinc-950 transition-colors duration-500">
+      <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-b from-brand-50 via-white to-brand-50/50 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900">
+        {/* Ambient Background Glow */}
+        <div className="absolute top-1/4 left-1/4 w-72 h-72 rounded-full bg-brand-200/20 dark:bg-brand-500/5 blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-brand-secondary/10 dark:bg-brand-300/5 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        
+        {/* Floating sparkle particles */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(8)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1.5 h-1.5 rounded-full bg-brand-300/40 dark:bg-brand-400/20"
+              style={{
+                left: `${15 + i * 10}%`,
+                top: `${20 + (i % 5) * 15}%`,
+              }}
+              animate={{
+                y: [0, -30, 0],
+                opacity: [0, 0.8, 0],
+                scale: [0, 1, 0],
+              }}
+              transition={{
+                duration: 2 + i * 0.3,
+                repeat: Infinity,
+                delay: i * 0.4,
+                ease: 'easeInOut',
+              }}
+            />
+          ))}
+        </div>
+
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6 }}
-          className="text-center space-y-6"
+          initial={{ opacity: 0, scale: 0.85, filter: 'blur(8px)' }}
+          animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="text-center space-y-8 relative z-10"
         >
-          {/* Custom Spinning Glowing Pastry Loader SVG */}
+          {/* Animated Cake Logo Container */}
           <div className="relative flex justify-center items-center">
+            {/* Outer pulsing ring */}
+            <motion.div
+              animate={{ scale: [0.9, 1.15, 0.9], opacity: [0.3, 0.1, 0.3] }}
+              transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
+              className="absolute w-32 h-32 rounded-full bg-brand-200/30 dark:bg-brand-500/10 blur-xl"
+            />
+            
+            {/* Rotating ring */}
             <motion.div
               animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 4, ease: 'linear' }}
-              className="w-24 h-24 rounded-full border-4 border-dashed border-brand-500/30 border-t-brand-500"
+              transition={{ repeat: Infinity, duration: 6, ease: 'linear' }}
+              className="absolute w-28 h-28 rounded-full border-2 border-dashed border-brand-300/40 dark:border-brand-400/20"
             />
-            <div className="absolute text-3xl">🧁</div>
+            
+            {/* Inner rotating ring (opposite direction) */}
+            <motion.div
+              animate={{ rotate: -360 }}
+              transition={{ repeat: Infinity, duration: 4, ease: 'linear' }}
+              className="absolute w-20 h-20 rounded-full border border-brand-secondary/20 dark:border-brand-300/10"
+            />
+
+            {/* Cake Icon */}
+            <motion.div
+              animate={{ y: [0, -4, 0] }}
+              transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+              className="relative"
+            >
+              <Cake className="w-12 h-12 text-brand-500 dark:text-brand-400" />
+            </motion.div>
           </div>
 
+          {/* Logo Text with Gradient */}
           <div>
-            <span className="font-serif text-3xl font-bold tracking-tight text-zinc-900 dark:text-white block">
+            <motion.h1
+              className="font-serif text-4xl font-bold tracking-tight text-zinc-900 dark:text-white"
+              animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
+              transition={{ repeat: Infinity, duration: 4, ease: 'linear' }}
+              style={{
+                background: 'linear-gradient(135deg, #C4847D 0%, #D4A373 50%, #C4847D 100%)',
+                backgroundSize: '200% 200%',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
               Maison Rosas
-            </span>
-            <span className="text-xs font-mono tracking-widest text-brand-600 dark:text-brand-400 uppercase mt-1 block">
-              PASTELERÍA DE AUTOR • CAROL & EDWIN
-            </span>
+            </motion.h1>
+            <motion.span
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="text-xs font-mono tracking-[0.3em] text-brand-600 dark:text-brand-400 uppercase mt-2 block"
+            >
+              PASTELERÍA DE AUTOR
+            </motion.span>
           </div>
 
-          <p className="text-[10px] text-zinc-400 font-sans tracking-wide">
-            Cargando recetas familiares y texturas elegantes...
-          </p>
+          {/* Progress Bar */}
+          <div className="w-56 mx-auto space-y-3">
+            <div className="h-0.5 bg-brand-200/40 dark:bg-brand-800/30 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-brand-400 to-brand-secondary rounded-full"
+                animate={{ width: `${loadingProgress}%` }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+              />
+            </div>
+            
+            {/* Animated Loading Messages */}
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={loadingMessageIndex}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.3 }}
+                className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono tracking-wider"
+              >
+                {LOADING_MESSAGES[loadingMessageIndex]}
+              </motion.p>
+            </AnimatePresence>
+          </div>
         </motion.div>
       </div>
     );
@@ -283,50 +465,54 @@ export default function App() {
         {currentView === 'admin' ? (
           <motion.main
             key="admin-page"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.4 }}
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
           >
-            <AdminPanel
-              products={products}
-              orders={orders}
-              setOrders={setOrders}
-              reviews={reviews}
-              galleryItems={galleryItems}
-              config={config || {
-                whatsappNumber: '51902568187',
-                facebookUrl: 'https://facebook.com/maisonrosas.pasteleria',
-                instagramUrl: 'https://instagram.com/maisonrosas.pasteleria',
-                email: 'maisonrosas@gmail.com',
-                address: 'AV ricardo palma 213 sanchez cerro piura sullana peru',
-                openingHours: 'Lunes a Sábado: 9:00 AM - 7:00 PM',
-                seoTitle: 'Maison Rosas',
-                seoDescription: 'Pastelería fina',
-                maintenanceMode: false
-              }}
-              onRefreshData={loadDataFromFirestore}
-              onLoginSuccess={handleAdminLogin}
-              isLoggedIn={isAdminLoggedIn}
-            />
+            <Suspense fallback={<SectionFallback />}>
+              <AdminPanel
+                products={products}
+                orders={orders}
+                setOrders={setOrders}
+                reviews={reviews}
+                galleryItems={galleryItems}
+                config={config || {
+                  whatsappNumber: '51902568187',
+                  facebookUrl: 'https://facebook.com/maisonrosas.pasteleria',
+                  instagramUrl: 'https://instagram.com/maisonrosas.pasteleria',
+                  email: 'maisonrosas@gmail.com',
+                  address: 'AV ricardo palma 213 sanchez cerro piura sullana peru',
+                  openingHours: 'Lunes a Sábado: 9:00 AM - 7:00 PM',
+                  seoTitle: 'Maison Rosas',
+                  seoDescription: 'Pastelería fina',
+                  maintenanceMode: false
+                }}
+                onRefreshData={loadDataFromFirestore}
+                onLoginSuccess={handleAdminLogin}
+                isLoggedIn={isAdminLoggedIn}
+              />
+            </Suspense>
           </motion.main>
         ) : currentView === 'tracking' ? (
           <motion.main
             key="tracking-page"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.4 }}
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
           >
-            <OrderTracking onBackToHome={() => handleViewChange('inicio')} />
+            <Suspense fallback={<SectionFallback />}>
+              <OrderTracking onBackToHome={() => handleViewChange('inicio')} />
+            </Suspense>
           </motion.main>
         ) : (
           <motion.div
             key="home-pages"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
           >
             {/* 1. Hero Landing Banner Section */}
             <Hero 
@@ -339,28 +525,40 @@ export default function App() {
             <RecentPurchases orders={orders} />
 
             {/* 2. Story / About Us Timeline Section */}
-            <History config={config} />
+            <Suspense fallback={<SectionFallback />}>
+              <History config={config} />
+            </Suspense>
 
             {/* 3. Catalog Section with Customization trigger */}
-            <Catalog
-              products={products}
-              onSelectCustomize={(prod) => setSelectedProductForCustomize(prod)}
-            />
+            <Suspense fallback={<SectionFallback />}>
+              <Catalog
+                products={products}
+                onSelectCustomize={(prod) => setSelectedProductForCustomize(prod)}
+              />
+            </Suspense>
 
             {/* 4. Shared Gallery Section */}
-            <Gallery galleryItems={galleryItems} />
+            <Suspense fallback={<SectionFallback />}>
+              <Gallery galleryItems={galleryItems} />
+            </Suspense>
 
             {/* 5. Customer Testimonial Opinions Review Section */}
-            <Reviews 
-              reviews={reviews} 
-              onRefreshReviews={loadDataFromFirestore} 
-            />
+            <Suspense fallback={<SectionFallback />}>
+              <Reviews 
+                reviews={reviews} 
+                onRefreshReviews={loadDataFromFirestore} 
+              />
+            </Suspense>
 
             {/* 6. FAQ Accordion Section */}
-            <FAQ />
+            <Suspense fallback={<SectionFallback />}>
+              <FAQ />
+            </Suspense>
 
             {/* 7. Contact Details and Map representation section */}
-            <Contact config={config} />
+            <Suspense fallback={<SectionFallback />}>
+              <Contact config={config} />
+            </Suspense>
           </motion.div>
         )}
       </AnimatePresence>

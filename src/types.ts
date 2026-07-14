@@ -109,6 +109,7 @@ export interface AppConfig {
   aboutDescription?: string;
   aboutImage?: string;
   logoUrl?: string;
+  faviconUrl?: string;
 }
 
 export interface CakeStock {

@@ -95,17 +95,17 @@ export default function Contact({ config }: ContactProps) {
       className="py-24 bg-transparent relative overflow-hidden"
     >
       {/* Aesthetic ambient lighting circles */}
-      <div className="absolute top-1/4 left-1/10 w-96 h-96 bg-brand-200/20 dark:bg-brand-900/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/10 w-96 h-96 bg-brand-secondary/10 dark:bg-zinc-900/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/10 w-96 h-96 bg-brand-200/20 dark:bg-brand-900/10 rounded-full blur-3xl pointer-events-none animate-blob-1 will-change-transform" />
+      <div className="absolute bottom-1/4 right-1/10 w-96 h-96 bg-brand-secondary/10 dark:bg-zinc-900/20 rounded-full blur-3xl pointer-events-none animate-blob-2 will-change-transform" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Header with modern upward fade */}
+        {/* Header with modern upward fade + spring */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
+          initial={{ opacity: 0, y: 30, filter: 'blur(4px)' }}
+          whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ type: 'spring', stiffness: 80, damping: 16, mass: 0.8 }}
           className="text-center max-w-3xl mx-auto mb-16"
         >
           <span className="text-[10px] tracking-[0.3em] uppercase opacity-90 text-brand-secondary dark:text-brand-300 block font-mono font-bold">
