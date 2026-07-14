@@ -25,6 +25,7 @@ import {
   limit
 } from "firebase/firestore";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { getAuth, signInAnonymously } from "firebase/auth";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import nodemailer from "nodemailer";
@@ -1004,17 +1005,36 @@ async function startServer() {
       return res.status(400).json({ success: false, error: "No se seleccionó ningún archivo." });
     }
     try {
-      // Read the file from local disk and upload to Firebase Storage
       const filePath = path.join(uploadsDir, req.file.filename);
       const fileBuffer = fs.readFileSync(filePath);
-      const uniqueName = `uploads/${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(req.file.originalname)}`;
-      const storageRefPath = storageRef(storageObj, uniqueName);
-      const metadata = { contentType: req.file.mimetype };
-      const snapshot = await uploadBytes(storageRefPath, fileBuffer, metadata);
-      const imageUrl = await getDownloadURL(snapshot.ref);
-      // Clean up the local file since it's now in Firebase Storage
+      const ext = path.extname(req.file.originalname);
+      const uniqueName = `uploads/${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+      
+      // Use Firebase Storage REST API directly (no auth SDK needed, works in Node.js)
+      const bucket = firebaseConfig.storageBucket;
+      const apiKey = firebaseConfig.apiKey;
+      const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o?name=${encodeURIComponent(uniqueName)}&key=${apiKey}`;
+      
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': req.file.mimetype },
+        body: fileBuffer
+      });
+      
+      if (!uploadRes.ok) {
+        const errText = await uploadRes.text();
+        throw new Error(`Firebase Storage API error: ${uploadRes.status} - ${errText}`);
+      }
+      
+      const uploadData = await uploadRes.json();
+      
+      // Get the download URL from the uploaded file
+      const downloadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(uploadData.name)}?alt=media&key=${apiKey}`;
+      
+      // Clean up the local file
       fs.unlinkSync(filePath);
-      res.json({ success: true, imageUrl });
+      
+      res.json({ success: true, imageUrl: downloadUrl });
     } catch (error) {
       console.error("Error uploading to Firebase Storage:", error);
       res.status(500).json({ success: false, error: "Error al subir la imagen al almacenamiento permanente." });
