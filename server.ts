@@ -195,20 +195,20 @@ async function startServer() {
   // Email Sandbox & Template Generator Helpers
   function getEmailHeader() {
     return `
-      <div style="background-color: #FCFAF5; padding: 30px 20px; text-align: center; border-bottom: 2px solid #E7ECE7;">
-        <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 28px; color: #495E4A; margin: 0; font-style: italic; font-weight: normal; letter-spacing: 1px;">Maison Rosas</h1>
-        <p style="font-family: 'Inter', Helvetica, Arial, sans-serif; font-size: 10px; text-transform: uppercase; letter-spacing: 0.2em; color: #D99C52; margin: 8px 0 0 0; font-weight: bold;">Pastelería de Autor & Repostería Fina</p>
+      <div style="background-color: #FFF9F5; padding: 30px 20px; text-align: center; border-bottom: 2px solid #F0D6CE;">
+        <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 28px; color: #8A5550; margin: 0; font-style: italic; font-weight: normal; letter-spacing: 1px;">Maison Rosas</h1>
+        <p style="font-family: 'Inter', Helvetica, Arial, sans-serif; font-size: 10px; text-transform: uppercase; letter-spacing: 0.2em; color: #D4A373; margin: 8px 0 0 0; font-weight: bold;">Pastelería de Autor & Repostería Fina</p>
       </div>
     `;
   }
 
   function getEmailFooter() {
     return `
-      <div style="background-color: #1A231B; padding: 30px 20px; text-align: center; color: #E7ECE7; border-top: 1px solid #3D4E3E; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+      <div style="background-color: #2D1C1A; padding: 30px 20px; text-align: center; color: #F8E3DE; border-top: 1px solid #6D4440; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
         <p style="font-family: 'Playfair Display', Georgia, serif; font-size: 16px; font-style: italic; margin: 0 0 10px 0;">Hecho a mano con amor familiar por Carol & Edwin.</p>
-        <p style="font-family: 'Inter', sans-serif; font-size: 11px; color: #B2C6B4; margin: 0 0 5px 0; line-height: 1.5;">Av. Ricardo Palma 213, Urb. Sánchez Cerro, Sullana, Piura, Perú</p>
-        <p style="font-family: 'Inter', sans-serif; font-size: 11px; color: #B2C6B4; margin: 0 0 15px 0;">WhatsApp: +51 902 568 187 | Email: edwinraulrosasalbines@gmail.com</p>
-        <div style="border-top: 1px solid #3D4E3E; padding-top: 15px; font-size: 10px; color: #8DAA90;">
+        <p style="font-family: 'Inter', sans-serif; font-size: 11px; color: #E4AAA0; margin: 0 0 5px 0; line-height: 1.5;">Av. Ricardo Palma 213, Urb. Sánchez Cerro, Sullana, Piura, Perú</p>
+        <p style="font-family: 'Inter', sans-serif; font-size: 11px; color: #E4AAA0; margin: 0 0 15px 0;">WhatsApp: +51 902 568 187 | Email: edwinraulrosasalbines@gmail.com</p>
+        <div style="border-top: 1px solid #6D4440; padding-top: 15px; font-size: 10px; color: #C4A8A0;">
           &copy; ${new Date().getFullYear()} Maison Rosas. Todos los derechos reservados.
         </div>
       </div>
@@ -217,89 +217,89 @@ async function startServer() {
 
   function getConfirmationEmailHTML(order: any) {
     return `
-      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #E7ECE7; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; color: #27272a;">
+      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #F0D6CE; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; color: #27272a;">
         ${getEmailHeader()}
         <div style="padding: 40px 30px; background-color: #ffffff;">
-          <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 22px; color: #313F32; margin: 0 0 15px 0; text-align: center; font-style: italic; font-weight: normal;">¡Tu Pedido ha sido Recibido!</h2>
-          <p style="font-size: 14px; color: #495E4A; line-height: 1.6; text-align: center; margin: 0 0 25px 0;">
+          <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 22px; color: #523531; margin: 0 0 15px 0; text-align: center; font-style: italic; font-weight: normal;">¡Tu Pedido ha sido Recibido!</h2>
+          <p style="font-size: 14px; color: #8A5550; line-height: 1.6; text-align: center; margin: 0 0 25px 0;">
             Estimado/a <strong>${order.customerName}</strong>, Carol ya tiene tu solicitud de diseño personalizado en su taller. Hemos generado tu código de seguimiento exclusivo para que puedas consultar el estado de tu pastel en cualquier momento.
           </p>
           
-          <div style="background-color: #FCFAF5; border: 1px dashed #B2C6B4; border-radius: 12px; padding: 20px; margin-bottom: 30px; text-align: center;">
-            <span style="font-size: 11px; font-family: monospace; text-transform: uppercase; color: #D99C52; letter-spacing: 0.15em; font-weight: bold; display: block; margin-bottom: 5px;">Código de Seguimiento</span>
-            <strong style="font-size: 24px; font-family: monospace; color: #495E4A; letter-spacing: 2px;">${order.trackingCode}</strong>
-            <span style="font-size: 11px; color: #8DAA90; display: block; margin-top: 5px;">Número de pedido: ${order.id}</span>
+          <div style="background-color: #FFF9F5; border: 1px dashed #E4AAA0; border-radius: 12px; padding: 20px; margin-bottom: 30px; text-align: center;">
+            <span style="font-size: 11px; font-family: monospace; text-transform: uppercase; color: #D4A373; letter-spacing: 0.15em; font-weight: bold; display: block; margin-bottom: 5px;">Código de Seguimiento</span>
+            <strong style="font-size: 24px; font-family: monospace; color: #8A5550; letter-spacing: 2px;">${order.trackingCode}</strong>
+            <span style="font-size: 11px; color: #C4A8A0; display: block; margin-top: 5px;">Número de pedido: ${order.id}</span>
           </div>
 
-          <h3 style="font-family: 'Playfair Display', Georgia, serif; font-size: 18px; color: #313F32; border-bottom: 1px solid #E7ECE7; padding-bottom: 8px; margin: 0 0 15px 0; font-weight: normal;">Detalles del Pastel de Autor</h3>
-          <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #313F32; margin-bottom: 25px;">
+          <h3 style="font-family: 'Playfair Display', Georgia, serif; font-size: 18px; color: #523531; border-bottom: 1px solid #F0D6CE; padding-bottom: 8px; margin: 0 0 15px 0; font-weight: normal;">Detalles del Pastel de Autor</h3>
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #523531; margin-bottom: 25px;">
             <tr>
-              <td style="padding: 8px 0; color: #8DAA90; font-weight: 500;">Modelo Referencial:</td>
-              <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #495E4A;">${order.productName}</td>
+              <td style="padding: 8px 0; color: #C4A8A0; font-weight: 500;">Modelo Referencial:</td>
+              <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #8A5550;">${order.productName}</td>
             </tr>
             <tr>
-              <td style="padding: 8px 0; color: #8DAA90; font-weight: 500;">Medida / Porciones:</td>
-              <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #495E4A;">${order.size}</td>
+              <td style="padding: 8px 0; color: #C4A8A0; font-weight: 500;">Medida / Porciones:</td>
+              <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #8A5550;">${order.size}</td>
             </tr>
             <tr>
-              <td style="padding: 8px 0; color: #8DAA90; font-weight: 500;">Sabor y Relleno:</td>
-              <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #495E4A;">${order.flavor}</td>
+              <td style="padding: 8px 0; color: #C4A8A0; font-weight: 500;">Sabor y Relleno:</td>
+              <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #8A5550;">${order.flavor}</td>
             </tr>
             ${order.customColor ? `
             <tr>
-              <td style="padding: 8px 0; color: #8DAA90; font-weight: 500;">Color de Cobertura:</td>
-              <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #495E4A;">${order.customColor}</td>
+              <td style="padding: 8px 0; color: #C4A8A0; font-weight: 500;">Color de Cobertura:</td>
+              <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #8A5550;">${order.customColor}</td>
             </tr>` : ''}
             ${order.theme ? `
             <tr>
-              <td style="padding: 8px 0; color: #8DAA90; font-weight: 500;">Temática:</td>
-              <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #495E4A;">${order.theme}</td>
+              <td style="padding: 8px 0; color: #C4A8A0; font-weight: 500;">Temática:</td>
+              <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #8A5550;">${order.theme}</td>
             </tr>` : ''}
             ${order.selectedDecoration ? `
             <tr>
-              <td style="padding: 8px 0; color: #8DAA90; font-weight: 500;">Decoración:</td>
-              <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #495E4A;">${order.selectedDecoration}</td>
+              <td style="padding: 8px 0; color: #C4A8A0; font-weight: 500;">Decoración:</td>
+              <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #8A5550;">${order.selectedDecoration}</td>
             </tr>` : ''}
             ${order.celebratedName ? `
             <tr>
-              <td style="padding: 8px 0; color: #8DAA90; font-weight: 500;">Homenajeado/a:</td>
-              <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #495E4A;">${order.celebratedName} ${order.customerAge ? `(${order.customerAge} años)` : ''}</td>
+              <td style="padding: 8px 0; color: #C4A8A0; font-weight: 500;">Homenajeado/a:</td>
+              <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #8A5550;">${order.celebratedName} ${order.customerAge ? `(${order.customerAge} años)` : ''}</td>
             </tr>` : ''}
             ${order.message ? `
             <tr>
-              <td style="padding: 8px 0; color: #8DAA90; font-weight: 500;">Mensaje en Pastel:</td>
-              <td style="padding: 8px 0; text-align: right; font-style: italic; color: #D99C52; font-weight: bold;">"${order.message}"</td>
+              <td style="padding: 8px 0; color: #C4A8A0; font-weight: 500;">Mensaje en Pastel:</td>
+              <td style="padding: 8px 0; text-align: right; font-style: italic; color: #D4A373; font-weight: bold;">"${order.message}"</td>
             </tr>` : ''}
             ${order.specialNotes ? `
             <tr>
-              <td style="padding: 8px 0; color: #8DAA90; font-weight: 500;">Notas Especiales:</td>
-              <td style="padding: 8px 0; text-align: right; color: #5B755D; font-style: italic;">${order.specialNotes}</td>
+              <td style="padding: 8px 0; color: #C4A8A0; font-weight: 500;">Notas Especiales:</td>
+              <td style="padding: 8px 0; text-align: right; color: #A86B64; font-style: italic;">${order.specialNotes}</td>
             </tr>` : ''}
-            <tr style="border-top: 1px solid #E7ECE7;">
-              <td style="padding: 15px 0 8px 0; font-size: 15px; font-weight: bold; color: #313F32;">Monto Total Estimado:</td>
-              <td style="padding: 15px 0 8px 0; text-align: right; font-size: 18px; font-weight: bold; color: #728F75;">S/. ${order.totalPrice}</td>
+            <tr style="border-top: 1px solid #F0D6CE;">
+              <td style="padding: 15px 0 8px 0; font-size: 15px; font-weight: bold; color: #523531;">Monto Total Estimado:</td>
+              <td style="padding: 15px 0 8px 0; text-align: right; font-size: 18px; font-weight: bold; color: #C4847D;">S/. ${order.totalPrice}</td>
             </tr>
           </table>
 
-          <h3 style="font-family: 'Playfair Display', Georgia, serif; font-size: 18px; color: #313F32; border-bottom: 1px solid #E7ECE7; padding-bottom: 8px; margin: 0 0 15px 0; font-weight: normal;">Datos de Entrega</h3>
-          <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #313F32; margin-bottom: 30px;">
+          <h3 style="font-family: 'Playfair Display', Georgia, serif; font-size: 18px; color: #523531; border-bottom: 1px solid #F0D6CE; padding-bottom: 8px; margin: 0 0 15px 0; font-weight: normal;">Datos de Entrega</h3>
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #523531; margin-bottom: 30px;">
             <tr>
-              <td style="padding: 6px 0; color: #8DAA90;">Fecha y Hora:</td>
-              <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #495E4A;">${order.deliveryDate} a las ${order.deliveryTime}</td>
+              <td style="padding: 6px 0; color: #C4A8A0;">Fecha y Hora:</td>
+              <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #8A5550;">${order.deliveryDate} a las ${order.deliveryTime}</td>
             </tr>
             <tr>
-              <td style="padding: 6px 0; color: #8DAA90;">Tipo de Entrega:</td>
-              <td style="padding: 6px 0; text-align: right; font-weight: bold; text-transform: uppercase; color: #D99C52;">${order.deliveryType === 'recojo' ? 'Recojo en Local (Sullana)' : 'Delivery a Domicilio'}</td>
+              <td style="padding: 6px 0; color: #C4A8A0;">Tipo de Entrega:</td>
+              <td style="padding: 6px 0; text-align: right; font-weight: bold; text-transform: uppercase; color: #D4A373;">${order.deliveryType === 'recojo' ? 'Recojo en Local (Sullana)' : 'Delivery a Domicilio'}</td>
             </tr>
             ${order.deliveryAddress ? `
             <tr>
-              <td style="padding: 6px 0; color: #8DAA90;">Dirección de Envío:</td>
-              <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #495E4A;">${order.deliveryAddress}</td>
+              <td style="padding: 6px 0; color: #C4A8A0;">Dirección de Envío:</td>
+              <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #8A5550;">${order.deliveryAddress}</td>
             </tr>` : ''}
           </table>
 
           <div style="text-align: center; margin-top: 30px;">
-            <a href="/?trackingCode=${order.trackingCode}&email=${encodeURIComponent(order.customerEmail)}" style="display: inline-block; background-color: #728F75; color: #ffffff; padding: 14px 28px; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; text-decoration: none; border-radius: 8px; box-shadow: 0 4px 10px rgba(114, 143, 117, 0.25);">Consultar Estado del Pedido</a>
+            <a href="/?trackingCode=${order.trackingCode}&email=${encodeURIComponent(order.customerEmail)}" style="display: inline-block; background-color: #C4847D; color: #ffffff; padding: 14px 28px; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; text-decoration: none; border-radius: 8px; box-shadow: 0 4px 10px rgba(196, 132, 125, 0.25);">Consultar Estado del Pedido</a>
           </div>
         </div>
         ${getEmailFooter()}
@@ -309,7 +309,7 @@ async function startServer() {
 
   function getStatusUpdateEmailHTML(order: any) {
     const statusColors: any = {
-      'Pendiente': '#D99C52',
+      'Pendiente': '#D4A373',
       'Confirmado': '#3B82F6',
       'Preparando': '#8B5CF6',
       'Decoración': '#EC4899',
@@ -330,7 +330,7 @@ async function startServer() {
       'Cancelado': 'Pedido Cancelado'
     };
 
-    const statusColor = statusColors[order.status] || '#728F75';
+    const statusColor = statusColors[order.status] || '#C4847D';
     const statusLabel = statusText[order.status] || order.status;
 
     let messageText = '';
@@ -363,10 +363,10 @@ async function startServer() {
     }
 
     return `
-      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #E7ECE7; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; color: #27272a;">
+      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #F0D6CE; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; color: #27272a;">
         ${getEmailHeader()}
         <div style="padding: 40px 30px; background-color: #ffffff;">
-          <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 22px; color: #313F32; margin: 0 0 10px 0; text-align: center; font-style: italic; font-weight: normal;">Actualización de tu Pedido</h2>
+          <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 22px; color: #523531; margin: 0 0 10px 0; text-align: center; font-style: italic; font-weight: normal;">Actualización de tu Pedido</h2>
           <p style="font-size: 13px; color: #71717a; text-align: center; margin: 0 0 25px 0;">Pedido: <strong>#${order.id}</strong></p>
           
           <div style="text-align: center; margin-bottom: 35px;">
@@ -375,36 +375,36 @@ async function startServer() {
             </span>
           </div>
 
-          <p style="font-size: 14px; color: #495E4A; line-height: 1.6; text-align: center; margin: 0 0 30px 0; padding: 0 15px;">
+          <p style="font-size: 14px; color: #8A5550; line-height: 1.6; text-align: center; margin: 0 0 30px 0; padding: 0 15px;">
             ${messageText}
           </p>
 
           <!-- Visual Progress Bar in Email -->
-          <div style="margin: 30px 0; border-top: 1px solid #E7ECE7; padding-top: 25px;">
+          <div style="margin: 30px 0; border-top: 1px solid #F0D6CE; padding-top: 25px;">
             <table style="width: 100%; border-collapse: collapse; text-align: center;">
               <tr>
-                <td style="width: 14%; font-size: 8px; font-family: sans-serif; color: ${order.status !== 'Cancelado' ? '#728F75' : '#a1a1aa'};">
-                  <div style="width: 10px; height: 10px; border-radius: 50%; background-color: ${order.status !== 'Cancelado' ? '#728F75' : '#a1a1aa'}; margin: 0 auto 5px auto;"></div>
+                <td style="width: 14%; font-size: 8px; font-family: sans-serif; color: ${order.status !== 'Cancelado' ? '#C4847D' : '#a1a1aa'};">
+                  <div style="width: 10px; height: 10px; border-radius: 50%; background-color: ${order.status !== 'Cancelado' ? '#C4847D' : '#a1a1aa'}; margin: 0 auto 5px auto;"></div>
                   Recibido
                 </td>
-                <td style="width: 14%; font-size: 8px; font-family: sans-serif; color: ${['Confirmado', 'Preparando', 'Decoración', 'Listo', 'En camino', 'Entregado'].includes(order.status) ? '#728F75' : '#a1a1aa'};">
-                  <div style="width: 10px; height: 10px; border-radius: 50%; background-color: ${['Confirmado', 'Preparando', 'Decoración', 'Listo', 'En camino', 'Entregado'].includes(order.status) ? '#728F75' : '#a1a1aa'}; margin: 0 auto 5px auto;"></div>
+                <td style="width: 14%; font-size: 8px; font-family: sans-serif; color: ${['Confirmado', 'Preparando', 'Decoración', 'Listo', 'En camino', 'Entregado'].includes(order.status) ? '#C4847D' : '#a1a1aa'};">
+                  <div style="width: 10px; height: 10px; border-radius: 50%; background-color: ${['Confirmado', 'Preparando', 'Decoración', 'Listo', 'En camino', 'Entregado'].includes(order.status) ? '#C4847D' : '#a1a1aa'}; margin: 0 auto 5px auto;"></div>
                   Confirmado
                 </td>
-                <td style="width: 14%; font-size: 8px; font-family: sans-serif; color: ${['Preparando', 'Decoración', 'Listo', 'En camino', 'Entregado'].includes(order.status) ? '#728F75' : '#a1a1aa'};">
-                  <div style="width: 10px; height: 10px; border-radius: 50%; background-color: ${['Preparando', 'Decoración', 'Listo', 'En camino', 'Entregado'].includes(order.status) ? '#728F75' : '#a1a1aa'}; margin: 0 auto 5px auto;"></div>
+                <td style="width: 14%; font-size: 8px; font-family: sans-serif; color: ${['Preparando', 'Decoración', 'Listo', 'En camino', 'Entregado'].includes(order.status) ? '#C4847D' : '#a1a1aa'};">
+                  <div style="width: 10px; height: 10px; border-radius: 50%; background-color: ${['Preparando', 'Decoración', 'Listo', 'En camino', 'Entregado'].includes(order.status) ? '#C4847D' : '#a1a1aa'}; margin: 0 auto 5px auto;"></div>
                   Horneando
                 </td>
-                <td style="width: 14%; font-size: 8px; font-family: sans-serif; color: ${['Decoración', 'Listo', 'En camino', 'Entregado'].includes(order.status) ? '#728F75' : '#a1a1aa'};">
-                  <div style="width: 10px; height: 10px; border-radius: 50%; background-color: ${['Decoración', 'Listo', 'En camino', 'Entregado'].includes(order.status) ? '#728F75' : '#a1a1aa'}; margin: 0 auto 5px auto;"></div>
+                <td style="width: 14%; font-size: 8px; font-family: sans-serif; color: ${['Decoración', 'Listo', 'En camino', 'Entregado'].includes(order.status) ? '#C4847D' : '#a1a1aa'};">
+                  <div style="width: 10px; height: 10px; border-radius: 50%; background-color: ${['Decoración', 'Listo', 'En camino', 'Entregado'].includes(order.status) ? '#C4847D' : '#a1a1aa'}; margin: 0 auto 5px auto;"></div>
                   Decoración
                 </td>
-                <td style="width: 14%; font-size: 8px; font-family: sans-serif; color: ${['Listo', 'En camino', 'Entregado'].includes(order.status) ? '#728F75' : '#a1a1aa'};">
-                  <div style="width: 10px; height: 10px; border-radius: 50%; background-color: ${['Listo', 'En camino', 'Entregado'].includes(order.status) ? '#728F75' : '#a1a1aa'}; margin: 0 auto 5px auto;"></div>
+                <td style="width: 14%; font-size: 8px; font-family: sans-serif; color: ${['Listo', 'En camino', 'Entregado'].includes(order.status) ? '#C4847D' : '#a1a1aa'};">
+                  <div style="width: 10px; height: 10px; border-radius: 50%; background-color: ${['Listo', 'En camino', 'Entregado'].includes(order.status) ? '#C4847D' : '#a1a1aa'}; margin: 0 auto 5px auto;"></div>
                   Listo
                 </td>
-                <td style="width: 14%; font-size: 8px; font-family: sans-serif; color: ${['En camino', 'Entregado'].includes(order.status) ? '#728F75' : '#a1a1aa'};">
-                  <div style="width: 10px; height: 10px; border-radius: 50%; background-color: ${['En camino', 'Entregado'].includes(order.status) ? '#728F75' : '#a1a1aa'}; margin: 0 auto 5px auto;"></div>
+                <td style="width: 14%; font-size: 8px; font-family: sans-serif; color: ${['En camino', 'Entregado'].includes(order.status) ? '#C4847D' : '#a1a1aa'};">
+                  <div style="width: 10px; height: 10px; border-radius: 50%; background-color: ${['En camino', 'Entregado'].includes(order.status) ? '#C4847D' : '#a1a1aa'}; margin: 0 auto 5px auto;"></div>
                   En Camino
                 </td>
                 <td style="width: 14%; font-size: 8px; font-family: sans-serif; color: ${order.status === 'Entregado' ? '#16A34A' : '#a1a1aa'};">
@@ -415,16 +415,16 @@ async function startServer() {
             </table>
           </div>
 
-          <div style="background-color: #FCFAF5; border: 1px solid #E7ECE7; border-radius: 12px; padding: 20px; margin-top: 30px;">
-            <h4 style="font-family: 'Playfair Display', Georgia, serif; font-size: 15px; color: #313F32; margin: 0 0 10px 0; font-weight: normal;">Detalles de tu Pastel</h4>
-            <p style="font-size: 12px; color: #495E4A; margin: 0 0 5px 0;"><strong>Modelo:</strong> ${order.productName}</p>
-            <p style="font-size: 12px; color: #495E4A; margin: 0 0 5px 0;"><strong>Tamaño:</strong> ${order.size}</p>
-            <p style="font-size: 12px; color: #495E4A; margin: 0 0 5px 0;"><strong>Código de seguimiento:</strong> ${order.trackingCode}</p>
-            <p style="font-size: 12px; color: #495E4A; margin: 0 0 5px 0;"><strong>Entrega programada:</strong> ${order.deliveryDate} a las ${order.deliveryTime}</p>
+          <div style="background-color: #FFF9F5; border: 1px solid #F0D6CE; border-radius: 12px; padding: 20px; margin-top: 30px;">
+            <h4 style="font-family: 'Playfair Display', Georgia, serif; font-size: 15px; color: #523531; margin: 0 0 10px 0; font-weight: normal;">Detalles de tu Pastel</h4>
+            <p style="font-size: 12px; color: #8A5550; margin: 0 0 5px 0;"><strong>Modelo:</strong> ${order.productName}</p>
+            <p style="font-size: 12px; color: #8A5550; margin: 0 0 5px 0;"><strong>Tamaño:</strong> ${order.size}</p>
+            <p style="font-size: 12px; color: #8A5550; margin: 0 0 5px 0;"><strong>Código de seguimiento:</strong> ${order.trackingCode}</p>
+            <p style="font-size: 12px; color: #8A5550; margin: 0 0 5px 0;"><strong>Entrega programada:</strong> ${order.deliveryDate} a las ${order.deliveryTime}</p>
           </div>
 
           <div style="text-align: center; margin-top: 30px;">
-            <a href="/?trackingCode=${order.trackingCode}&email=${encodeURIComponent(order.customerEmail)}" style="display: inline-block; background-color: #728F75; color: #ffffff; padding: 14px 28px; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; text-decoration: none; border-radius: 8px;">Ver Progreso del Pedido</a>
+            <a href="/?trackingCode=${order.trackingCode}&email=${encodeURIComponent(order.customerEmail)}" style="display: inline-block; background-color: #C4847D; color: #ffffff; padding: 14px 28px; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; text-decoration: none; border-radius: 8px;">Ver Progreso del Pedido</a>
           </div>
         </div>
         ${getEmailFooter()}
@@ -434,26 +434,26 @@ async function startServer() {
 
   function getOTPEmailHTML(customerName: string, email: string, otp: string) {
     return `
-      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #E7ECE7; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; color: #27272a;">
+      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #F0D6CE; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; color: #27272a;">
         ${getEmailHeader()}
         <div style="padding: 40px 30px; background-color: #ffffff;">
-          <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 22px; color: #313F32; margin: 0 0 20px 0; text-align: center; font-style: italic; font-weight: normal;">Acceso a tus Pedidos 🎂</h2>
+          <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 22px; color: #523531; margin: 0 0 20px 0; text-align: center; font-style: italic; font-weight: normal;">Acceso a tus Pedidos 🎂</h2>
           
-          <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: #495E4A; line-height: 1.6; margin: 0 0 15px 0;">
+          <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: #8A5550; line-height: 1.6; margin: 0 0 15px 0;">
             Hola, <strong>${customerName}</strong>.
           </p>
           
-          <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: #495E4A; line-height: 1.6; margin: 0 0 20px 0;">
+          <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: #8A5550; line-height: 1.6; margin: 0 0 20px 0;">
             Tu código para consultar el estado de tu pedido es:
           </p>
           
-          <div style="background-color: #FCFAF5; border: 1px dashed #728F75; border-radius: 12px; padding: 25px; margin-bottom: 25px; text-align: center;">
-            <span style="font-size: 10px; font-family: monospace; text-transform: uppercase; color: #D99C52; letter-spacing: 0.2em; font-weight: bold; display: block; margin-bottom: 10px;">Código de Verificación</span>
-            <strong style="font-size: 38px; font-family: monospace; color: #728F75; letter-spacing: 5px;">${otp}</strong>
-            <span style="font-size: 11px; color: #8DAA90; display: block; margin-top: 10px;">Este código es válido durante 10 minutos.</span>
+          <div style="background-color: #FFF9F5; border: 1px dashed #C4847D; border-radius: 12px; padding: 25px; margin-bottom: 25px; text-align: center;">
+            <span style="font-size: 10px; font-family: monospace; text-transform: uppercase; color: #D4A373; letter-spacing: 0.2em; font-weight: bold; display: block; margin-bottom: 10px;">Código de Verificación</span>
+            <strong style="font-size: 38px; font-family: monospace; color: #C4847D; letter-spacing: 5px;">${otp}</strong>
+            <span style="font-size: 11px; color: #C4A8A0; display: block; margin-top: 10px;">Este código es válido durante 10 minutos.</span>
           </div>
           
-          <p style="font-family: 'Inter', sans-serif; font-size: 13px; color: #8DAA90; text-align: center; margin: 0; line-height: 1.5;">
+          <p style="font-family: 'Inter', sans-serif; font-size: 13px; color: #C4A8A0; text-align: center; margin: 0; line-height: 1.5;">
             Si no solicitaste este código, puedes ignorar este correo de forma segura.
           </p>
         </div>
@@ -609,7 +609,7 @@ async function startServer() {
           <p><strong>Nombre:</strong> ${name}</p>
           ${email ? `<p><strong>Email:</strong> ${email}</p>` : ''}
           <p><strong>Mensaje:</strong></p>
-          <blockquote style="border-left: 4px solid #728F75; padding-left: 15px; margin: 10px 0; color: #333;">
+          <blockquote style="border-left: 4px solid #C4847D; padding-left: 15px; margin: 10px 0; color: #333;">
             ${message}
           </blockquote>
           <p><em>Recibido el ${new Date().toLocaleString('es-PE')}</em></p>
@@ -640,24 +640,24 @@ async function startServer() {
         to: "edwinraulrosasalbines@gmail.com",
         subject: `Nuevo mensaje de ${name} - Formulario de Contacto`,
         html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 20px auto; border: 1px solid #E7ECE7; border-radius: 16px; overflow: hidden;">
-            <div style="background-color: #FCFAF5; padding: 30px 20px; text-align: center; border-bottom: 2px solid #E7ECE7;">
-              <h1 style="font-family: Georgia, serif; font-size: 28px; color: #495E4A; margin: 0;">Maison Rosas</h1>
-              <p style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.2em; color: #D99C52; margin: 8px 0 0 0;">Notificación de Contacto Web</p>
+          <div style="font-family: sans-serif; max-width: 600px; margin: 20px auto; border: 1px solid #F0D6CE; border-radius: 16px; overflow: hidden;">
+            <div style="background-color: #FFF9F5; padding: 30px 20px; text-align: center; border-bottom: 2px solid #F0D6CE;">
+              <h1 style="font-family: Georgia, serif; font-size: 28px; color: #8A5550; margin: 0;">Maison Rosas</h1>
+              <p style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.2em; color: #D4A373; margin: 8px 0 0 0;">Notificación de Contacto Web</p>
             </div>
             <div style="padding: 30px;">
-              <h2 style="font-family: Georgia, serif; font-size: 20px; color: #313F32;">Nuevo mensaje del formulario de contacto</h2>
-              <p style="font-size: 13px; color: #495E4A; line-height: 1.6;">Has recibido un nuevo mensaje desde el formulario de contacto de la web.</p>
+              <h2 style="font-family: Georgia, serif; font-size: 20px; color: #523531;">Nuevo mensaje del formulario de contacto</h2>
+              <p style="font-size: 13px; color: #8A5550; line-height: 1.6;">Has recibido un nuevo mensaje desde el formulario de contacto de la web.</p>
               <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin: 20px 0;">
-                <tr><td style="padding: 8px 0; color: #8DAA90; font-weight: 500;">Nombre:</td><td style="padding: 8px 0; font-weight: bold; color: #495E4A;">${name}</td></tr>
-                ${email ? `<tr><td style="padding: 8px 0; color: #8DAA90; font-weight: 500;">Email:</td><td style="padding: 8px 0; font-weight: bold; color: #495E4A;">${email}</td></tr>` : ''}
-                <tr><td style="padding: 8px 0; color: #8DAA90; font-weight: 500;">Fecha:</td><td style="padding: 8px 0; color: #495E4A;">${new Date().toLocaleString('es-PE')}</td></tr>
+                <tr><td style="padding: 8px 0; color: #C4A8A0; font-weight: 500;">Nombre:</td><td style="padding: 8px 0; font-weight: bold; color: #8A5550;">${name}</td></tr>
+                ${email ? `<tr><td style="padding: 8px 0; color: #C4A8A0; font-weight: 500;">Email:</td><td style="padding: 8px 0; font-weight: bold; color: #8A5550;">${email}</td></tr>` : ''}
+                <tr><td style="padding: 8px 0; color: #C4A8A0; font-weight: 500;">Fecha:</td><td style="padding: 8px 0; color: #8A5550;">${new Date().toLocaleString('es-PE')}</td></tr>
               </table>
-              <div style="background-color: #FCFAF5; border: 1px solid #E7ECE7; border-radius: 12px; padding: 20px; margin-top: 10px;">
-                <p style="font-size: 13px; color: #495E4A; margin: 0 0 10px 0; font-weight: bold;">Mensaje:</p>
-                <p style="font-size: 13px; color: #495E4A; line-height: 1.6; white-space: pre-wrap;">${message}</p>
+              <div style="background-color: #FFF9F5; border: 1px solid #F0D6CE; border-radius: 12px; padding: 20px; margin-top: 10px;">
+                <p style="font-size: 13px; color: #8A5550; margin: 0 0 10px 0; font-weight: bold;">Mensaje:</p>
+                <p style="font-size: 13px; color: #8A5550; line-height: 1.6; white-space: pre-wrap;">${message}</p>
               </div>
-              <p style="font-size: 11px; color: #8DAA90; margin-top: 20px; text-align: center;">Este mensaje fue enviado automáticamente desde el formulario de contacto de <strong>Maison Rosas</strong>.</p>
+              <p style="font-size: 11px; color: #C4A8A0; margin-top: 20px; text-align: center;">Este mensaje fue enviado automáticamente desde el formulario de contacto de <strong>Maison Rosas</strong>.</p>
             </div>
           </div>
         `

@@ -251,7 +251,7 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
       >
         {successOrder ? (
           /* POST-ORDER SUCCESS SCREEN INSIDE WIZARD */
-          <div className="w-full p-8 sm:p-12 text-center bg-[#FCFAF5] dark:bg-zinc-950 flex flex-col items-center justify-center space-y-6">
+          <div className="w-full p-8 sm:p-12 text-center bg-[#FFF9F5] dark:bg-zinc-950 flex flex-col items-center justify-center space-y-6">
             <div className="w-16 h-16 bg-brand-100 dark:bg-brand-900/30 rounded-full flex items-center justify-center text-brand-600 dark:text-brand-400 mb-2">
               <Check className="h-8 w-8 stroke-[3px]" />
             </div>

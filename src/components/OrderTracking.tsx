@@ -218,7 +218,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
     : steps;
 
   return (
-    <div className="pt-24 pb-20 min-h-screen bg-[#FCFAF5]" id="tracking">
+    <div className="pt-24 pb-20 min-h-screen bg-[#FFF9F5]" id="tracking">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* HEADER SECTION */}
