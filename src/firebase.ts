@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   projectId: "gen-lang-client-0993488679",
@@ -16,4 +17,8 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize Cloud Firestore and get a reference to the service
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+
+// Initialize Cloud Storage for client-side uploads (persistent across server restarts)
+export const storage = getStorage(app);
+
 export default app;

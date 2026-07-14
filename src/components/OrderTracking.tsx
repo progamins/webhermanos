@@ -334,38 +334,24 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                 </div>
                 <h3 className="font-serif text-lg font-bold text-zinc-900">Ver mis Pedidos</h3>
               </div>
-              <p className="text-xs text-zinc-500 leading-relaxed font-sans">
-                ¿No recuerdas tu código o deseas ver la lista completa de tus pedidos? Ingresa tu correo electrónico registrado y te enviaremos un código de seguridad OTP.
-              </p>
 
-              <div className="space-y-3 pt-2">
-                <label className="text-xs font-mono font-bold text-zinc-400 uppercase tracking-wider block">
-                  Correo Electrónico Obligatorio
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="ejemplo@correo.com"
-                  className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-zinc-800 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-                />
-                <button
-                  onClick={handleRequestOtp}
-                  disabled={loading}
-                  className="w-full flex items-center justify-center space-x-2 py-3 bg-brand-500 hover:bg-brand-600 disabled:bg-brand-400 text-white font-medium text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm font-sans"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Enviando Código...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Solicitar Código de Acceso</span>
-                      <ChevronRight className="h-4 w-4" />
-                    </>
-                  )}
-                </button>
+              <div style={{background:"#F8F6EF", borderRadius:"12px", border:"1px solid #E8E4D8", padding:"32px", fontFamily:"'Georgia', serif"}}>
+                <div style={{display:"flex", alignItems:"center", gap:"10px", marginBottom:"14px"}}>
+                  <div style={{width:"36px", height:"36px", borderRadius:"8px", background:"#F3EAD9", display:"flex", alignItems:"center", justifyContent:"center"}}>
+                    <span style={{fontSize:"18px"}}>✉️</span>
+                  </div>
+                  <h3 style={{margin:0, fontSize:"20px", color:"#2E2A22", fontWeight:600}}>Ver mis Pedidos</h3>
+                </div>
+
+                <div style={{border:"1px dashed #CFC8B4", borderRadius:"10px", padding:"24px", textAlign:"center", background:"#FBFAF6"}}>
+                  <p style={{margin:"0 0 8px", fontSize:"15px", letterSpacing:"1px", textTransform:"uppercase", color:"#7A6A4E", fontFamily:"sans-serif", fontWeight:600}}>
+                    En horneado 🍰
+                  </p>
+                  <p style={{margin:0, fontSize:"15px", color:"#5C5648", lineHeight:1.6, fontFamily:"sans-serif"}}>
+                    Estamos preparando una experiencia más dulce para consultar tus pedidos por correo.<br />
+                    Vuelve pronto — mientras tanto, usa tu <strong>código de seguimiento</strong> aquí al lado.
+                  </p>
+                </div>
               </div>
             </div>
 

@@ -998,39 +998,13 @@ async function startServer() {
     });
   });
 
-  // Memory storage for uploads that go to Firebase Storage (persistent across restarts)
-  const memoryStorage = multer.memoryStorage();
-  const uploadMemory = multer({
-    storage: memoryStorage,
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-    fileFilter: (req, file, cb) => {
-      const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-      if (allowedTypes.includes(file.mimetype)) {
-        cb(null, true);
-      } else {
-        cb(new Error("Formato de archivo no soportado. Sube JPEG, PNG, WEBP o GIF."));
-      }
-    }
-  });
-
-  // 8. Admin Secure File Upload API — stores images in Firebase Storage for persistence
-  app.post("/api/upload", verifyAdminSession, uploadMemory.single("image"), async (req, res) => {
+  // 8. Admin Secure File Upload API — stores images locally (also supports Firebase Storage URL passthrough)
+  app.post("/api/upload", verifyAdminSession, upload.single("image"), (req, res) => {
     if (!req.file) {
       return res.status(400).json({ success: false, error: "No se seleccionó ningún archivo." });
     }
-    try {
-      const uniqueName = `uploads/${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(req.file.originalname)}`;
-      const storageRefPath = storageRef(storageObj, uniqueName);
-      const metadata = {
-        contentType: req.file.mimetype,
-      };
-      const snapshot = await uploadBytes(storageRefPath, req.file.buffer, metadata);
-      const imageUrl = await getDownloadURL(snapshot.ref);
-      res.json({ success: true, imageUrl });
-    } catch (error) {
-      console.error("Error uploading to Firebase Storage:", error);
-      res.status(500).json({ success: false, error: "Error al subir la imagen al almacenamiento permanente." });
-    }
+    const imageUrl = `/uploads/${req.file.filename}`;
+    res.json({ success: true, imageUrl });
   });
 
   // Memory storage for vouchers (uploaded to Firebase Storage for persistence)

@@ -11,7 +11,8 @@ import {
   where 
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import { db } from './firebase';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from './firebase';
 import { Product, Review, Order, GalleryItem, AppConfig, CakeStock } from './types';
 
 // Standardized operation types for error handling
@@ -841,5 +842,17 @@ export const dbService = {
       throw new Error(data.error || 'Error al asignar el stock al pedido.');
     }
     return data;
+  },
+
+  // Upload image directly to Firebase Storage from the browser (persists across server restarts)
+  async uploadImageToStorage(file: File): Promise<string> {
+    const uniqueName = `uploads/${Date.now()}-${Math.round(Math.random() * 1e9)}${file.name.substring(file.name.lastIndexOf('.'))}`;
+    const storageReference = storageRef(storage, uniqueName);
+    const metadata = {
+      contentType: file.type,
+    };
+    const snapshot = await uploadBytes(storageReference, file, metadata);
+    const downloadUrl = await getDownloadURL(snapshot.ref);
+    return downloadUrl;
   }
 };
