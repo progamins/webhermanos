@@ -170,7 +170,7 @@ function GalleryLightbox({ item, onClose }: GalleryLightboxProps) {
           />
           {/* Glass indicator on image */}
           <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/40 backdrop-blur-md border border-white/10 text-[9px] font-mono tracking-widest text-brand-200 uppercase">
-            Maison Rosas Gallery
+            Galería Maison Rosas
           </div>
         </div>
 

@@ -229,10 +229,10 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
             className="inline-flex items-center space-x-2 bg-brand-50 border border-brand-200 px-3 py-1.5 rounded-full text-brand-700 text-xs font-mono font-bold tracking-wider uppercase mb-3"
           >
             <Sparkles className="h-3.5 w-3.5" />
-            <span>Maison Rosas Custody</span>
+            <span>Seguimiento Maison Rosas</span>
           </motion.div>
           <h1 className="font-serif text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
-            Consulta el Estado de tu Pedido
+            Consulta tu Pedido
           </h1>
           <p className="mt-3 text-sm text-zinc-500 max-w-xl mx-auto font-sans leading-relaxed">
             Ingresa tu código de seguimiento de 6 dígitos o solicita un acceso OTP seguro a tu correo electrónico para ver el historial completo de tus pedidos de autor.
@@ -364,8 +364,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                   disabled={loading}
                   className="w-full py-3 bg-brand-500 hover:bg-brand-600 disabled:bg-brand-400 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shadow-sm flex items-center justify-center space-x-2"
                 >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
-                  <span>{loading ? 'Enviando...' : 'Solicitar Código de Acceso'}</span>
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}                        <span>{loading ? 'Enviando...' : 'Enviar Código'}</span>
                 </button>
                 <span className="text-[10px] text-zinc-400 block font-sans">
                   Recibirás un código de 6 dígitos en tu correo. Válido por 10 minutos.
@@ -416,7 +415,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                   disabled={loading}
                   className="flex-1 py-3 bg-brand-500 hover:bg-brand-600 disabled:bg-brand-400 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
                 >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : 'Verificar e Ingresar'}
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : 'Ingresar'}
                 </button>
               </div>
             </div>
@@ -445,7 +444,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                 </button>
                 <div>
                   <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 block font-bold">
-                    {phase === 'single_code' ? 'Seguimiento por Código' : 'Portal de Pedidos Verificado'}
+                    {phase === 'single_code' ? 'Búsqueda por Código' : 'Portal de Pedidos'}
                   </span>
                   <span className="text-sm font-serif font-bold text-zinc-800 block">
                     {phase === 'single_code' ? `Pedido #${selectedOrder?.id}` : `${email.toLowerCase()}`}
@@ -899,7 +898,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
             className="inline-flex items-center space-x-2 text-zinc-500 hover:text-brand-700 text-xs font-semibold uppercase tracking-wider transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>Volver a la Tienda Principal</span>
+            <span>Volver a la Página Principal</span>
           </button>
         </div>
 

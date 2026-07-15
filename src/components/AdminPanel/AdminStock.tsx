@@ -142,7 +142,7 @@ export default function AdminStock({ products, orders, onRefreshData, showToast 
         <div>
           <h3 className="text-xl font-serif font-bold text-zinc-900 dark:text-white flex items-center gap-2">
             <Layers className="h-5 w-5 text-brand-500" />
-            Inventario de Pasteles Listos (Vitrina / Stock Físico)
+            Stock Físico (Pasteles Listos para Entrega)
           </h3>
           <p className="text-xs text-zinc-500 mt-1">
             Gestiona pasteles ya preparados físicamente que puedes asignar directamente a pedidos de clientes para entrega inmediata, saltando la etapa de horneado y decoración.
@@ -152,7 +152,7 @@ export default function AdminStock({ products, orders, onRefreshData, showToast 
           <button onClick={() => { clearStockForm(); setIsCreatingStock(true); }}
             className="flex items-center justify-center space-x-1.5 px-5 py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl text-xs font-mono font-bold uppercase tracking-wider shadow-md hover:scale-[1.01] transition-all cursor-pointer">
             <Plus className="h-4 w-4" />
-            <span>Agregar Pastel Listo</span>
+            <span>Agregar Pastel</span>
           </button>
         )}
       </div>
@@ -163,7 +163,7 @@ export default function AdminStock({ products, orders, onRefreshData, showToast 
           className="p-6 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-md">
           <div className="flex items-center justify-between mb-6">
             <h4 className="text-sm font-mono font-bold uppercase tracking-wider text-brand-500">
-              {editingStockItem ? 'Editar Pastel en Stock Físico' : 'Registrar Nuevo Pastel en Stock Físico'}
+              {editingStockItem ? 'Editar Pastel' : 'Registrar Nuevo Pastel'}
             </h4>
             <button onClick={() => { setEditingStockItem(null); setIsCreatingStock(false); clearStockForm(); }}
               className="text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-colors cursor-pointer">
@@ -248,7 +248,7 @@ export default function AdminStock({ products, orders, onRefreshData, showToast 
               </button>
               <button type="submit"
                 className="px-5 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-mono font-bold uppercase tracking-wider cursor-pointer">
-                {editingStockItem ? 'Actualizar Stock' : 'Agregar al Inventario'}
+                {editingStockItem ? 'Guardar Cambios' : 'Agregar al Inventario'}
               </button>
             </div>
           </form>

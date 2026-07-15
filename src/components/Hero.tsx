@@ -158,13 +158,13 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
               </div>
               <div className="w-px h-8 bg-zinc-200 dark:bg-zinc-800"></div>
               <div className="flex flex-col text-left">
-                <span className="text-2xl font-light text-zinc-900 dark:text-white">Handmade</span>
-                <span className="text-[9px] uppercase tracking-tighter text-zinc-500 dark:text-zinc-400">With Love</span>
+                <span className="text-2xl font-light text-zinc-900 dark:text-white">Hecho a Mano</span>
+                <span className="text-[9px] uppercase tracking-tighter text-zinc-500 dark:text-zinc-400">Con Amor</span>
               </div>
               <div className="w-px h-8 bg-zinc-200 dark:bg-zinc-800"></div>
               <div className="flex flex-col text-left">
-                <span className="text-2xl font-light text-zinc-900 dark:text-white">Family</span>
-                <span className="text-[9px] uppercase tracking-tighter text-zinc-500 dark:text-zinc-400">Owned</span>
+                <span className="text-2xl font-light text-zinc-900 dark:text-white">Familia</span>
+                <span className="text-[9px] uppercase tracking-tighter text-zinc-500 dark:text-zinc-400">Rosas</span>
               </div>
             </motion.div>
           </motion.div>

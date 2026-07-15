@@ -81,7 +81,7 @@ export default function ScreenshotModal({ imageUrl, isOpen, onClose, title = 'Ca
                 {title}
               </h3>
               <p className="text-[10px] font-mono text-zinc-400 mt-0.5 truncate uppercase tracking-wider">
-                Visualizador de Comprobantes Oficial
+                Visor de Comprobantes
               </p>
             </div>
             
@@ -91,7 +91,7 @@ export default function ScreenshotModal({ imageUrl, isOpen, onClose, title = 'Ca
                 type="button"
                 onClick={handleZoomIn}
                 className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                title="Acercar (Zoom In)"
+                title="Acercar"
               >
                 <ZoomIn className="h-4 w-4" />
               </button>
@@ -99,7 +99,7 @@ export default function ScreenshotModal({ imageUrl, isOpen, onClose, title = 'Ca
                 type="button"
                 onClick={handleZoomOut}
                 className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                title="Alejar (Zoom Out)"
+                title="Alejar"
               >
                 <ZoomOut className="h-4 w-4" />
               </button>
@@ -107,7 +107,7 @@ export default function ScreenshotModal({ imageUrl, isOpen, onClose, title = 'Ca
                 type="button"
                 onClick={handleRotate}
                 className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                title="Rotar 90°"
+                title="Rotar"
               >
                 <RotateCw className="h-4 w-4" />
               </button>
@@ -115,7 +115,7 @@ export default function ScreenshotModal({ imageUrl, isOpen, onClose, title = 'Ca
                 type="button"
                 onClick={handleDownload}
                 className="p-1.5 bg-brand-600 hover:bg-brand-500 rounded-lg text-white transition-colors cursor-pointer"
-                title="Descargar Comprobante"
+                title="Descargar"
               >
                 <Download className="h-4 w-4" />
               </button>
@@ -124,7 +124,7 @@ export default function ScreenshotModal({ imageUrl, isOpen, onClose, title = 'Ca
                 type="button"
                 onClick={onClose}
                 className="p-1.5 bg-zinc-800 hover:bg-zinc-750 rounded-full text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                title="Cerrar ventana"
+                title="Cerrar"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -150,7 +150,7 @@ export default function ScreenshotModal({ imageUrl, isOpen, onClose, title = 'Ca
           <div className="px-6 py-3 bg-zinc-950/80 border-t border-zinc-800 flex items-center justify-between text-[11px] text-zinc-400 font-sans">
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              Verificado seguro por el servidor
+              Verificado por el servidor
             </span>
             <span>Zoom: {Math.round(scale * 100)}%</span>
           </div>

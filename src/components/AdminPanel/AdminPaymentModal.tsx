@@ -125,8 +125,8 @@ export default function AdminPaymentModal({
         {/* Header */}
         <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between shrink-0">
           <div>
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-brand-500 block">Gestión de Pago</span>
-            <h3 className="font-serif text-lg font-bold text-zinc-900 dark:text-white">Detalles de Transacción</h3>
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-brand-500 block">Pago</span>
+            <h3 className="font-serif text-lg font-bold text-zinc-900 dark:text-white">Detalles del Pago</h3>
           </div>
           <button onClick={onClose} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full cursor-pointer">
             <X className="h-4 w-4 text-zinc-500" />

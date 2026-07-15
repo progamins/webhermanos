@@ -10,6 +10,7 @@ import { Product, Order, Review, GalleryItem, AppConfig } from './types';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import RecentPurchases from './components/RecentPurchases';
+import TermsAndPrivacy from './components/TermsAndPrivacy';
 
 // Lazy-loaded components (below the fold / heavy)
 const History = lazy(() => import('./components/History'));
@@ -56,6 +57,9 @@ export default function App() {
 
   // Admin authentication state saved locally
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+
+  // Legal modals state
+  const [legalModal, setLegalModal] = useState<{ isOpen: boolean; tab: 'terms' | 'privacy' }>({ isOpen: false, tab: 'terms' });
 
   // Cycle loading messages
   useEffect(() => {
@@ -481,8 +485,8 @@ export default function App() {
                   whatsappNumber: '51902568187',
                   facebookUrl: 'https://facebook.com/maisonrosas.pasteleria',
                   instagramUrl: 'https://instagram.com/maisonrosas.pasteleria',
-                  email: 'maisonrosas@gmail.com',
-                  address: 'AV ricardo palma 213 sanchez cerro piura sullana peru',
+                  email: 'edwinraulrosasalbines@gmail.com',
+                  address: 'Av. Ricardo Palma 213, Sánchez Cerro, Sullana, Piura',
                   openingHours: 'Lunes a Sábado: 9:00 AM - 7:00 PM',
                   seoTitle: 'Maison Rosas',
                   seoDescription: 'Pastelería fina',
@@ -589,15 +593,14 @@ export default function App() {
           <div>
             <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-brand-400 mb-4">Nuestra Casa</h4>
             <ul className="space-y-2 text-xs text-zinc-400">
-              <li>{config?.address || 'AV ricardo palma 213, sanchez cerro'}</li>
+              <li>{config?.address || 'Av. Ricardo Palma 213, Sánchez Cerro'}</li>
               <li>Sullana, Piura, Perú</li>
-              <li>{config?.email || 'maisonrosas@gmail.com'}</li>
-              <li>+{config?.whatsappNumber || '51902568187'}</li>
+              <li><a href="mailto:edwinraulrosasalbines@gmail.com" className="hover:text-white transition-colors">{config?.email || 'edwinraulrosasalbines@gmail.com'}</a></li>
+              <li><a href="https://wa.me/51902568187" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">+{config?.whatsappNumber || '51902568187'}</a></li>
             </ul>
           </div>
 
-          <div>
-            <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-brand-400 mb-4">Enlaces Rápidos</h4>
+          <div>              <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-brand-400 mb-4">Enlaces</h4>
             <ul className="space-y-2 text-xs text-zinc-400">
               <li>
                 <button onClick={() => scrollToSection('inicio')} className="hover:text-white transition-colors">
@@ -635,11 +638,18 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-zinc-800 mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between text-[11px] text-zinc-500 gap-4">
           <span>&copy; {new Date().getFullYear()} Maison Rosas. Todos los derechos reservados.</span>
           <div className="flex space-x-4">
-            <span className="hover:text-zinc-300 cursor-pointer">Términos de Servicio</span>
-            <span className="hover:text-zinc-300 cursor-pointer">Políticas de Privacidad</span>
+            <button onClick={() => setLegalModal({ isOpen: true, tab: 'terms' })} className="hover:text-zinc-300 cursor-pointer">Términos de Servicio</button>
+            <button onClick={() => setLegalModal({ isOpen: true, tab: 'privacy' })} className="hover:text-zinc-300 cursor-pointer">Políticas de Privacidad</button>
           </div>
         </div>
       </footer>
+
+      {/* LEGAL MODALS: TÉRMINOS DE SERVICIO Y POLÍTICAS DE PRIVACIDAD */}
+      <TermsAndPrivacy
+        isOpen={legalModal.isOpen}
+        onClose={() => setLegalModal({ ...legalModal, isOpen: false })}
+        initialTab={legalModal.tab}
+      />
 
     </div>
   );

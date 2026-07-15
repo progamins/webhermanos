@@ -569,7 +569,7 @@ async function startServer() {
   }
 
   async function sendSimulatedEmail(recipient: string | undefined, subject: string, htmlContent: string, orderId?: string) {
-    const emailRecipient = recipient || "cliente-sullana@maisonrosas.com";
+    const emailRecipient = recipient || "edwinraulrosasalbines@gmail.com";
     const emailId = `mail-${Date.now()}-${Math.round(Math.random() * 1000)}`;
     
     let sentReal = false;

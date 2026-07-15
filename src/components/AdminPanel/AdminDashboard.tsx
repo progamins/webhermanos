@@ -30,7 +30,7 @@ export default function AdminDashboard({ orders, products, onNavigate }: AdminDa
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="dashboard-stats-grid">
         <div className="liquid-glass liquid-glass-sheen p-6 rounded-3xl border border-white/30 dark:border-zinc-800/40 shadow-md flex items-center justify-between transition-all duration-300 hover:scale-[1.01]">
           <div>
-            <span className="text-xs font-mono font-semibold text-zinc-400 dark:text-zinc-400 block uppercase">Ventas de Pedidos</span>
+            <span className="text-xs font-mono font-semibold text-zinc-400 dark:text-zinc-400 block uppercase">Ventas</span>
             <span className="text-2xl font-serif font-bold text-zinc-900 dark:text-white mt-1 block">S/. {totalSales}</span>
             <span className="text-[10px] text-emerald-500 font-medium flex items-center mt-1">
               <TrendingUp className="h-3 w-3 mr-1" /> {acceptedOrders.length} {acceptedOrders.length === 1 ? 'pedido entregado' : 'pedidos entregados'}
@@ -43,7 +43,7 @@ export default function AdminDashboard({ orders, products, onNavigate }: AdminDa
 
         <div className="liquid-glass liquid-glass-sheen p-6 rounded-3xl border border-white/30 dark:border-zinc-800/40 shadow-md flex items-center justify-between transition-all duration-300 hover:scale-[1.01]">
           <div>
-            <span className="text-xs font-mono font-semibold text-zinc-400 dark:text-zinc-400 block uppercase">Total Pedidos</span>
+            <span className="text-xs font-mono font-semibold text-zinc-400 dark:text-zinc-400 block uppercase">Pedidos</span>
             <span className="text-2xl font-serif font-bold text-zinc-900 dark:text-white mt-1 block">{totalOrders}</span>
             <span className="text-[10px] text-zinc-500 dark:text-zinc-400 block mt-1">Registrados en la plataforma</span>
           </div>
@@ -54,7 +54,7 @@ export default function AdminDashboard({ orders, products, onNavigate }: AdminDa
 
         <div className="liquid-glass liquid-glass-sheen p-6 rounded-3xl border border-white/30 dark:border-zinc-800/40 shadow-md flex items-center justify-between transition-all duration-300 hover:scale-[1.01]">
           <div>
-            <span className="text-xs font-mono font-semibold text-zinc-400 dark:text-zinc-400 block uppercase">Pendientes de Charla</span>
+            <span className="text-xs font-mono font-semibold text-zinc-400 dark:text-zinc-400 block uppercase">Pendientes</span>
             <span className="text-2xl font-serif font-bold text-zinc-900 dark:text-white mt-1 block">{pendingOrdersCount}</span>
             <span className="text-[10px] text-amber-500 block mt-1">Requieren coordinar</span>
           </div>
@@ -65,7 +65,7 @@ export default function AdminDashboard({ orders, products, onNavigate }: AdminDa
 
         <div className="liquid-glass liquid-glass-sheen p-6 rounded-3xl border border-white/30 dark:border-zinc-800/40 shadow-md flex items-center justify-between transition-all duration-300 hover:scale-[1.01]">
           <div>
-            <span className="text-xs font-mono font-semibold text-zinc-400 dark:text-zinc-400 block uppercase">En Preparación</span>
+            <span className="text-xs font-mono font-semibold text-zinc-400 dark:text-zinc-400 block uppercase">En Horno</span>
             <span className="text-2xl font-serif font-bold text-zinc-900 dark:text-white mt-1 block">{inPrepOrdersCount}</span>
             <span className="text-[10px] text-blue-500 block mt-1">En el horno de Carol</span>
           </div>
@@ -81,7 +81,7 @@ export default function AdminDashboard({ orders, products, onNavigate }: AdminDa
           <div>
             <h3 className="text-lg font-serif font-bold text-zinc-900 dark:text-white flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-brand-500 animate-pulse" />
-              Crecimiento de Ventas & Volumen de Pedidos
+              Crecimiento de Ventas
             </h3>
             <p className="text-xs text-zinc-400">Volumen mensual total recibido y facturación estimada (S/.) para Maison Rosas</p>
           </div>
@@ -128,8 +128,7 @@ export default function AdminDashboard({ orders, products, onNavigate }: AdminDa
       {/* Popular cakes & Quick actions */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-7 liquid-glass liquid-glass-sheen p-6 border border-white/30 dark:border-zinc-800/40 shadow-md">
-          <h3 className="text-lg font-serif font-bold text-zinc-900 dark:text-white mb-6">
-            Rendimiento de Modelos Más Pedidos
+          <h3 className="text-lg font-serif font-bold text-zinc-900 dark:text-white mb-6">              Modelos Más Pedidos
           </h3>
 
           {sortedCakes.length === 0 ? (
@@ -161,10 +160,10 @@ export default function AdminDashboard({ orders, products, onNavigate }: AdminDa
         <div className="lg:col-span-5 liquid-glass liquid-glass-sheen p-6 border border-white/30 dark:border-zinc-800/40 shadow-md flex flex-col justify-between">
           <div>
             <h3 className="text-lg font-serif font-bold text-zinc-900 dark:text-white mb-2">
-              Accesos Rápidos
+              Accesos Directos
             </h3>
             <p className="text-xs text-zinc-400 dark:text-zinc-400 leading-relaxed font-sans mb-6">
-              Maison Rosas funciona con sincronización en tiempo real. Utiliza estos accesos para gestionar los estados comerciales.
+              Utiliza estos accesos para gestionar tu negocio rápidamente.
             </p>
           </div>
 

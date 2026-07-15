@@ -423,9 +423,8 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
               {/* Top Header of Form */}
               <div>
                 <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <span className="text-[10px] font-mono font-bold tracking-widest text-brand-secondary dark:text-brand-400 uppercase">
-                      Taller de Alta Repostería
+                  <div>                      <span className="text-[10px] font-mono font-bold tracking-widest text-brand-secondary dark:text-brand-400 uppercase">
+                      Pastelería de Autor
                     </span>
                     <h3 className="text-xl sm:text-2xl font-serif font-light text-zinc-900 dark:text-white mt-0.5">
                       Ficha de Personalización
@@ -865,7 +864,7 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                             <div className="col-span-2 mt-1">
                               <strong className="text-zinc-400 block text-[9px] font-mono uppercase">Lugar de entrega</strong>
                               <span className="text-brand-700 font-serif font-bold">
-                                {deliveryType === 'recojo' ? 'Recojo en local (Av. Ricardo Palma 213, Sullana)' : `Delivery a Domicilio: ${deliveryAddress}`}
+                                {deliveryType === 'recojo' ? 'Recojo en Local (Av. Ricardo Palma 213, Sullana)' : `Delivery a Domicilio: ${deliveryAddress}`}
                               </span>
                             </div>
                           </div>
@@ -924,7 +923,7 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                       onClick={handleNextStep}
                       className="w-full sm:flex-1 py-3.5 rounded-xl bg-brand-primary text-white font-mono text-[10px] font-bold uppercase tracking-widest hover:bg-brand-secondary transition-all flex items-center justify-center space-x-1.5 cursor-pointer shadow-md shadow-brand-primary/10"
                     >
-                      <span>Siguiente Paso</span>
+                      <span>Siguiente</span>
                       <ChevronRight className="h-4 w-4" />
                     </button>
                   ) : (
@@ -936,8 +935,7 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                       className="w-full sm:flex-1 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-mono text-[10px] font-bold uppercase tracking-widest flex items-center justify-center space-x-2 transition-all duration-300 active:scale-95 disabled:opacity-50 cursor-pointer shadow-lg shadow-emerald-600/10"
                       id="whatsapp-submit-btn"
                     >
-                      <Send className="h-4 w-4" />
-                      <span>{isSubmitting ? 'Registrando Pedido...' : 'Agendar & Pedir por WhatsApp'}</span>
+                      <Send className="h-4 w-4" />                        <span>{isSubmitting ? 'Registrando...' : 'Pedir por WhatsApp'}</span>
                     </button>
                   )}
                 </div>

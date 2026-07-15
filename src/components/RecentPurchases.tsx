@@ -41,16 +41,35 @@ export default function RecentPurchases({ orders }: RecentPurchasesProps) {
   };
 
   return (
-    <div className="bg-zinc-900/95 dark:bg-zinc-950/95 py-6 border-y border-zinc-800 relative z-20 overflow-hidden" id="recent-purchases-container">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="relative z-20 overflow-hidden bg-gradient-to-b from-zinc-900 via-zinc-900/95 to-zinc-950 py-10 border-y border-zinc-800/50" id="recent-purchases-container">
+      {/* Decorative background blobs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-24 -left-24 w-72 h-72 bg-brand-500/5 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-emerald-500/5 rounded-full blur-3xl" />
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         
         {/* Section Heading */}
-        <div className="flex items-center space-x-2 mb-4">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-          <span className="text-[10px] font-mono tracking-widest text-emerald-400 uppercase font-bold">
-            Actividad en Vivo • Maison Rosas
-          </span>
-          <span className="text-xs text-zinc-500 font-sans">• Compras reales de la familia Rosas Albines</span>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping absolute inset-0 m-auto" />
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 relative" />
+            </div>
+            <h2 className="text-sm font-bold tracking-[0.15em] uppercase bg-gradient-to-r from-emerald-300 via-brand-200 to-emerald-400 bg-clip-text text-transparent">
+              Compras Recientes
+            </h2>
+            <span className="hidden sm:inline text-zinc-600">•</span>
+            <span className="text-[10px] font-mono tracking-[0.2em] text-zinc-500 uppercase hidden sm:inline">
+              Maison Rosas
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-zinc-500">
+            <Sparkles className="h-3 w-3 text-amber-400/70" />
+            <span className="font-sans italic">Clientes satisfechos en todo el Perú</span>
+            <Sparkles className="h-3 w-3 text-amber-400/70" />
+          </div>
         </div>
 
         {/* Swiper Slider */}
@@ -73,35 +92,35 @@ export default function RecentPurchases({ orders }: RecentPurchasesProps) {
           {recentOrders.map((order) => (
             <SwiperSlide key={order.id}>
               <div 
-                className="bg-zinc-950 border border-zinc-800 p-4 rounded-2xl flex items-center space-x-3.5 hover:border-brand-500/50 transition-all duration-300"
+                className="group bg-gradient-to-br from-zinc-950 via-zinc-950 to-zinc-900/80 border border-zinc-800/80 p-4 rounded-2xl flex items-center space-x-3.5 hover:border-brand-500/40 hover:shadow-lg hover:shadow-brand-500/5 hover:scale-[1.02] transition-all duration-500 ease-out"
                 id={`recent-slide-${order.id}`}
               >
                 {/* Visual Icon badge */}
-                <div className="p-3 bg-brand-500/10 rounded-full text-brand-400 border border-brand-500/20 shrink-0">
+                <div className="relative p-3 bg-gradient-to-br from-brand-500/20 to-brand-600/10 rounded-full text-brand-300 border border-brand-500/20 shrink-0 shadow-lg shadow-brand-500/5">
                   <ShoppingBag className="h-5 w-5" />
                 </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1.5">
-                    <span className="text-[11px] font-mono font-bold text-zinc-300 truncate">
+                    <span className="text-[11px] font-mono font-bold text-zinc-200 truncate tracking-wide">
                       {order.customerName}
                     </span>
-                    <span className="text-[9px] font-mono text-zinc-500 flex items-center space-x-1 shrink-0">
-                      <Clock className="h-2.5 w-2.5 text-zinc-500" />
+                    <span className="text-[9px] font-mono text-zinc-600 flex items-center gap-1 shrink-0">
+                      <Clock className="h-2.5 w-2.5 text-zinc-600" />
                       <span>{formatOrderTime(order.date)}</span>
                     </span>
                   </div>
 
-                  <p className="text-xs font-serif font-semibold text-white truncate mt-0.5">
+                  <p className="text-xs font-serif font-semibold text-white/90 truncate mt-0.5">
                     {order.productName}
                   </p>
 
-                  <div className="flex items-center justify-between mt-1 pt-1 border-t border-zinc-900">
-                    <span className="text-[10px] text-zinc-400 truncate flex items-center gap-1">
-                      <MapPin className="h-3 w-3 text-brand-400" />
+                  <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-zinc-800">
+                    <span className="text-[10px] text-zinc-500 truncate flex items-center gap-1">
+                      <MapPin className="h-3 w-3 text-brand-500/70" />
                       Sullana / Piura
                     </span>
-                    <span className="text-[10px] font-mono font-bold text-emerald-400 shrink-0">
+                    <span className="text-[10px] font-mono font-bold bg-gradient-to-r from-emerald-300 to-emerald-400 bg-clip-text text-transparent shrink-0">
                       S/. {order.totalPrice}
                     </span>
                   </div>

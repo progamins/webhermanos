@@ -137,7 +137,7 @@ export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, o
                   className="px-4 py-2 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 transition-all shadow-sm"
                   id="nav-admin-dashboard"
                 >
-                  Dashboard
+                  Panel
                 </button>
                 <button
                   onClick={onLogout}

@@ -64,14 +64,14 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
   return (
     <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl border border-zinc-100 dark:border-zinc-800/80 shadow-sm max-w-2xl mx-auto">
       <h3 className="text-lg font-serif font-bold text-zinc-900 dark:text-white mb-6">
-        Ajustes Comerciales de Maison Rosas
+        Configuración de la Tienda
       </h3>
 
       {/* Logo */}
       <div className="bg-zinc-50 dark:bg-zinc-950 p-5 rounded-2xl border border-zinc-150 dark:border-zinc-800/60 mb-6" id="logo-customizer-section">
         <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-brand-500 mb-3 flex items-center gap-1.5">
           <Cake className="h-4 w-4" />
-          Logo de la Marca
+          Logo
         </h4>
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex items-center justify-center bg-white dark:bg-zinc-900 h-14 w-14 rounded-full overflow-hidden shrink-0 border border-zinc-200 dark:border-zinc-800 shadow-sm">
@@ -82,7 +82,7 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
             )}
           </div>
           <div className="flex-1 space-y-1">
-            <span className="block text-[10px] font-mono uppercase text-zinc-400">Personalizar Ícono / Logo de la Tienda</span>
+            <span className="block text-[10px] font-mono uppercase text-zinc-400">            Personalizar Logo</span>
             <ImageUploader value={logoUrl} onChange={(val) => setLogoUrl(val)} placeholder="URL de tu logo o sube uno" />
           </div>
         </div>
@@ -92,7 +92,7 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
       <div className="bg-zinc-50 dark:bg-zinc-950 p-5 rounded-2xl border border-zinc-150 dark:border-zinc-800/60 mb-6" id="favicon-customizer-section">
         <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-brand-500 mb-3 flex items-center gap-1.5">
           <Globe className="h-4 w-4" />
-          Favicon de la Web (ícono de pestaña)
+          Favicon
         </h4>
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex items-center justify-center bg-white dark:bg-zinc-900 h-12 w-12 rounded-xl overflow-hidden shrink-0 border border-zinc-200 dark:border-zinc-800 shadow-sm ring-1 ring-zinc-100 dark:ring-zinc-800">
@@ -103,7 +103,7 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
             )}
           </div>
           <div className="flex-1 space-y-1">
-            <span className="block text-[10px] font-mono uppercase text-zinc-400">Ícono que aparece en la pestaña del navegador</span>
+            <span className="block text-[10px] font-mono uppercase text-zinc-400">            Ícono de la pestaña del navegador</span>
             <ImageUploader value={faviconUrl} onChange={(val) => setFaviconUrl(val)} placeholder="URL de tu favicon (ico, png, svg) o sube uno" />
           </div>
         </div>

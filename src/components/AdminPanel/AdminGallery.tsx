@@ -76,8 +76,7 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
     try {
       await dbService.saveGalleryItem(itemData);
       handleCancelEditGallery();
-      onRefreshData();
-      showToast(editingGalleryItem ? 'Imagen de la galería actualizada correctamente.' : 'Imagen agregada a la galería familiar con éxito.', 'success', 'Galería de Arte');
+      onRefreshData();              showToast(editingGalleryItem ? 'Imagen actualizada correctamente.' : 'Foto agregada a la galería.', 'success', 'Galería');
     } catch {
       showToast('Ocurrió un error al intentar guardar la imagen en la galería.', 'error', 'Error');
     } finally {
@@ -106,7 +105,7 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
     try {
       await dbService.saveConfig(newConfig);
       onRefreshData();
-      showToast('Imágenes del hero e historia guardadas correctamente.', 'success', 'Imágenes guardadas');
+      showToast('Imágenes guardadas correctamente.', 'success', 'Imágenes');
     } catch {
       showToast('Error al intentar actualizar las imágenes de cabecera.', 'error', 'Error');
     }
@@ -117,10 +116,10 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
       {/* Header */}
       <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl border border-zinc-100 dark:border-zinc-800/80 shadow-sm" id="admin-images-header">
         <span className="text-[10px] tracking-[0.3em] uppercase opacity-75 text-brand-500 block font-bold font-mono">
-          DISEÑO & IDENTIDAD VISUAL
+          DISEÑO E IDENTIDAD VISUAL
         </span>
         <h3 className="text-2xl font-serif font-light italic text-zinc-900 dark:text-white mt-1">
-          Administrador de Imágenes de la Web
+          Galería de Imágenes
         </h3>
         <p className="text-xs text-zinc-500 mt-2 max-w-xl leading-relaxed">
           Reemplaza y gestiona fácilmente las imágenes principales del sitio web, incluyendo las portadas de inicio, nuestra historia y las fotos reales de la galería de creaciones de Carol Rosas.
@@ -131,7 +130,7 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
       <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl border border-zinc-100 dark:border-zinc-800/80 shadow-sm" id="admin-cover-images-section">
         <h4 className="text-sm font-mono font-bold uppercase tracking-wider text-brand-500 mb-6 flex items-center">
           <Image className="h-4 w-4 mr-2 text-brand-500" />
-          1. Imágenes de Portada Principal
+          1. Portada Principal
         </h4>
         <form onSubmit={handleSaveImagesConfig} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -210,7 +209,7 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
         <div className="flex items-center justify-between mb-6">
           <h4 className="text-sm font-mono font-bold uppercase tracking-wider text-brand-500 flex items-center">
             <Sparkles className="h-4 w-4 mr-2 text-brand-500" />
-            2. Galería de Creaciones Carol ({galleryItems.length} fotos)
+            2. Creaciones Carol ({galleryItems.length} fotos)
           </h4>
           {!editingGalleryItem && (
             <button onClick={handleCancelEditGallery}
@@ -226,7 +225,7 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
           <form onSubmit={handleSaveGalleryItem} className="mb-8 p-6 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-mono font-bold uppercase tracking-wider text-brand-500">
-                {editingGalleryItem ? `Editando: ${editingGalleryItem.title}` : 'Nuevo Item de Galería'}
+                {editingGalleryItem ? `Editando: ${editingGalleryItem.title}` : 'Nueva Foto'}
               </span>
               <button type="button" onClick={handleCancelEditGallery}
                 className="text-zinc-400 hover:text-zinc-600 cursor-pointer">

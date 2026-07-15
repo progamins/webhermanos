@@ -299,7 +299,7 @@ const DEFAULT_CONFIG: AppConfig = {
   facebookUrl: 'https://www.facebook.com/edwinraul.rosasalbines',
   instagramUrl: 'https://www.instagram.com/edwinraulrosas741/',
   email: 'edwinraulrosasalbines@gmail.com',
-  address: 'AV ricardo palma 213 sanchez cerro piura sullana peru',
+  address: 'Av. Ricardo Palma 213, Sánchez Cerro, Sullana, Piura',
   openingHours: 'Lunes a Sábado: 9:00 AM - 7:00 PM | Domingos: 10:00 AM - 2:00 PM',
   seoTitle: 'Maison Rosas | Pastelería de Autor & Repostería Fina',
   seoDescription: 'Deléitate con los pasteles personalizados de Carol Rosas Albines. Modelos exclusivos, ingredientes premium de alta repostería artesanal. Haz tu pedido por WhatsApp.',
@@ -391,8 +391,15 @@ export async function seedDatabaseIfNeeded() {
       }
     } else {
       const data = configDoc.data();
-      if (data && (data.whatsappNumber === '51987654321' || data.email === 'contacto@maisonrosas.pe' || data.facebookUrl?.includes('maisonrosas') || data.instagramUrl?.includes('maisonrosas'))) {
-        console.log('Updating legacy configuration in Firestore...');
+      if (data && (
+        data.whatsappNumber === '51987654321' ||
+        data.email === 'contacto@maisonrosas.pe' ||
+        data.email === 'maisonrosas@gmail.com' ||
+        data.facebookUrl?.includes('maisonrosas') ||
+        data.instagramUrl?.includes('maisonrosas') ||
+        data.address?.toLowerCase().includes('av ricardo palma 213 sanchez cerro')
+      )) {
+        console.log('Actualizando configuración legacy en Firestore...');
         try {
           await setDoc(doc(db, CONFIG_COL, 'app_config'), {
             ...data,

@@ -25,17 +25,17 @@ export default function AdminPayments({ orders, setOrders, onRefreshData, showTo
           ...o, voucherUrl: result.voucherUrl, voucherName: result.voucherName, voucherUploadedAt: result.voucherUploadedAt
         } : o));
       }
-      showToast('Captura de pago de WhatsApp archivada correctamente.', 'success', 'Comprobante Guardado');
+      showToast('Comprobante de pago archivado correctamente.', 'success', 'Comprobante Guardado');
       onRefreshData();
     } catch (err: any) {
-      showToast(err.message || 'Error al subir la captura de pago.', 'error', 'Error de Subida');
+      showToast(err.message || 'Error al subir el comprobante.', 'error', 'Error de Subida');
     } finally {
       setUploadingReceiptOrderId(null);
     }
   };
 
   const handleDeleteReceiptForOrder = async (order: Order) => {
-    if (!confirm(`¿Estás seguro de eliminar la captura de pago de WhatsApp del cliente ${order.customerName}?`)) return;
+    if (!confirm(`¿Estás seguro de eliminar el comprobante de pago de ${order.customerName}?`)) return;
     setUploadingReceiptOrderId(order.id);
     try {
       await dbService.deleteVoucher(order.id, order.voucherUrl);
@@ -44,10 +44,10 @@ export default function AdminPayments({ orders, setOrders, onRefreshData, showTo
           ...o, voucherUrl: undefined, voucherName: undefined, voucherUploadedAt: undefined
         } : o));
       }
-      showToast('Captura de pago eliminada del archivo.', 'success', 'Captura Eliminada');
+      showToast('Comprobante eliminado del archivo.', 'success', 'Eliminado');
       onRefreshData();
     } catch (err: any) {
-      showToast(err.message || 'Error al eliminar la captura de pago.', 'error', 'Error al Eliminar');
+      showToast(err.message || 'Error al eliminar el comprobante.', 'error', 'Error al Eliminar');
     } finally {
       setUploadingReceiptOrderId(null);
     }
@@ -72,7 +72,7 @@ export default function AdminPayments({ orders, setOrders, onRefreshData, showTo
           <span>💵 Archivo de Pagos Verificados</span>
         </div>
         <h3 className="text-2xl font-serif font-bold text-zinc-900 dark:text-white">
-          Comprobantes & Capturas de WhatsApp
+          Comprobantes de Pago
         </h3>
         <p className="text-xs text-zinc-500 mt-1 font-sans leading-relaxed max-w-2xl">
           Este es un apartado exclusivo para el administrador. Una vez que confirmas el pago de un cliente desde la sección "Pedidos WhatsApp", puedes archivar aquí la captura de pantalla real (Yape, Plin o Transferencia) para llevar un registro histórico perfecto del negocio. El cliente también podrá visualizarla en su portal de seguimiento.
@@ -89,9 +89,9 @@ export default function AdminPayments({ orders, setOrders, onRefreshData, showTo
         </div>
         <div className="flex space-x-1.5 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
           {[
-            { id: 'all', label: 'Todos los confirmados' },
-            { id: 'no_screenshot', label: '⚠️ Sin Captura (Pendientes)' },
-            { id: 'has_screenshot', label: '✅ Con Captura (Archivados)' },
+            { id: 'all', label: 'Todos' },
+            { id: 'no_screenshot', label: '⚠️ Sin Comprobante' },
+            { id: 'has_screenshot', label: '✅ Con Comprobante' },
           ].map((btn) => (
             <button key={btn.id} onClick={() => setPaymentsFilter(btn.id as any)}
               className={`px-3 py-1.5 rounded-xl text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${paymentsFilter === btn.id ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-950' : 'bg-zinc-50 dark:bg-zinc-950 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
@@ -152,13 +152,12 @@ export default function AdminPayments({ orders, setOrders, onRefreshData, showTo
                     <button onClick={() => handleDeleteReceiptForOrder(ord)}
                       disabled={uploadingReceiptOrderId === ord.id}
                       className="w-full py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50">
-                      {uploadingReceiptOrderId === ord.id ? 'Eliminando...' : 'Eliminar Captura'}
+                      {uploadingReceiptOrderId === ord.id ? 'Eliminando...' : 'Eliminar'}
                     </button>
                   </div>
                 ) : (
                   <label className={`flex items-center justify-center space-x-2 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider cursor-pointer border-2 border-dashed transition-colors ${uploadingReceiptOrderId === ord.id ? 'bg-zinc-100 border-zinc-300 text-zinc-400' : 'bg-brand-50 border-brand-300 text-brand-700 hover:bg-brand-100'}`}>
-                    <Upload className="h-3.5 w-3.5" />
-                    <span>{uploadingReceiptOrderId === ord.id ? 'Subiendo...' : 'Subir Captura de WhatsApp'}</span>
+                    <Upload className="h-3.5 w-3.5" />                      <span>{uploadingReceiptOrderId === ord.id ? 'Subiendo...' : 'Subir Comprobante'}</span>
                     <input type="file" accept="image/*" className="hidden" disabled={uploadingReceiptOrderId === ord.id}
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadReceiptForOrder(ord.id, f); e.target.value = ''; }} />
                   </label>

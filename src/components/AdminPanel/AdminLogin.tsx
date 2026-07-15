@@ -79,7 +79,7 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
 
         <div>
           <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-brand-600 dark:text-brand-400 font-bold">
-            PORTAL DE GESTIÓN
+            PANEL DE ADMINISTRACIÓN
           </span>
           <h2 className="text-2xl font-serif font-bold text-zinc-900 dark:text-white mt-1">
             Maison Rosas Admin
@@ -118,7 +118,7 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
         </form>
 
         <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
-          Passphrase demo: <code className="bg-white/40 dark:bg-zinc-800/40 px-1.5 py-0.5 rounded font-mono">ADMIN_PASSWORD_PLACEHOLDER</code>
+          Contraseña demo: <code className="bg-white/40 dark:bg-zinc-800/40 px-1.5 py-0.5 rounded font-mono">ADMIN_PASSWORD_PLACEHOLDER</code>
         </p>
       </motion.div>
 

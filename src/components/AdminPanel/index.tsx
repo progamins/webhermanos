@@ -69,14 +69,14 @@ export default function AdminPanel({
   }
 
   const tabs = [
-    { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'products' as const, label: 'Cakes / Plantillas', icon: Cake },
-    { id: 'stock' as const, label: 'Gestión de Stock', icon: Layers },
-    { id: 'orders' as const, label: 'Pedidos WhatsApp', icon: ShoppingBag },
-    { id: 'payments' as const, label: 'Comprobantes WhatsApp', icon: CreditCard },
-    { id: 'reviews' as const, label: 'Opiniones Clientes', icon: MessageSquare },
-    { id: 'images' as const, label: 'Imágenes & Galería', icon: Image },
-    { id: 'settings' as const, label: 'Ajustes Tienda', icon: Settings },
+    { id: 'dashboard' as const, label: 'Panel Principal', icon: LayoutDashboard },
+    { id: 'products' as const, label: 'Modelos / Plantillas', icon: Cake },
+    { id: 'stock' as const, label: 'Stock Físico', icon: Layers },
+    { id: 'orders' as const, label: 'Pedidos', icon: ShoppingBag },
+    { id: 'payments' as const, label: 'Pagos y Comprobantes', icon: CreditCard },
+    { id: 'reviews' as const, label: 'Opiniones', icon: MessageSquare },
+    { id: 'images' as const, label: 'Galería', icon: Image },
+    { id: 'settings' as const, label: 'Configuración', icon: Settings },
   ];
 
   const toastIcons: Record<string, React.ReactNode> = {
@@ -110,7 +110,7 @@ export default function AdminPanel({
               <span className="p-1 bg-brand-500 text-white rounded-md text-[9px] font-mono uppercase font-bold tracking-wider shadow-sm">PRO</span>
               <span className="text-xs font-mono font-bold text-zinc-500 dark:text-zinc-400">Sesión Segura • Edwin Raúl Rosas Albines</span>
             </div>
-            <h1 className="text-3xl font-serif font-bold text-zinc-950 dark:text-white mt-1">Panel Administrativo Maison</h1>
+            <h1 className="text-3xl font-serif font-bold text-zinc-950 dark:text-white mt-1">Panel de Administración</h1>
           </div>
           <div className="flex items-center space-x-2">
             <button onClick={handleRefresh}

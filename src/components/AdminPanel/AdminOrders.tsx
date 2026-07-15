@@ -181,7 +181,7 @@ export default function AdminOrders({ orders, setOrders, onRefreshData, showToas
               </span>
             </div>
             <p className="text-[11px] text-zinc-400 mt-1.5 font-sans">
-              Ordena, filtra, edita inline y exporta a Excel profesional
+              Ordena, filtra, edita y exporta a Excel
             </p>
           </div>
           <div className="flex items-center gap-2.5">
