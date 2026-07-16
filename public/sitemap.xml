@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+
+  <!-- 
+    ─────────────────────────────────────────────
+    SITEMAP MAISON ROSAS — Pastelería de Autor
+    Generado: 2026-07-16
+    Dominio: maisonrosas.com
+    ─────────────────────────────────────────────
+    Nota: Esta es una SPA (Single Page Application).
+    Google indexa todo el contenido desde la URL
+    principal renderizando JavaScript. Las secciones
+    se listan para mejor comprensión del crawler.
+    ─────────────────────────────────────────────
+  -->
+
+  <!-- ════════════════════════════════════════════
+       PÁGINA PRINCIPAL — Todo el contenido
+       (Hero, Historia, Catálogo, Galería,
+        Opiniones, FAQ, Contacto)
+       ════════════════════════════════════════ -->
+  <url>
+    <loc>https://maisonrosas.com/</loc>
+    <lastmod>2026-07-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1535141192574-5d4897c13636?w=1200&amp;auto=format&amp;fit=crop&amp;q=80</image:loc>
+      <image:title>Pastel artesanal Maison Rosas - Diseño Floral Vintage</image:title>
+      <image:caption>Modelo exclusivo de Carol Rosas para Maison Rosas, pastelería de autor en Sullana, Piura.</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800&amp;auto=format&amp;fit=crop&amp;q=80</image:loc>
+      <image:title>Maison Trufa Imperial - Pastel de chocolate belga</image:title>
+      <image:caption>Trufas artesanales y ganache de cacao belga premium.</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1558961309-db6f1a3eb64e?w=800&amp;auto=format&amp;fit=crop&amp;q=80</image:loc>
+      <image:title>Cielo de Macarons - Pastel infantil artesanal</image:title>
+      <image:caption>Degradado celeste y lila coronado con macarons artesanales.</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1508737027454-e6454ef45afd?w=800&amp;auto=format&amp;fit=crop&amp;q=80</image:loc>
+      <image:title>Elegancia de Oro &amp; Velvet - Red Velvet Premium</image:title>
+      <image:caption>Bizcocho Red Velvet con frosting de queso crema y pan de oro 24K.</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1519340333755-56e9c1d04579?w=800&amp;auto=format&amp;fit=crop&amp;q=80</image:loc>
+      <image:title>Cumpleaños Arcoíris Alegre - Pastel infantil</image:title>
+      <image:caption>Bizcochos coloridos con cobertura de vainilla y minidonuts.</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=800&amp;auto=format&amp;fit=crop&amp;q=80</image:loc>
+      <image:title>Elegancia Rústica del Bosque - Naked Cake</image:title>
+      <image:caption>Estilo semi-cubierto con romero fresco y bayas silvestres.</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?w=800&amp;auto=format&amp;fit=crop&amp;q=80</image:loc>
+      <image:title>Chocolatier de Autor - Glaseado espejo</image:title>
+      <image:caption>Obra de arte geométrica con chocolate templado y fresas.</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&amp;auto=format&amp;fit=crop&amp;q=80</image:loc>
+      <image:title>Taller artesanal Maison Rosas</image:image>
+      <image:caption>Carol preparando con amor cada creación en nuestro taller de Sullana.</image:caption>
+    </image:image>
+  </url>
+
+  <!-- ════════════════════════════════════════════
+       SEGUIMIENTO DE PEDIDOS
+       (Búsqueda por código de tracking)
+       ════════════════════════════════════════ -->
+  <url>
+    <loc>https://maisonrosas.com/tracking</loc>
+    <lastmod>2026-07-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- ════════════════════════════════════════════
+       ADMIN — Panel de administración
+       (No indexar, solo administradores)
+       ════════════════════════════════════════ -->
+  <url>
+    <loc>https://maisonrosas.com/admin</loc>
+    <lastmod>2026-07-16</lastmod>
+    <changefreq>never</changefreq>
+    <priority>0.1</priority>
+  </url>
+
+</urlset>

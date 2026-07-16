@@ -70,6 +70,15 @@ export interface Order {
   voucherUploadedAt?: string;
   fulfilledFromStock?: boolean;
   assignedStockId?: string;
+
+  // Progress photos (added by Carol during preparation)
+  progressPhotos?: {
+    id: string;
+    imageUrl: string;
+    caption: string;
+    stage: string; // e.g. 'bizcocho', 'decoracion', 'final'
+    uploadedAt: string;
+  }[];
 }
 
 export interface GalleryItem {
@@ -100,6 +109,10 @@ export interface AppConfig {
   seoTitle: string;
   seoDescription: string;
   maintenanceMode: boolean;
+  maintenanceEndTime?: string; // ISO timestamp for when maintenance ends (countdown target)
+  maintenanceTitle?: string; // Customizable title on the maintenance screen
+  maintenanceDescription?: string; // Customizable description on the maintenance screen
+  maintenanceBadge?: string; // Customizable badge text on the maintenance screen
   // Customizable website content fields
   heroTitle?: string;
   heroDescription?: string;
@@ -111,6 +124,8 @@ export interface AppConfig {
   logoUrl?: string;
   faviconUrl?: string;
 }
+
+export type AdminRole = 'admin' | 'analyst' | 'stock_manager';
 
 export interface CakeStock {
   id: string;          // e.g. "stock-1"

@@ -1,62 +1,50 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Lock, Check, X, Sparkles, Clock } from 'lucide-react';
+import { Toaster } from 'react-hot-toast';
+import { Lock, Check, Shield, UserCircle, Image as ImageIcon } from 'lucide-react';
 import { dbService } from '../../dbService';
-
-interface ToastItem {
-  id: string;
-  message: string;
-  type: 'success' | 'error' | 'info' | 'warning';
-  title?: string;
-}
+import type { AdminRole } from '../../types';
+import { showToast } from '../../utils/toast';
 
 interface AdminLoginProps {
-  onLoginSuccess: () => void;
+  onLoginSuccess: (role: AdminRole) => void;
 }
+
+const ROLES: { id: AdminRole; label: string; icon: React.ElementType; desc: string }[] = [
+  { id: 'admin', label: 'Administrador', icon: Shield, desc: 'Acceso completo a todos los módulos' },
+  { id: 'analyst', label: 'Analista', icon: UserCircle, desc: 'Pedidos, pagos, cuentas y reseñas' },
+  { id: 'stock_manager', label: 'Gestor de Stock', icon: ImageIcon, desc: 'Stock físico, galería de imágenes y modelo' },
+];
 
 export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
   const [password, setPassword] = useState('');
+  const [selectedRole, setSelectedRole] = useState<AdminRole>('admin');
   const [loginError, setLoginError] = useState('');
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'success', title?: string) => {
-    const id = 'toast_' + Date.now() + Math.random().toString(36).substring(2, 5);
-    setToasts(prev => [...prev, { id, message, type, title }]);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, 4500);
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
     setIsSubmitting(true);
-    const result = await dbService.adminLogin(password);
+    const result = await dbService.adminLogin(password, selectedRole);
     setIsSubmitting(false);
 
     if (result.success) {
-      showToast('Sesión de administración autorizada. ¡Hola Edwin!', 'success', 'Acceso Concedido');
-      setTimeout(() => onLoginSuccess(), 500);
+      // Store role in localStorage
+      localStorage.setItem('maison_admin_role', selectedRole);
+      
+      const roleLabels: Record<string, string> = {
+        admin: 'Administrador Principal',
+        analyst: 'Analista de Cuentas',
+        stock_manager: 'Gestor de Stock',
+      };
+      showToast(`Sesión iniciada como ${roleLabels[selectedRole] || 'Administrador'}`, 'success', 'Acceso Concedido');
+      setTimeout(() => onLoginSuccess(selectedRole), 500);
     } else {
       const errorMsg = result.error || 'Contraseña incorrecta. Inténtalo de nuevo.';
       setLoginError(errorMsg);
       showToast('Credenciales incorrectas.', 'error', 'Acceso Denegado');
     }
-  };
-
-  const toastIcons = {
-    success: <Check className="h-3 w-3" />,
-    error: <X className="h-3 w-3" />,
-    info: <Sparkles className="h-3 w-3" />,
-    warning: <Clock className="h-3 w-3" />,
-  };
-
-  const toastBg = {
-    success: 'bg-emerald-500/20 text-emerald-500',
-    error: 'bg-red-500/20 text-red-500',
-    info: 'bg-blue-500/20 text-blue-500',
-    warning: 'bg-amber-500/20 text-amber-500',
   };
 
   return (
@@ -101,6 +89,40 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
             disabled={isSubmitting}
           />
 
+          {/* Role Selector */}
+          <div className="space-y-2">
+            <label className="block text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-semibold">
+              Seleccionar Rol
+            </label>
+            <div className="grid grid-cols-1 gap-1.5">
+              {ROLES.map((role) => {
+                const Icon = role.icon;
+                const isActive = selectedRole === role.id;
+                return (
+                  <button
+                    key={role.id}
+                    type="button"
+                    onClick={() => setSelectedRole(role.id)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs transition-all border cursor-pointer ${
+                      isActive
+                        ? 'bg-brand-50 border-brand-300 text-brand-800 shadow-sm'
+                        : 'bg-white/40 border-zinc-200/60 text-zinc-600 hover:bg-zinc-50 hover:border-zinc-300'
+                    }`}
+                  >
+                    <div className={`p-1.5 rounded-lg ${isActive ? 'bg-brand-500 text-white' : 'bg-zinc-100 text-zinc-500'}`}>
+                      <Icon className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="flex-1">
+                      <span className="block text-[11px] font-bold">{role.label}</span>
+                      <span className="block text-[9px] text-zinc-400">{role.desc}</span>
+                    </div>
+                    {isActive && <Check className="h-3.5 w-3.5 text-brand-500 shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {loginError && (
             <p className="text-xs text-red-500 font-medium" id="login-error-msg">
               {loginError}
@@ -117,45 +139,21 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
           </button>
         </form>
 
-        <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
-          Contraseña demo: <code className="bg-white/40 dark:bg-zinc-800/40 px-1.5 py-0.5 rounded font-mono">ADMIN_PASSWORD_PLACEHOLDER</code>
-        </p>
+
       </motion.div>
 
-      {/* Toast Notifications */}
-      <div className="fixed top-6 right-6 z-50 flex flex-col space-y-3 max-w-sm w-full pointer-events-none" id="toasts-portal-login">
-        {toasts.map((toast) => (
-          <motion.div
-            key={toast.id}
-            initial={{ opacity: 0, y: -20, scale: 0.9, rotate: -1 }}
-            animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            layout
-            className="pointer-events-auto liquid-glass liquid-glass-sheen border border-white/40 dark:border-zinc-800/80 p-4 rounded-2xl shadow-xl flex items-start space-x-3 backdrop-blur-xl"
-            id={`toast-${toast.id}`}
-          >
-            <div className={`mt-0.5 shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${toastBg[toast.type]}`}>
-              {toastIcons[toast.type]}
-            </div>
-            <div className="flex-1 min-w-0">
-              {toast.title && (
-                <h5 className="text-[10px] font-mono font-bold text-zinc-900 dark:text-white uppercase tracking-wider">
-                  {toast.title}
-                </h5>
-              )}
-              <p className="text-xs text-zinc-600 dark:text-zinc-300 mt-0.5 leading-relaxed font-sans">
-                {toast.message}
-              </p>
-            </div>
-            <button
-              onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
-              className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors shrink-0"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </motion.div>
-        ))}
-      </div>
+      {/* Toast Notifications with react-hot-toast */}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4500,
+          style: { padding: 0, margin: 0, background: 'transparent', boxShadow: 'none' },
+        }}
+        containerStyle={{
+          top: 24,
+          right: 24,
+        }}
+      />
     </section>
   );
 }

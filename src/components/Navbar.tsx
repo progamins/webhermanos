@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Cake, Menu, X, LogIn, ShoppingBag, HelpCircle, PhoneCall, Star } from 'lucide-react';
+import { optimizeImageUrl } from '../utils/images';
 
 interface NavbarProps {
   currentView: string;
@@ -78,7 +79,7 @@ export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, o
             {logoUrl ? (
               <div className="h-10 w-10 rounded-full overflow-hidden shrink-0 group-hover:scale-110 transition-transform duration-300 border border-zinc-200 dark:border-zinc-850 flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
                 <img 
-                  src={logoUrl} 
+                  src={optimizeImageUrl(logoUrl, 100)} 
                   alt="Maison Rosas Logo" 
                   referrerPolicy="no-referrer" 
                   className="w-full h-full object-cover"
@@ -101,9 +102,9 @@ export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, o
             </div>
           </div>
 
-          {/* Desktop Navigation Links */}
+          {/* Desktop Navigation Links — hidden for admin, only show Panel + Salir */}
           <div className="hidden md:flex items-center space-x-1">
-            {navItems.map((item) => {
+            {!isAdminLoggedIn && navItems.map((item) => {
               const Icon = item.icon;
               return (
                 <button
@@ -128,7 +129,7 @@ export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, o
               );
             })}
 
-            <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-2" />
+            {!isAdminLoggedIn && <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-2" />}
 
             {isAdminLoggedIn && (
               <div className="flex items-center space-x-2">
@@ -171,7 +172,7 @@ export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, o
           exit={{ opacity: 0, height: 0 }}
           className="md:hidden bg-white dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900 px-4 pt-3 pb-6 space-y-2 shadow-xl"
         >
-          {navItems.map((item) => (
+          {!isAdminLoggedIn && navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => handleNavigate(item.id)}
@@ -187,7 +188,7 @@ export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, o
             </button>
           ))}
 
-          <div className="h-px bg-zinc-100 dark:bg-zinc-900 my-3" />
+          {!isAdminLoggedIn && <div className="h-px bg-zinc-100 dark:bg-zinc-900 my-3" />}
 
           {isAdminLoggedIn && (
             <div className="space-y-2 pt-2">

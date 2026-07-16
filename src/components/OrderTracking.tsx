@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Search, Mail, Key, Calendar, Clock, MapPin, Sparkles, 
   CheckCircle2, AlertTriangle, Loader2, ArrowLeft, ChevronRight, 
-  Cake, Check, HelpCircle, PhoneCall, Gift, FileText, User, ShoppingBag,
-  Printer, Eye
+  Cake, Check, HelpCircle, PhoneCall, Gift, FileText, User,
+  Printer, Camera, X, BadgeCheck, ShieldCheck
 } from 'lucide-react';
 import VoucherModal from './VoucherModal';
 import ScreenshotModal from './ScreenshotModal';
@@ -35,6 +35,74 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [serverOtp, setServerOtp] = useState<string | null>(null); // Visual aid for local testing
+
+  // Real-time SSE connection for live status updates
+  const [statusNotification, setStatusNotification] = useState<string | null>(null);
+  const sseRef = useRef<EventSource | null>(null);
+  const prevStatusRef = useRef<string | null>(null);
+
+  // Connect to SSE stream when an order is selected
+  useEffect(() => {
+    if (!selectedOrder) {
+      if (sseRef.current) {
+        sseRef.current.close();
+        sseRef.current = null;
+      }
+      return;
+    }
+
+    // Store current status for change detection
+    prevStatusRef.current = selectedOrder.status;
+
+    // Connect to the existing SSE stream
+    const sse = new EventSource('/api/orders/stream');
+    sseRef.current = sse;
+
+    sse.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        let updatedOrder = null;
+
+        if (data.type === 'new' && data.order) {
+          updatedOrder = data.order;
+        } else if (data.type === 'initial' && data.orders) {
+          // Check if our order is in the initial batch
+          updatedOrder = data.orders.find((o: any) => o.id === selectedOrder.id);
+        }
+
+        if (updatedOrder && updatedOrder.id === selectedOrder.id) {
+          // Status changed?
+          if (prevStatusRef.current && prevStatusRef.current !== updatedOrder.status) {
+            const statusLabels: Record<string, string> = {
+              'Confirmado': '✅ Diseño Confirmado',
+              'Preparando': '🔥 En Horneado',
+              'Decoración': '🎨 Decoración de Autor',
+              'Listo': '📦 Listo para Entrega',
+              'En camino': '🚗 En Camino / Delivery',
+              'Entregado': '🎉 Entregado con Éxito',
+              'Cancelado': '❌ Pedido Cancelado'
+            };
+            const notification = statusLabels[updatedOrder.status] || `📋 Estado actualizado: ${updatedOrder.status}`;
+            setStatusNotification(notification);
+            setTimeout(() => setStatusNotification(null), 6000);
+          }
+          prevStatusRef.current = updatedOrder.status;
+          setSelectedOrder(updatedOrder);
+        }
+      } catch (e) {
+        // Ignore parse errors
+      }
+    };
+
+    sse.onerror = () => {
+      // SSE will auto-reconnect
+    };
+
+    return () => {
+      sse.close();
+      sseRef.current = null;
+    };
+  }, [selectedOrder?.id]);
 
   // Read URL parameters on mount for automatic tracking
   useEffect(() => {
@@ -262,6 +330,30 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
             >
               <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5 text-emerald-600" />
               <span>{successMsg}</span>
+            </motion.div>
+          )}
+
+          {/* 🔴 LIVE STATUS NOTIFICATION BANNER (SSE real-time) */}
+          {statusNotification && (
+            <motion.div
+              initial={{ opacity: 0, y: -20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+              className="max-w-2xl mx-auto mb-6 p-4 bg-gradient-to-r from-brand-500 to-brand-600 text-white rounded-2xl shadow-lg shadow-brand-500/25 flex items-center gap-3 text-sm"
+            >
+              <div className="p-1.5 bg-white/20 rounded-full shrink-0">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-sm">🎯 ¡Tu pedido avanzó!</p>
+                <p className="text-[12px] text-white/80 mt-0.5">{statusNotification}</p>
+              </div>
+              <button
+                onClick={() => setStatusNotification(null)}
+                className="p-1 hover:bg-white/10 rounded-full transition-colors shrink-0 cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -584,6 +676,63 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                     </div>
                   )}
 
+                  {/* 📸 GALERÍA DE FOTOS DEL PROGRESO (subidas por Carol) */}
+                  {selectedOrder.progressPhotos && selectedOrder.progressPhotos.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <Camera className="h-4 w-4 text-purple-500" />
+                        <h4 className="font-serif text-sm font-bold text-zinc-800">Galería del Progreso</h4>
+                        <span className="text-[10px] font-mono text-purple-500 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
+                          {selectedOrder.progressPhotos.length} foto{selectedOrder.progressPhotos.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mb-6">
+                        <AnimatePresence>
+                          {selectedOrder.progressPhotos.map((photo, idx) => {
+                            const stageLabels: Record<string, string> = {
+                              bizcocho: '🟤 Bizcocho',
+                              decoracion: '🎨 Decoración',
+                              final: '✨ Final'
+                            };
+                            return (
+                              <motion.div
+                                key={photo.id}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: idx * 0.1 }}
+                                className="group relative"
+                              >
+                                <div
+                                  onClick={() => {
+                                    setScreenshotUrlToView(photo.imageUrl);
+                                    setScreenshotTitleToView(`📸 ${photo.caption} - Pedido MR-${selectedOrder.trackingCode}`);
+                                  }}
+                                  className="aspect-square rounded-xl overflow-hidden border border-zinc-200 cursor-pointer hover:ring-2 hover:ring-brand-500/50 transition-all shadow-sm hover:shadow-md"
+                                >
+                                  <img
+                                    src={photo.imageUrl}
+                                    alt={photo.caption}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                    referrerPolicy="no-referrer"
+                                    loading="lazy"
+                                  />
+                                </div>
+                                <div className="mt-1.5 text-center">
+                                  <span className="text-[8px] font-mono text-zinc-400 block leading-tight truncate">
+                                    {stageLabels[photo.stage] || photo.stage}
+                                  </span>
+                                  {photo.caption && (
+                                    <span className="text-[7px] text-zinc-500 block truncate">{photo.caption}</span>
+                                  )}
+                                </div>
+                              </motion.div>
+                            );
+                          })}
+                        </AnimatePresence>
+                      </div>
+                    </div>
+                  )}
+
                   {/* LIVE ORDER LOG SUMMARY DETAILS */}
                   <div className="bg-zinc-50 rounded-2xl p-6 border border-zinc-100 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -713,170 +862,116 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                     </a>
                   </div>
 
-                  {/* 💰 ESTADO DE PAGO Y COMPROBANTE CARD */}
+                  {/* 💰 ESTADO DE PAGO Y COMPROBANTE OFICIAL */}
                   <div className="bg-white border border-zinc-100 rounded-3xl p-6 shadow-sm space-y-5">
                     <div className="border-b border-zinc-100 pb-3">
                       <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 block font-bold">Transacción</span>
                       <h3 className="font-serif text-lg font-bold text-zinc-950 mt-0.5 flex items-center gap-1.5">
-                        <span>💰 Estado de Pago</span>
+                        <ShieldCheck className="h-5 w-5 text-brand-500" />
+                        <span>Estado de Pago</span>
                       </h3>
                     </div>
 
                     {(() => {
                       const pStatus = selectedOrder.paymentStatus || 'pendiente';
-                      const statusConfig = {
-                        pendiente: { label: 'Pago pendiente', color: 'text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/50', icon: '🟡' },
-                        confirmado: { label: 'Pago confirmado', color: 'text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/50', icon: '🟢' },
-                        rechazado: { label: 'Pago rechazado', color: 'text-red-600 bg-red-50 border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-900/50', icon: '🔴' },
-                        parcial: { label: 'Pago parcial', color: 'text-zinc-600 bg-zinc-50 border-zinc-200 dark:bg-zinc-850 dark:text-zinc-400 dark:border-zinc-800', icon: '⚪' },
-                      }[pStatus as 'pendiente' | 'confirmado' | 'rechazado' | 'parcial'] || { label: 'Pago pendiente', color: 'text-amber-600 bg-amber-50 border-amber-200', icon: '🟡' };
+                      const statusConfig: Record<string, { label: string; color: string; icon: string }> = {
+                        pendiente: { label: 'Pago pendiente', color: 'text-amber-700 bg-amber-50 border-amber-200', icon: '⏳' },
+                        confirmado: { label: 'Pago verificado', color: 'text-emerald-700 bg-emerald-50 border-emerald-200', icon: '✅' },
+                        rechazado: { label: 'Pago rechazado', color: 'text-red-700 bg-red-50 border-red-200', icon: '❌' },
+                        parcial: { label: 'Pago parcial', color: 'text-zinc-600 bg-zinc-50 border-zinc-200', icon: '⚪' },
+                      };
+                      const cfg = statusConfig[pStatus] || statusConfig.pendiente;
 
                       return (
                         <>
-                          <div className="flex items-center space-x-3">
-                            <span className={`px-3 py-1.5 rounded-xl text-xs font-bold border ${statusConfig.color} flex items-center gap-1.5`}>
-                              <span>{statusConfig.icon}</span>
-                              <span>{statusConfig.label}</span>
-                            </span>
+                          {/* Payment status badge */}
+                          <div className={`px-4 py-3 rounded-xl border ${cfg.color} flex items-center gap-3`}>
+                            <div className="text-xl">{cfg.icon}</div>
+                            <div>
+                              <p className="text-sm font-bold">{cfg.label}</p>
+                              {selectedOrder.paymentMethod && (
+                                <p className="text-[10px] text-zinc-500 mt-0.5 font-mono">
+                                  Via {selectedOrder.paymentMethod}
+                                </p>
+                              )}
+                            </div>
+                            {pStatus === 'confirmado' && (
+                              <div className="ml-auto">
+                                <BadgeCheck className="h-6 w-6 text-emerald-500" />
+                              </div>
+                            )}
                           </div>
 
-                          <div className="space-y-3 font-sans text-xs border-t border-zinc-100 pt-4 text-zinc-600">
-                            <div className="flex justify-between">
-                              <span className="text-zinc-400">Método de pago:</span>
-                              <span className="font-semibold text-zinc-800">{selectedOrder.paymentMethod || 'Yape / Plin / Transferencia'}</span>
-                            </div>
-                            
+                          {/* Payment details summary */}
+                          <div className="grid grid-cols-2 gap-3 text-xs font-sans">
                             {selectedOrder.fechaPago && (
-                              <div className="flex justify-between">
-                                <span className="text-zinc-400">Fecha de confirmación:</span>
-                                <span className="font-semibold text-zinc-800">{selectedOrder.fechaPago}</span>
+                              <div className="bg-zinc-50 rounded-xl p-3 border border-zinc-100">
+                                <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-400 block font-bold">Fecha</span>
+                                <span className="font-semibold text-zinc-800 mt-1 block">{selectedOrder.fechaPago}</span>
                               </div>
                             )}
-
-                            <div className="flex justify-between">
-                              <span className="text-zinc-400">Monto pagado:</span>
-                              <span className="font-mono font-bold text-zinc-800">S/. {(selectedOrder.montoPagado || 0).toFixed(2)}</span>
+                            <div className="bg-zinc-50 rounded-xl p-3 border border-zinc-100">
+                              <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-400 block font-bold">Monto</span>
+                              <span className="font-mono font-bold text-zinc-900 mt-1 block">
+                                S/. {(selectedOrder.montoPagado || selectedOrder.totalPrice || 0).toFixed(2)}
+                              </span>
                             </div>
-
-                            {selectedOrder.confirmedByAdmin && (
-                              <div className="flex justify-between text-[10px] text-zinc-400 italic">
-                                <span>Confirmado por:</span>
-                                <span>{selectedOrder.confirmedByAdmin}</span>
-                              </div>
-                            )}
                           </div>
 
-                          {/* Comprobante de pago (Voucher) section */}
-                          {selectedOrder.paymentStatus === 'confirmado' ? (
-                            <div className="border-t border-zinc-100 pt-4 space-y-4">
-                              {/* 1. Primary Dynamic Official Voucher */}
-                              <div className="border border-brand-200/60 bg-[#FCFBF7] rounded-2xl p-4 shadow-sm space-y-3">
-                                <div className="flex items-center justify-between">
-                                  <h4 className="font-serif text-xs font-bold text-zinc-900 flex items-center gap-1.5">
-                                    <Printer className="h-4 w-4 text-brand-600" />
-                                    <span>Boleta de Venta Digital</span>
-                                  </h4>
-                                  <span className="text-[8px] font-mono bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                                    PAGADO
+                          {/* --- COMPROBANTE DE VENTA OFICIAL --- */}
+                          {pStatus === 'confirmado' ? (
+                            <div className="border-t border-zinc-100 pt-4">
+                              <div className="relative overflow-hidden bg-gradient-to-br from-[#FCFBF7] to-[#FFF9F5] border-2 border-brand-200/70 rounded-2xl p-5 shadow-sm">
+                                {/* Decorative stamp */}
+                                <div className="absolute -top-3 -right-3 w-20 h-20 opacity-[0.06] pointer-events-none">
+                                  <span className="font-serif font-black text-6xl rotate-12 block text-center">OK</span>
+                                </div>
+
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center gap-2">
+                                    <div className="p-1.5 bg-brand-100 rounded-lg">
+                                      <Printer className="h-4 w-4 text-brand-600" />
+                                    </div>
+                                    <div>
+                                      <h4 className="font-serif font-bold text-zinc-900 text-sm">Boleta de Venta Digital</h4>
+                                      <p className="text-[9px] font-mono text-zinc-400">
+                                        MR-{selectedOrder.trackingCode}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[8px] font-mono font-bold uppercase tracking-wider border border-emerald-200">
+                                    ✓ Oficial
                                   </span>
                                 </div>
-                                <p className="text-[10px] text-zinc-500 leading-relaxed font-sans">
-                                  Tu pago ha sido verificado con éxito. Ya puedes ver e imprimir el comprobante de venta oficial generado automáticamente por Maison Rosas.
+
+                                <p className="text-[10px] text-zinc-500 leading-relaxed font-sans mb-4">
+                                  Tu comprobante de pago ha sido emitido y verificado por Maison Rosas. 
+                                  Este documento tiene validez oficial como boleta de venta electrónica.
                                 </p>
+
                                 <button
                                   type="button"
                                   onClick={() => setVoucherModalOrder(selectedOrder)}
-                                  className="w-full py-2 bg-brand-500 hover:bg-brand-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-xl text-center transition-colors shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                                  className="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
                                 >
-                                  <Printer className="h-3.5 w-3.5" />
-                                  <span>Ver / Imprimir Boleta</span>
+                                  <Printer className="h-4 w-4" />
+                                  <span>Ver / Descargar Boleta</span>
                                 </button>
-                              </div>
-
-                              {/* 2. Optional Secondary WhatsApp Screenshot evidence */}
-                              {selectedOrder.voucherUrl && (
-                                <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-150 space-y-3">
-                                  <div className="flex items-center justify-between">
-                                    <h4 className="font-serif text-[11px] font-bold text-zinc-800 flex items-center gap-1.5">
-                                      <ShoppingBag className="h-3.5 w-3.5 text-zinc-500" />
-                                      <span>Captura WhatsApp Verificada</span>
-                                    </h4>
-                                    <span className="text-[8px] font-mono bg-zinc-200 text-zinc-700 px-2 py-0.5 rounded-full font-bold uppercase">
-                                      Archivado
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center space-x-3 bg-white border border-zinc-100 p-2 rounded-xl">
-                                    <div className="w-10 h-10 rounded-lg overflow-hidden border border-zinc-100 shrink-0">
-                                      <img
-                                        src={selectedOrder.voucherUrl}
-                                        alt="WhatsApp Screenshot"
-                                        className="w-full h-full object-cover"
-                                        referrerPolicy="no-referrer"
-                                        loading="lazy"
-                                        decoding="async"
-                                      />
-                                    </div>
-                                    <div className="truncate flex-1">
-                                      <span className="block text-[10px] font-medium text-zinc-700 truncate font-mono">
-                                        {selectedOrder.voucherName || 'captura-whatsapp.jpg'}
-                                      </span>
-                                      <span className="block text-[8px] text-zinc-400 font-mono">
-                                        Verificado por el administrador
-                                      </span>
-                                    </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setScreenshotUrlToView(selectedOrder.voucherUrl);
-                                        setScreenshotTitleToView(`Captura de Pago (WhatsApp) - Pedido MR-${selectedOrder.trackingCode}`);
-                                      }}
-                                      className="p-1.5 bg-zinc-100 hover:bg-zinc-250 text-zinc-600 rounded-lg shrink-0 transition-colors cursor-pointer flex items-center justify-center"
-                                      title="Ver imagen completa"
-                                    >
-                                      <Eye className="h-3.5 w-3.5 text-zinc-400" />
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ) : selectedOrder.voucherUrl ? (
-                            /* If paymentStatus is not 'confirmado' but somehow they have a voucherUrl */
-                            <div className="border-t border-zinc-100 pt-4 space-y-3">
-                              <h4 className="font-serif text-xs font-bold text-zinc-900 flex items-center gap-1.5">
-                                <FileText className="h-4 w-4 text-brand-500" />
-                                <span>Comprobante de Pago</span>
-                              </h4>
-                              
-                              <div className="bg-zinc-50 rounded-xl p-3 border border-zinc-100 space-y-2">
-                                <div className="flex justify-between text-[10px] text-zinc-400">
-                                  <span>Formato:</span>
-                                  <span className="font-mono uppercase">{selectedOrder.voucherUrl.split('.').pop()?.split('?')[0] || 'Voucher'}</span>
-                                </div>
-                                {selectedOrder.voucherUploadedAt && (
-                                  <div className="flex justify-between text-[10px] text-zinc-400">
-                                    <span>Fecha de carga:</span>
-                                    <span>{new Date(selectedOrder.voucherUploadedAt).toLocaleDateString('es-PE')}</span>
-                                  </div>
-                                )}
-                                
-                                <div className="flex gap-2 pt-1">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setScreenshotUrlToView(selectedOrder.voucherUrl);
-                                      setScreenshotTitleToView(`Comprobante de Pago - Pedido MR-${selectedOrder.trackingCode}`);
-                                    }}
-                                    className="flex-1 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[10px] font-bold uppercase rounded-lg text-center transition-colors cursor-pointer"
-                                  >
-                                    Ver comprobante
-                                  </button>
-                                </div>
                               </div>
                             </div>
                           ) : (
-                            <div className="border-t border-zinc-100 pt-4 text-center space-y-1 bg-zinc-50/50 p-4 rounded-2xl border border-dashed border-zinc-250">
-                              <p className="text-[11px] font-serif font-bold text-zinc-700">Comprobante de Pago Digital</p>
-                              <p className="text-[10px] text-zinc-400 leading-relaxed">Se auto-generará de forma inmediata una boleta/ticket oficial en cuanto el administrador verifique tu pago en WhatsApp.</p>
+                            <div className="border-t border-zinc-100 pt-4">
+                              <div className="bg-zinc-50/70 border border-dashed border-zinc-200 rounded-2xl p-5 text-center space-y-2">
+                                <div className="inline-flex p-2 bg-zinc-100 rounded-full">
+                                  <FileText className="h-5 w-5 text-zinc-400" />
+                                </div>
+                                <p className="text-xs font-serif font-bold text-zinc-700">
+                                  Comprobante de Pago Digital
+                                </p>
+                                <p className="text-[10px] text-zinc-400 leading-relaxed max-w-[200px] mx-auto font-sans">
+                                  Se generará automáticamente una boleta oficial cuando el administrador verifique tu pago.
+                                </p>
+                              </div>
                             </div>
                           )}
                         </>

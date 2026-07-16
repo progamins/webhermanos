@@ -1,4 +1,6 @@
-import { TrendingUp, DollarSign, ShoppingBag, Clock, Cake, Plus } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { TrendingUp, DollarSign, ShoppingBag, Clock, Cake, Plus, Activity, UserCircle } from 'lucide-react';
+import { dbService } from '../../dbService';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { Order, Product } from '../../types';
 import { getMonthlyOrderData } from './helpers';
@@ -9,7 +11,31 @@ interface AdminDashboardProps {
   onNavigate: (tab: string) => void;
 }
 
+interface ActivityLogEntry {
+  id: string;
+  action: string;
+  details: string;
+  role: string;
+  timestamp: string;
+}
+
 export default function AdminDashboard({ orders, products, onNavigate }: AdminDashboardProps) {
+  const [activityLogs, setActivityLogs] = useState<ActivityLogEntry[]>([]);
+  const [logsLoading, setLogsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadLogs = async () => {
+      try {
+        const res = await dbService.getActivityLogs();
+        if (res.success && res.logs) {
+          setActivityLogs(res.logs.slice(0, 10));
+        }
+      } catch {}
+      setLogsLoading(false);
+    };
+    loadLogs();
+  }, []);
+
   const totalOrders = orders.length;
   const acceptedOrders = orders.filter(o => o.status === 'Entregado');
   const totalSales = acceptedOrders.reduce((acc, o) => acc + o.totalPrice, 0);
@@ -23,6 +49,18 @@ export default function AdminDashboard({ orders, products, onNavigate }: AdminDa
     }
   });
   const sortedCakes = Object.entries(cakeCountMap).sort((a, b) => b[1] - a[1]);
+
+  const roleLabels: Record<string, string> = {
+    admin: 'Admin',
+    analyst: 'Analista',
+    stock_manager: 'Gestor'
+  };
+
+  const roleColors: Record<string, string> = {
+    admin: 'bg-brand-500/20 text-brand-600',
+    analyst: 'bg-blue-500/20 text-blue-600',
+    stock_manager: 'bg-emerald-500/20 text-emerald-600'
+  };
 
   return (
     <div className="space-y-8">
@@ -187,6 +225,51 @@ export default function AdminDashboard({ orders, products, onNavigate }: AdminDa
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Activity Log */}
+      <div className="liquid-glass liquid-glass-sheen p-6 border border-white/30 dark:border-zinc-800/40 shadow-md">
+        <div className="flex items-center gap-2 mb-4">
+          <Activity className="h-5 w-5 text-brand-500" />
+          <h3 className="text-lg font-serif font-bold text-zinc-900 dark:text-white">Registro de Actividades</h3>
+          <span className="text-[9px] font-mono text-zinc-400 ml-auto">Últimas 10 acciones</span>
+        </div>
+        
+        {logsLoading ? (
+          <div className="text-center py-6">
+            <div className="w-5 h-5 rounded-full border-2 border-brand-200 border-t-brand-500 animate-spin mx-auto" />
+            <p className="text-[10px] font-mono text-zinc-400 mt-2">Cargando registro...</p>
+          </div>
+        ) : activityLogs.length === 0 ? (
+          <div className="text-center py-6">
+            <p className="text-xs text-zinc-400 font-mono">Aún no hay actividad registrada.</p>
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {activityLogs.map((log, idx) => (
+              <div
+                key={log.id || idx}
+                className="flex items-start gap-3 p-3 rounded-xl bg-white/40 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800/60 hover:bg-white/60 dark:hover:bg-zinc-900/60 transition-colors"
+              >
+                <div className={`p-1.5 rounded-lg shrink-0 ${roleColors[log.role] || 'bg-zinc-500/20 text-zinc-600'}`}>
+                  <UserCircle className="h-3.5 w-3.5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[11px] font-bold text-zinc-800 dark:text-zinc-200">{log.action}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[8px] font-mono font-bold uppercase ${roleColors[log.role] || 'bg-zinc-500/20 text-zinc-600'}`}>
+                      {roleLabels[log.role] || log.role}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 line-clamp-1">{log.details}</p>
+                  <p className="text-[9px] text-zinc-300 dark:text-zinc-600 font-mono mt-0.5">
+                    {new Date(log.timestamp).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

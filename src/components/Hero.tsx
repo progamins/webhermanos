@@ -1,12 +1,35 @@
 import { motion } from 'motion/react';
-import { ArrowRight, Sparkles, Heart, HelpCircle, PhoneCall } from 'lucide-react';
+import { Sparkles, Star } from 'lucide-react';
 import { AppConfig } from '../types';
+import { optimizeImageUrl } from '../utils/images';
 
 interface HeroProps {
   onViewCatalog: () => void;
   onViewHistory: () => void;
   config?: AppConfig | null;
 }
+
+// Pre-generate particle configs for SSR/cache stability (avoid Math.random on re-renders)
+const FLOATING_PARTICLES = Array.from({ length: 28 }, (_, i) => ({
+  id: i,
+  size: 2 + (i % 7) * 2.5,
+  x: 3 + (i * 3.7) % 94,
+  y: 2 + (i * 7.1 + 5) % 96,
+  driftX: ((i % 5) - 2) * 6,
+  duration: 7 + (i % 4) * 3,
+  delay: i * 0.35,
+  opacityBase: 0.15 + (i % 5) * 0.08,
+  isStar: i % 5 === 0,
+}));
+
+const SPARKLE_PARTICLES = Array.from({ length: 8 }, (_, i) => ({
+  id: i + 100,
+  x: 10 + (i * 11.3) % 80,
+  y: 5 + (i * 9.7 + 3) % 85,
+  size: 1.5 + (i % 3) * 1.5,
+  delay: i * 0.6,
+  duration: 2.5 + (i % 3) * 1.5,
+}));
 
 export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps) {
   // Modern spring-based animation variants
@@ -41,34 +64,94 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
       id="inicio" 
       className="relative min-h-[92vh] flex items-center justify-center pt-24 overflow-hidden bg-gradient-to-b from-brand-50/50 via-white to-white dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900"
     >
-      {/* Decorative background ambient blobs */}
-      <div className="absolute top-20 left-1/10 w-72 h-72 rounded-full bg-brand-100/40 dark:bg-brand-950/10 blur-3xl will-change-transform animate-blob-1" />
-      <div className="absolute bottom-10 right-1/10 w-96 h-96 rounded-full bg-brand-200/20 dark:bg-brand-900/5 blur-3xl will-change-transform animate-blob-2" />
+      {/* ─── LAYER 1: Gradient Mesh / Ambient Orbs ─── */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Main warm orb */}
+        <div className="absolute -top-20 left-[5%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-brand-200/30 via-brand-100/20 to-transparent dark:from-brand-800/10 dark:via-brand-900/5 dark:to-transparent blur-[80px] will-change-transform animate-orb-slow" />
+        
+        {/* Secondary cool orb */}
+        <div className="absolute top-[45%] -right-[10%] w-[450px] h-[450px] rounded-full bg-gradient-to-br from-brand-secondary/20 via-brand-300/15 to-transparent dark:from-brand-600/8 dark:via-brand-700/5 dark:to-transparent blur-[80px] will-change-transform animate-orb-slow-reverse" />
+        
+        {/* Deep accent orb */}
+        <div className="absolute -bottom-[15%] left-[20%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-brand-400/15 via-brand-500/10 to-transparent dark:from-brand-700/6 dark:via-brand-800/4 dark:to-transparent blur-[100px] will-change-transform animate-orb-drift" />
 
-      {/* Floating particles background effect */}
-      <div className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-20">
-        {[...Array(12)].map((_, i) => (
+        {/* Ethereal light sweep */}
+        <div className="absolute top-[15%] -left-[5%] w-[300px] h-[300px] rounded-full bg-gradient-to-r from-white/40 via-brand-100/20 to-transparent dark:from-white/5 dark:via-brand-200/5 dark:to-transparent blur-[60px] will-change-transform animate-light-sweep" />
+      </div>
+
+      {/* ─── LAYER 2: Extended Floating Particles ─── */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Floating circles */}
+        {FLOATING_PARTICLES.map((p) => (
           <motion.div
-            key={i}
-            className="absolute rounded-full bg-brand-300 will-change-transform"
+            key={p.id}
+            className={`absolute rounded-full will-change-transform ${
+              p.isStar 
+                ? 'bg-brand-400 dark:bg-brand-300' 
+                : 'bg-brand-300 dark:bg-brand-400'
+            }`}
             style={{
-              width: Math.random() * 8 + 4,
-              height: Math.random() * 8 + 4,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              width: p.size,
+              height: p.size,
+              left: `${p.x}%`,
+              top: `${p.y}%`,
             }}
             animate={{
-              y: [0, -40, 0],
-              x: [0, Math.random() * 20 - 10, 0],
-              opacity: [0.3, 0.9, 0.3],
+              y: [0, -50 - p.driftX * 0.5, -20, -60, 0],
+              x: [0, p.driftX * 0.3, -p.driftX * 0.2, p.driftX * 0.5, 0],
+              opacity: [p.opacityBase, p.opacityBase * 3, p.opacityBase * 1.5, p.opacityBase * 2.5, p.opacityBase],
+              scale: [1, 1.4, 0.8, 1.2, 1],
             }}
             transition={{
-              duration: Math.random() * 6 + 5,
+              duration: p.duration,
               repeat: Infinity,
+              delay: p.delay,
               ease: 'easeInOut',
             }}
           />
         ))}
+
+        {/* Twinkling star sparkles */}
+        {SPARKLE_PARTICLES.map((p) => (
+          <motion.div
+            key={p.id}
+            className="absolute will-change-transform"
+            style={{
+              left: `${p.x}%`,
+              top: `${p.y}%`,
+            }}
+            animate={{
+              opacity: [0, 1, 0.3, 1, 0],
+              scale: [0, 1.2, 0.5, 1, 0],
+              rotate: [0, 180, 360],
+            }}
+            transition={{
+              duration: p.duration,
+              repeat: Infinity,
+              delay: p.delay,
+              ease: 'easeInOut',
+            }}
+          >
+            <Star 
+              className="text-brand-400/60 dark:text-brand-300/40" 
+              style={{ width: p.size * 4, height: p.size * 4 }}
+              fill="currentColor"
+            />
+          </motion.div>
+        ))}
+      </div>
+
+      {/* ─── LAYER 3: Subtle Geometric Pattern Overlay ─── */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03] dark:opacity-[0.02]">
+        <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+          <defs>
+            <pattern id="hero-dots-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+              <circle cx="20" cy="20" r="1" fill="#C4847D" />
+              <circle cx="0" cy="0" r="0.8" fill="#D4A373" />
+            </pattern>
+          </defs>
+          <rect x="0" y="0" width="100%" height="100%" fill="url(#hero-dots-pattern)" />
+        </svg>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
@@ -98,14 +181,14 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
               {config?.heroTitle ? (
                 <>
                   {config.heroTitle.split(' ').slice(0, -1).join(' ')}{' '}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary to-brand-500 dark:from-brand-300 dark:to-brand-200 block sm:inline">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary via-brand-500 to-brand-400 dark:from-brand-300 dark:via-brand-200 dark:to-brand-400 bg-[length:200%_100%] animate-gradient-shift block sm:inline">
                     {config.heroTitle.split(' ').slice(-1)[0]}
                   </span>
                 </>
               ) : (
                 <>
                   El Arte de <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary to-brand-500 dark:from-brand-300 dark:to-brand-200">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary via-brand-500 to-brand-400 dark:from-brand-300 dark:via-brand-200 dark:to-brand-400 bg-[length:200%_100%] animate-gradient-shift">
                     Compartir
                   </span>
                 </>
@@ -171,6 +254,23 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
 
           {/* Visual Showcase (Cake mockup & presentation) */}
           <div className="lg:col-span-5 relative flex justify-center">
+            {/* ─── Decorative Rings Behind the Image ─── */}
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 20, ease: 'linear' }}
+              className="absolute w-[460px] h-[460px] rounded-full border-[1.5px] border-dashed border-brand-200/30 dark:border-brand-700/20 pointer-events-none"
+            />
+            <motion.div
+              animate={{ rotate: -360 }}
+              transition={{ repeat: Infinity, duration: 15, ease: 'linear' }}
+              className="absolute w-[420px] h-[420px] rounded-full border border-brand-100/20 dark:border-brand-800/10 pointer-events-none"
+            />
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 25, ease: 'linear' }}
+              className="absolute w-[380px] h-[380px] rounded-full border-[1px] border-dotted border-brand-secondary/15 dark:border-brand-600/10 pointer-events-none"
+            />
+
             <motion.div
               initial={{ opacity: 0, scale: 0.85, rotate: -3, filter: 'blur(6px)' }}
               animate={{ opacity: 1, scale: 1, rotate: 0, filter: 'blur(0px)' }}
@@ -184,9 +284,13 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
               className="glass-panel relative w-full max-w-[420px] aspect-[4/5] rounded-[40px] p-4 overflow-hidden shadow-xl border border-white/30 dark:border-white/5 bg-white/40 dark:bg-zinc-900/40"
               id="hero-image-container"
             >
-              <div className="w-full h-full bg-white/20 dark:bg-zinc-950/20 rounded-[32px] relative overflow-hidden">
+              <motion.div 
+                animate={{ y: [0, -6, 0] }}
+                transition={{ repeat: Infinity, duration: 6, ease: 'easeInOut' }}
+                className="w-full h-full bg-white/20 dark:bg-zinc-950/20 rounded-[32px] relative overflow-hidden"
+              >
                 <img
-                  src={config?.heroImage || 'https://images.unsplash.com/photo-1535141192574-5d4897c13636?w=600&auto=format&fit=crop&q=80'}
+                  src={optimizeImageUrl(config?.heroImage || 'https://images.unsplash.com/photo-1535141192574-5d4897c13636?w=600&auto=format&fit=crop&q=80', 600)}
                   alt="Pastel de Boda Rosas"
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                   id="hero-cake-image"
@@ -195,13 +299,37 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
                   decoding="async"
                 />
                 
+                {/* Subtle gradient overlay for better text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
+
                 {/* Overlay labels / floaters on image */}
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent p-6 text-white z-10">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-brand-200">Modelo Destacado</span>
-                  <h3 className="text-xl font-serif font-light italic mt-1">Rosado Floral Vintage</h3>
-                  <p className="text-xs text-zinc-200 mt-1">Sabor: Vainilla Francesa • Decorado con Rosas Frescas</p>
+                  <motion.span 
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1.2, duration: 0.5 }}
+                    className="text-[10px] font-mono uppercase tracking-widest text-brand-200"
+                  >
+                    Modelo Destacado
+                  </motion.span>
+                  <motion.h3
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1.3, duration: 0.5 }}
+                    className="text-xl font-serif font-light italic mt-1"
+                  >
+                    Rosado Floral Vintage
+                  </motion.h3>
+                  <motion.p
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1.4, duration: 0.5 }}
+                    className="text-xs text-zinc-200 mt-1"
+                  >
+                    Sabor: Vainilla Francesa • Decorado con Rosas Frescas
+                  </motion.p>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Floating review card */}
               <motion.div
@@ -213,16 +341,25 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
                   damping: 15,
                   delay: 0.6,
                 }}
-                className="absolute top-8 -right-4 glass-panel p-4 rounded-2xl shadow-xl max-w-[200px] border border-white/40 text-left z-20"
+                whileHover={{ scale: 1.02, x: 2 }}
+                className="absolute top-8 -right-4 glass-panel p-4 rounded-2xl shadow-xl max-w-[200px] border border-white/40 text-left z-20 transition-shadow hover:shadow-2xl cursor-default"
                 id="hero-review-floater"
               >
                 <div className="flex items-center space-x-1 mb-1">
                   {[...Array(5)].map((_, i) => (
-                    <span key={i} className="text-amber-400 text-xs">★</span>
+                    <motion.span
+                      key={i}
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 1 + i * 0.12, type: 'spring', stiffness: 300 }}
+                      className="text-amber-400 text-xs"
+                    >
+                      ★
+                    </motion.span>
                   ))}
                 </div>
                 <p className="text-[11px] text-zinc-700 dark:text-zinc-300 font-sans italic leading-tight">
-                  "El sabor es increíblemente suave y la presentación fue perfecta para mi boda civil."
+                  &ldquo;El sabor es increíblemente suave y la presentación fue perfecta para mi boda civil.&rdquo;
                 </p>
                 <span className="block text-[9px] font-mono font-bold mt-2 text-brand-700 dark:text-brand-400">
                   — María José, Novia

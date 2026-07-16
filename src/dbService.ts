@@ -304,6 +304,10 @@ const DEFAULT_CONFIG: AppConfig = {
   seoTitle: 'Maison Rosas | Pastelería de Autor & Repostería Fina',
   seoDescription: 'Deléitate con los pasteles personalizados de Carol Rosas Albines. Modelos exclusivos, ingredientes premium de alta repostería artesanal. Haz tu pedido por WhatsApp.',
   maintenanceMode: false,
+  maintenanceEndTime: '',
+  maintenanceTitle: 'Volveremos muy pronto',
+  maintenanceDescription: 'Estamos horneando nuevas sorpresas para ti. Mientras tanto, todos tus pedidos y operaciones continúan activos. No tienes nada de qué preocuparte.',
+  maintenanceBadge: 'En mantenimiento',
   heroTitle: 'El Arte de Compartir',
   heroDescription: 'Diseños exclusivos creados por Carol Rosas para transformar tus momentos especiales en legados de sabor.',
   heroBadge: 'Por Carol & Edwin Rosas Albines',
@@ -579,20 +583,32 @@ export const dbService = {
   },
 
   async deleteOrder(id: string): Promise<void> {
-    // Orders can be deleted by removing doc (blocked in strict backend, but can be done if needed)
-    // We don't have a direct delete order route in server, let's keep it safe or we can add it if requested.
-    try {
-      await deleteDoc(doc(db, ORDERS_COL, id));
-    } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `${ORDERS_COL}/${id}`);
+    const token = localStorage.getItem('maison_admin_token') || '';
+    const res = await fetch(`/api/admin/orders/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'x-admin-token': token
+      }
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Error al eliminar el pedido en el servidor.');
     }
   },
 
   async updateOrder(order: Order): Promise<void> {
-    try {
-      await setDoc(doc(db, ORDERS_COL, order.id), order);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `${ORDERS_COL}/${order.id}`);
+    const token = localStorage.getItem('maison_admin_token') || '';
+    const res = await fetch('/api/admin/orders/update-full', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-token': token
+      },
+      body: JSON.stringify({ order })
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Error al actualizar el pedido en el servidor.');
     }
   },
 
@@ -730,12 +746,12 @@ export const dbService = {
   },
 
   // Secure Authentication API Proxy Methods
-  async adminLogin(password: string): Promise<{ success: boolean; token?: string; expiresAt?: string; error?: string }> {
+  async adminLogin(password: string, role?: string): Promise<{ success: boolean; token?: string; expiresAt?: string; error?: string }> {
     try {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
+        body: JSON.stringify({ password, role: role || 'admin' })
       });
       const data = await res.json();
       if (res.ok && data.success) {
@@ -787,6 +803,89 @@ export const dbService = {
     }
     localStorage.removeItem('maison_admin_token');
     localStorage.removeItem('maison_admin_logged');
+  },
+
+  // ── Role Passwords Management ──
+  async getRolePasswordsStatus(): Promise<{ success: boolean; roles?: any; credentials_emailed?: boolean; error?: string }> {
+    const token = localStorage.getItem('maison_admin_token') || '';
+    try {
+      const res = await fetch('/api/admin/role-passwords', {
+        headers: { 'x-admin-token': token }
+      });
+      return await res.json();
+    } catch {
+      return { success: false, error: 'Error al obtener estado de contraseñas de roles.' };
+    }
+  },
+
+  async saveRolePasswords(analystPassword: string, stockManagerPassword: string): Promise<{ success: boolean; error?: string }> {
+    const token = localStorage.getItem('maison_admin_token') || '';
+    try {
+      const res = await fetch('/api/admin/role-passwords', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': token
+        },
+        body: JSON.stringify({ analystPassword, stockManagerPassword })
+      });
+      return await res.json();
+    } catch {
+      return { success: false, error: 'Error al guardar contraseñas de roles.' };
+    }
+  },
+
+  // ── Activity Log ──
+  async getActivityLogs(): Promise<{ success: boolean; logs?: any[]; error?: string }> {
+    const token = localStorage.getItem('maison_admin_token') || '';
+    try {
+      const res = await fetch('/api/admin/activity-log', {
+        headers: { 'x-admin-token': token }
+      });
+      return await res.json();
+    } catch {
+      return { success: false, error: 'Error al obtener registro de actividades.' };
+    }
+  },
+
+  // ── Change Admin Master Password ──
+  async changeAdminPassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
+    const token = localStorage.getItem('maison_admin_token') || '';
+    try {
+      const res = await fetch('/api/admin/change-admin-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': token
+        },
+        body: JSON.stringify({ currentPassword, newPassword })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        return { success: true };
+      } else {
+        return { success: false, error: data.error || 'Error al cambiar la contraseña.' };
+      }
+    } catch {
+      return { success: false, error: 'Error de conexión con el servidor.' };
+    }
+  },
+
+  // ── Send One-Time Credentials Email ──
+  async sendCredentialsEmail(): Promise<{ success: boolean; alreadySent?: boolean; message?: string; error?: string }> {
+    const token = localStorage.getItem('maison_admin_token') || '';
+    try {
+      const res = await fetch('/api/admin/send-credentials', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': token
+        }
+      });
+      return await res.json();
+    } catch {
+      return { success: false, error: 'Error al enviar correo de credenciales.' };
+    }
   },
 
   async getCakeStock(): Promise<CakeStock[]> {
@@ -850,6 +949,40 @@ export const dbService = {
       throw new Error(data.error || 'Error al asignar el stock al pedido.');
     }
     return data;
+  },
+
+  // Add a progress photo to an order (routed through server API for Firestore rules compliance)
+  async addProgressPhoto(orderId: string, imageUrl: string, caption: string, stage: string): Promise<void> {
+    const token = localStorage.getItem('maison_admin_token') || '';
+    const res = await fetch('/api/admin/orders/progress-photo', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-token': token
+      },
+      body: JSON.stringify({ orderId, imageUrl, caption, stage })
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Error al agregar foto de progreso en el servidor.');
+    }
+  },
+
+  // Delete a progress photo from an order (routed through server API for Firestore rules compliance)
+  async deleteProgressPhoto(orderId: string, photoId: string): Promise<void> {
+    const token = localStorage.getItem('maison_admin_token') || '';
+    const res = await fetch('/api/admin/orders/delete-progress-photo', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-token': token
+      },
+      body: JSON.stringify({ orderId, photoId })
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Error al eliminar foto de progreso en el servidor.');
+    }
   },
 
   // Upload image directly to Firebase Storage from the browser (persists across server restarts)

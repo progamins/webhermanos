@@ -1,10 +1,36 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Moon, Sun, AlertCircle, ShoppingBag, Eye, LogOut, Cake } from 'lucide-react';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 // Database service & types
 import { dbService, seedDatabaseIfNeeded } from './dbService';
 import { Product, Order, Review, GalleryItem, AppConfig } from './types';
+
+// Google Analytics 4 (lightweight, loads only in production)
+import GoogleAnalytics from './components/GoogleAnalytics';
+
+// ─── Síncrono: Favicon desde localStorage (se ejecuta ANTES del primer render) ───
+function setFaviconFromLocalStorage() {
+  try {
+    const saved = localStorage.getItem('maison_favicon_url');
+    const link = document.getElementById('dynamic-favicon') as HTMLLinkElement;
+    if (!link) return;
+    if (saved) {
+      const cacheBuster = `?v=${Date.now()}`;
+      link.href = saved.split('?')[0] + cacheBuster;
+      link.type = '';
+      link.rel = 'icon';
+    } else {
+      link.href = 'data:,';
+      link.type = '';
+      link.rel = 'icon';
+    }
+  } catch {
+    // localStorage no disponible, ignorar
+  }
+}
+setFaviconFromLocalStorage();
 
 // Eager-loaded components (above the fold)
 import Navbar from './components/Navbar';
@@ -58,6 +84,13 @@ export default function App() {
   // Admin authentication state saved locally
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
 
+  // Maintenance mode
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+
+  // Countdown state
+  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [countdownActive, setCountdownActive] = useState(false);
+
   // Legal modals state
   const [legalModal, setLegalModal] = useState<{ isOpen: boolean; tab: 'terms' | 'privacy' }>({ isOpen: false, tab: 'terms' });
 
@@ -83,19 +116,23 @@ export default function App() {
     // Update document title
     document.title = config.seoTitle || 'Maison Rosas | Pastelería de Autor & Repostería Fina';
 
-    // Update favicon with cache-busting to force browser refresh
+    // Update favicon with cache-busting (only from admin upload, no fallback)
     const faviconLink = document.getElementById('dynamic-favicon') as HTMLLinkElement;
     if (faviconLink) {
       if (config.faviconUrl) {
-        // Add cache-busting query param so the browser re-downloads the favicon
         const cacheBuster = `?v=${Date.now()}`;
         const cleanUrl = config.faviconUrl.split('?')[0];
         faviconLink.href = cleanUrl + cacheBuster;
-        faviconLink.type = ''; // Let browser auto-detect type from URL
+        faviconLink.type = '';
+        faviconLink.rel = 'icon';
+        // Persistir en localStorage para que aparezca en la próxima carga
+        try { localStorage.setItem('maison_favicon_url', cleanUrl); } catch {}
       } else {
-        // Reset to default favicon when none is configured
-        faviconLink.href = '/favicon.svg';
-        faviconLink.type = 'image/svg+xml';
+        faviconLink.href = 'data:,';
+        faviconLink.type = '';
+        faviconLink.rel = 'icon';
+        // Limpiar localStorage cuando se elimina el favicon
+        try { localStorage.removeItem('maison_favicon_url'); } catch {}
       }
     }
   }, [config]);
@@ -123,6 +160,19 @@ export default function App() {
       setGalleryItems(fetchedGallery);
       setConfig(fetchedConfig);
       setOrders(fetchedOrders);
+      // Check maintenance mode from config
+      if (fetchedConfig?.maintenanceMode) {
+        setMaintenanceMode(true);
+        // Initialize countdown if end time is set
+        if (fetchedConfig?.maintenanceEndTime) {
+          const end = new Date(fetchedConfig.maintenanceEndTime).getTime();
+          const now = Date.now();
+          if (end > now) {
+            setCountdownActive(true);
+            calcCountdown(end);
+          }
+        }
+      }
       setLoadingProgress(85);
     } catch (error) {
       console.error('Error fetching data from Firestore:', error);
@@ -161,6 +211,13 @@ export default function App() {
     const checkSessionToken = async () => {
       const isValid = await dbService.adminVerifyToken();
       setIsAdminLoggedIn(isValid);
+      // Restore role from localStorage on page reload
+      if (isValid) {
+        const savedRole = localStorage.getItem('maison_admin_role') as 'admin' | 'analyst' | 'stock_manager' | null;
+        if (savedRole) {
+          setAdminRole(savedRole);
+        }
+      }
     };
     checkSessionToken();
 
@@ -250,6 +307,30 @@ export default function App() {
     };
   }, []);
 
+  // Countdown timer effect
+  const calcCountdown = (endTime: number) => {
+    const diff = Math.max(0, endTime - Date.now());
+    setCountdown({
+      days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+      minutes: Math.floor((diff / (1000 * 60)) % 60),
+      seconds: Math.floor((diff / 1000) % 60),
+    });
+  };
+
+  useEffect(() => {
+    if (!countdownActive || !config?.maintenanceEndTime) return;
+    const end = new Date(config.maintenanceEndTime).getTime();
+    if (end <= Date.now()) {
+      setCountdownActive(false);
+      return;
+    }
+    const interval = setInterval(() => {
+      calcCountdown(end);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [countdownActive, config?.maintenanceEndTime]);
+
   // Theme updates
   useEffect(() => {
     const root = window.document.documentElement;
@@ -273,14 +354,19 @@ export default function App() {
     }
   };
 
-  const handleAdminLogin = () => {
+  const [adminRole, setAdminRole] = useState<'admin' | 'analyst' | 'stock_manager'>('admin');
+
+  const handleAdminLogin = (role: 'admin' | 'analyst' | 'stock_manager') => {
     setIsAdminLoggedIn(true);
+    setAdminRole(role);
   };
 
   const handleAdminLogout = async () => {
     await dbService.adminLogout();
+    localStorage.removeItem('maison_admin_role');
     setIsAdminLoggedIn(false);
-    handleViewChange('inicio');
+    setAdminRole('admin');
+    handleViewChange('admin'); // Redirect to admin login screen, not homepage
   };
 
   const scrollToSection = (sectionId: string) => {
@@ -452,9 +538,221 @@ export default function App() {
     );
   }
 
+  // Maintenance Mode Screen (clients see this, admin can still access /admin to disable it)
+  if (maintenanceMode && currentView !== 'admin') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#FFF9F5] via-white to-[#FFF9F5] flex items-center justify-center p-4 overflow-hidden">
+        <GoogleAnalytics />
+        
+        {/* Decorative floating particles */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 rounded-full bg-brand-200/30"
+              style={{
+                left: `${10 + i * 18}%`,
+                top: `${15 + (i % 3) * 30}%`,
+              }}
+              animate={{
+                y: [0, -20, 0],
+                opacity: [0, 0.5, 0],
+              }}
+              transition={{
+                duration: 3 + i * 0.5,
+                repeat: Infinity,
+                delay: i * 0.6,
+                ease: 'easeInOut',
+              }}
+            />
+          ))}
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-lg w-full text-center space-y-5 relative z-10"
+        >
+          {/* Lottie 3D Cake Animation */}
+          <div className="relative flex justify-center">
+            <motion.div
+              animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.08, 0.15] }}
+              transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
+              className="absolute w-80 h-80 rounded-full bg-brand-200/40 blur-3xl"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.7, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="w-72 h-72 relative"
+            >
+              <DotLottieReact
+                src="/cake.lottie"
+                autoplay
+                loop
+                style={{ width: '100%', height: '100%' }}
+              />
+            </motion.div>
+          </div>
+
+          <div className="space-y-4">
+            {/* Badge */}
+            <motion.span
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="inline-block px-4 py-1.5 bg-brand-50 border border-brand-200 rounded-full text-[10px] font-mono font-semibold text-brand-700 tracking-[0.2em] uppercase"
+            >
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse mr-2 align-middle" />
+              {config?.maintenanceBadge || 'En mantenimiento'}
+            </motion.span>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="font-serif text-3xl sm:text-4xl font-bold text-zinc-900 leading-tight"
+            >
+              {config?.maintenanceTitle || 'Volveremos muy pronto'}
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35 }}
+              className="text-sm sm:text-base text-zinc-500 leading-relaxed font-sans max-w-sm mx-auto"
+            >
+              {config?.maintenanceDescription ? (
+                <>{config.maintenanceDescription}</>
+              ) : (
+                <>
+                  Estamos horneando nuevas sorpresas para ti. Mientras tanto,
+                  <span className="text-zinc-700 font-medium"> todos tus pedidos y operaciones continúan activos</span>.
+                  No tienes nada de qué preocuparte.
+                </>
+              )}
+            </motion.p>
+
+            {/* Countdown Timer */}
+            {countdownActive && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="flex items-center justify-center gap-3"
+              >
+                {[
+                  { label: 'Días', value: countdown.days },
+                  { label: 'Horas', value: countdown.hours },
+                  { label: 'Min', value: countdown.minutes },
+                  { label: 'Seg', value: countdown.seconds },
+                ].map((unit, i) => (
+                  <div key={unit.label} className="flex items-center gap-3">
+                    <div className="text-center">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white/80 backdrop-blur-sm border border-brand-100 rounded-2xl flex items-center justify-center shadow-sm">
+                        <span className="font-mono text-lg sm:text-xl font-bold text-brand-700 tabular-nums">
+                          {String(unit.value).padStart(2, '0')}
+                        </span>
+                      </div>
+                      <span className="block text-[9px] font-mono font-semibold text-zinc-400 uppercase tracking-wider mt-1">
+                        {unit.label}
+                      </span>
+                    </div>
+                    {i < 3 && <span className="text-lg font-mono font-bold text-brand-300 -mt-5">:</span>}
+                  </div>
+                ))}
+              </motion.div>
+            )}
+
+            {/* Reassurance cards */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.45 }}
+              className="grid grid-cols-2 gap-2 max-w-xs mx-auto"
+            >
+              <div className="bg-white/70 backdrop-blur-sm border border-brand-100 rounded-xl p-3 text-center">
+                <span className="block text-lg mb-0.5">✅</span>
+                <span className="text-[10px] font-mono font-semibold text-zinc-600 uppercase tracking-wide">
+                  Pedidos guardados
+                </span>
+              </div>
+              <div className="bg-white/70 backdrop-blur-sm border border-brand-100 rounded-xl p-3 text-center">
+                <span className="block text-lg mb-0.5">🔄</span>
+                <span className="text-[10px] font-mono font-semibold text-zinc-600 uppercase tracking-wide">
+                  Operaciones activas
+                </span>
+              </div>
+            </motion.div>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.55 }}
+            className="space-y-4 pt-1"
+          >
+            {/* Contact Info */}
+            <div className="text-xs text-zinc-400 font-sans">
+              <p>📧 {config?.email || 'edwinraulrosasalbines@gmail.com'}</p>
+              <p>📱 {config?.whatsappNumber ? `+${config.whatsappNumber}` : '+51 902 568 187'}</p>
+            </div>
+
+            {/* Social Media Buttons */}
+            <div className="flex items-center justify-center gap-3">
+              {/* Facebook */}
+              <a
+                href={config?.facebookUrl || 'https://facebook.com/edwinraul.rosasalbines'}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 px-4 py-2.5 bg-[#1877F2] hover:bg-[#166fe5] text-white rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.97]"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                <span>Facebook</span>
+              </a>
+              {/* Instagram */}
+              <a
+                href={config?.instagramUrl || 'https://instagram.com/edwinraulrosas741/'}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-tr from-[#f58529] via-[#dd2a7b] to-[#515bd4] hover:opacity-90 text-white rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.97]"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                <span>Instagram</span>
+              </a>
+              {/* WhatsApp */}
+              <a
+                href={`https://wa.me/${config?.whatsappNumber || '51902568187'}?text=Hola%20Carol%20y%20Edwin%2C%20quiero%20hacer%20un%20pedido`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 px-4 py-2.5 bg-[#25D366] hover:bg-[#20ba5a] text-white rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.97]"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                <span>WhatsApp</span>
+              </a>
+            </div>
+          </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+            className="text-[11px] text-zinc-400 font-serif italic"
+          >
+            — Con amor, Carol & Edwin Rosas Albines
+          </motion.p>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-brand-bg text-zinc-800 transition-colors duration-300 relative selection:bg-brand-100 selection:text-brand-900 dot-pattern">
       
+      {/* Google Analytics 4 */}
+      <GoogleAnalytics />
+
       {/* Main Sticky Header Navbar */}
       <Navbar
         currentView={currentView}
@@ -490,11 +788,13 @@ export default function App() {
                   openingHours: 'Lunes a Sábado: 9:00 AM - 7:00 PM',
                   seoTitle: 'Maison Rosas',
                   seoDescription: 'Pastelería fina',
-                  maintenanceMode: false
+                  maintenanceMode: false,
+                  maintenanceEndTime: ''
                 }}
                 onRefreshData={loadDataFromFirestore}
                 onLoginSuccess={handleAdminLogin}
                 isLoggedIn={isAdminLoggedIn}
+                adminRole={adminRole}
               />
             </Suspense>
           </motion.main>

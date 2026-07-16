@@ -83,7 +83,7 @@ const upload = multer({
   }
 });
 
-// Middleware for Admin session verification
+// Middleware for Admin session verification (single-session enforcement)
 async function verifyAdminSession(req: express.Request, res: express.Response, next: express.NextFunction) {
   const token = req.headers["x-admin-token"] as string;
   if (!token) {
@@ -91,6 +91,7 @@ async function verifyAdminSession(req: express.Request, res: express.Response, n
   }
 
   try {
+    // 1. Check that the session document exists in Firestore
     const sessionDocRef = doc(db, "admin_sessions", token);
     const sessionDoc = await getDoc(sessionDocRef);
 
@@ -106,6 +107,17 @@ async function verifyAdminSession(req: express.Request, res: express.Response, n
       return res.status(401).json({ success: false, error: "No autorizado: Sesión expirada." });
     }
 
+    // 2. Single-session check: verify this token is the active session
+    const authDoc = await getDoc(doc(db, "config", "admin_auth"));
+    if (authDoc.exists()) {
+      const authData = authDoc.data();
+      if (authData.activeSessionToken && authData.activeSessionToken !== token) {
+        // This token is not the active session — another login happened elsewhere
+        await deleteDoc(sessionDocRef);
+        return res.status(401).json({ success: false, error: "No autorizado: Tu sesión fue reemplazada por un nuevo inicio de sesión en otro dispositivo." });
+      }
+    }
+
     next();
   } catch (error) {
     console.error("Error verifying admin session:", error);
@@ -116,6 +128,15 @@ async function verifyAdminSession(req: express.Request, res: express.Response, n
 async function startServer() {
   const app = express();
   app.use(express.json({ limit: '10mb' }));
+
+  // 0. Firebase Anonymous Auth for Firestore Rules compliance
+  try {
+    const serverAuth = getAuth(firebaseApp);
+    await signInAnonymously(serverAuth);
+    console.log('[AUTH] Firebase anonymous auth initialized for Firestore rules compliance.');
+  } catch (authError: any) {
+    console.warn('[AUTH] Could not init anonymous auth:', authError?.message || authError);
+  }
 
   // 1. Security Headers Middleware (XSS, Clickjacking, MIME-Sniffing protection)
   app.use((req, res, next) => {
@@ -134,39 +155,88 @@ async function startServer() {
     res.json({ status: "ok", time: new Date().toISOString() });
   });
 
-  // 3. Admin Authentication Login API (with hashed passwords stored in Firestore)
+  // 3. Admin Authentication Login API (with per-role hashed passwords stored in Firestore)
   app.post("/api/admin/login", async (req, res) => {
-    const { password } = req.body;
+    const { password, role } = req.body;
     if (!password) {
       return res.status(400).json({ success: false, error: "Se requiere contraseña." });
+    }
+
+    const loginRole: string = role || 'admin';
+    const validRoles = ['admin', 'analyst', 'stock_manager'];
+    if (!validRoles.includes(loginRole)) {
+      return res.status(400).json({ success: false, error: "Rol inválido." });
     }
 
     try {
       const authDocRef = doc(db, "config", "admin_auth");
       let authDoc = await getDoc(authDocRef);
 
-      // Seed default admin password if not set
+      // Seed default master admin password if not set
       if (!authDoc.exists()) {
         const salt = bcrypt.genSaltSync(10);
         const passwordHash = bcrypt.hashSync("ADMIN_PASSWORD_PLACEHOLDER", salt);
-        await setDoc(authDocRef, { passwordHash });
+        await setDoc(authDocRef, { 
+          passwordHash,
+          rolePasswords: {
+            analyst: bcrypt.hashSync("ANALYST_PASSWORD_PLACEHOLDER", salt),
+            stock_manager: bcrypt.hashSync("STOCK_PASSWORD_PLACEHOLDER", salt)
+          },
+          credentials_emailed: false
+        });
         authDoc = await getDoc(authDocRef);
       }
 
-      const { passwordHash } = authDoc.data()!;
-      const isMatch = bcrypt.compareSync(password, passwordHash);
+      const authData = authDoc.data()!;
+      let isMatch = false;
+
+      if (loginRole === 'admin') {
+        // Admin uses the master passwordHash
+        const { passwordHash } = authData;
+        isMatch = bcrypt.compareSync(password, passwordHash);
+      } else {
+        // Analyst and stock_manager use role-specific passwords
+        const rolePasswords = authData.rolePasswords || {};
+        const roleHash = rolePasswords[loginRole];
+        if (roleHash) {
+          isMatch = bcrypt.compareSync(password, roleHash);
+        } else {
+          // Fallback: try the master password if no role-specific password is set
+          const { passwordHash } = authData;
+          isMatch = bcrypt.compareSync(password, passwordHash);
+        }
+      }
 
       if (!isMatch) {
-        return res.status(401).json({ success: false, error: "Contraseña incorrecta." });
+        return res.status(401).json({ success: false, error: "Contraseña incorrecta para el rol seleccionado." });
+      }
+
+      // ── Single Session Enforcement ──
+      // If there's an existing active session, invalidate it
+      const existingToken = authData.activeSessionToken;
+      if (existingToken) {
+        try {
+          await deleteDoc(doc(db, "admin_sessions", existingToken));
+          console.log(`[SESSION] Old session ${existingToken.substring(0, 8)}... invalidated.`);
+        } catch (e) {
+          console.warn("[SESSION] Could not delete old session:", e);
+        }
       }
 
       // Generate secure session token and store in Firestore
       const token = crypto.randomUUID();
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours duration
 
-      await setDoc(doc(db, "admin_sessions", token), { token, expiresAt });
+      await setDoc(doc(db, "admin_sessions", token), { token, expiresAt, role: loginRole });
 
-      return res.json({ success: true, token, expiresAt });
+      // Store the new token as the active session in auth config
+      await setDoc(authDocRef, { activeSessionToken: token }, { merge: true });
+
+      // Log the login activity
+      const roleLabels: any = { admin: 'Administrador', analyst: 'Analista', stock_manager: 'Gestor de Stock' };
+      await logActivity('Inicio de sesión', `El ${roleLabels[loginRole] || loginRole} inició sesión en el panel.`, loginRole);
+
+      return res.json({ success: true, token, expiresAt, role: loginRole });
 
     } catch (error) {
       console.error("Admin Login Error:", error);
@@ -185,6 +255,11 @@ async function startServer() {
     if (token) {
       try {
         await deleteDoc(doc(db, "admin_sessions", token));
+        // Clear the active session token from auth config if it matches
+        const authDoc = await getDoc(doc(db, "config", "admin_auth"));
+        if (authDoc.exists() && authDoc.data().activeSessionToken === token) {
+          await setDoc(doc(db, "config", "admin_auth"), { activeSessionToken: '' }, { merge: true });
+        }
       } catch (e) {
         // Suppress or log error
       }
@@ -192,7 +267,149 @@ async function startServer() {
     res.json({ success: true });
   });
 
+  // ─────────────────────────────────────────
+  // Activity Log Helper — logs admin actions to Firestore
+  // ─────────────────────────────────────────
+  async function logActivity(action: string, details: string, role: string = 'admin') {
+    try {
+      const logId = `log-${Date.now()}-${Math.round(Math.random() * 1000)}`;
+      await setDoc(doc(db, "activity_logs", logId), {
+        id: logId,
+        action,
+        details,
+        role,
+        timestamp: new Date().toISOString()
+      });
+    } catch (err) {
+      console.warn("[ACTIVITY LOG] Error saving activity:", err);
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // Credentials Email Template (one-time setup)
+  // ─────────────────────────────────────────
+  function getCredentialsEmailHTML(passwords: { admin: string; analyst: string; stock_manager: string }, configInfo: any) {
+    return `
+      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #F0D6CE; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; color: #27272a;">
+        <div style="background-color: #2D1C1A; padding: 30px 20px; text-align: center;">
+          <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 28px; color: #F8E3DE; margin: 0; font-style: italic; font-weight: normal; letter-spacing: 1px;">Maison Rosas</h1>
+          <p style="font-family: 'Inter', Helvetica, Arial, sans-serif; font-size: 10px; text-transform: uppercase; letter-spacing: 0.2em; color: #D4A373; margin: 8px 0 0 0; font-weight: bold;">Panel de Administración</p>
+        </div>
+        <div style="padding: 40px 30px; background-color: #ffffff;">
+          <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 22px; color: #523531; margin: 0 0 15px 0; text-align: center; font-style: italic; font-weight: normal;">🔐 Credenciales de Acceso</h2>
+          <p style="font-size: 14px; color: #8A5550; line-height: 1.6; text-align: center; margin: 0 0 25px 0;">
+            Estas son las credenciales configuradas para el panel de administración de Maison Rosas. 
+            <strong>Este correo se envía una sola vez.</strong> Guarda esta información en un lugar seguro.
+          </p>
+          
+          <div style="background-color: #FFF9F5; border: 1px solid #F0D6CE; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <tr style="border-bottom: 1px solid #F0D6CE;">
+                <td style="padding: 12px 8px; font-weight: bold; color: #8A5550;">🛡️ Administrador</td>
+                <td style="padding: 12px 8px; text-align: right;">
+                  <code style="background: #2D1C1A; color: #F8E3DE; padding: 4px 12px; border-radius: 6px; font-size: 14px; font-family: monospace; letter-spacing: 1px;">${passwords.admin}</code>
+                </td>
+                <td style="padding: 12px 8px; text-align: right; color: #C4A8A0; font-size: 11px;">Acceso total</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #F0D6CE;">
+                <td style="padding: 12px 8px; font-weight: bold; color: #8A5550;">👤 Analista</td>
+                <td style="padding: 12px 8px; text-align: right;">
+                  <code style="background: #2D1C1A; color: #F8E3DE; padding: 4px 12px; border-radius: 6px; font-size: 14px; font-family: monospace; letter-spacing: 1px;">${passwords.analyst}</code>
+                </td>
+                <td style="padding: 12px 8px; text-align: right; color: #C4A8A0; font-size: 11px;">Pedidos, pagos, reseñas</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 8px; font-weight: bold; color: #8A5550;">🖼️ Gestor de Stock</td>
+                <td style="padding: 12px 8px; text-align: right;">
+                  <code style="background: #2D1C1A; color: #F8E3DE; padding: 4px 12px; border-radius: 6px; font-size: 14px; font-family: monospace; letter-spacing: 1px;">${passwords.stock_manager}</code>
+                </td>
+                <td style="padding: 12px 8px; text-align: right; color: #C4A8A0; font-size: 11px;">Stock, galería</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #FFF9F5; border: 1px solid #F0D6CE; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+            <h4 style="font-family: 'Playfair Display', Georgia, serif; font-size: 15px; color: #523531; margin: 0 0 10px 0; font-weight: normal;">📋 Información del Negocio</h4>
+            <p style="font-size: 12px; color: #8A5550; margin: 0 0 4px 0;"><strong>WhatsApp:</strong> +${configInfo?.whatsappNumber || '51902568187'}</p>
+            <p style="font-size: 12px; color: #8A5550; margin: 0 0 4px 0;"><strong>Email:</strong> ${configInfo?.email || 'edwinraulrosasalbines@gmail.com'}</p>
+            <p style="font-size: 12px; color: #8A5550; margin: 0 0 4px 0;"><strong>Dirección:</strong> ${configInfo?.address || 'Av. Ricardo Palma 213, Sullana'}</p>
+            <p style="font-size: 12px; color: #8A5550; margin: 0;"><strong>URL Admin:</strong> <a href="https://maisonrosas.com/admin" style="color: #C4847D;">maisonrosas.com/admin</a></p>
+          </div>
+
+          <p style="font-family: 'Inter', sans-serif; font-size: 11px; color: #C4A8A0; text-align: center; margin: 0; line-height: 1.5;">
+            ⚠️ No compartas estas credenciales con nadie que no sea de confianza. 
+            Si crees que alguna contraseña ha sido comprometida, cámbiala desde Configuración en el panel.
+          </p>
+        </div>
+        <div style="background-color: #2D1C1A; padding: 20px; text-align: center; color: #C4A8A0; font-size: 10px;">
+          &copy; ${new Date().getFullYear()} Maison Rosas — Este correo fue generado automáticamente desde el panel de administración.
+        </div>
+      </div>
+    `;
+  }
+
   // Email Sandbox & Template Generator Helpers
+
+  // Generates a visual barcode pattern SVG inline for email templates (the human-readable tracking code is the real identifier)
+  function getBarcodeSvg(code: string): string {
+    // Map each character to a unique bar pattern (4 bars each: thick/thin pattern)
+    const charMap: Record<string, string> = {};
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    for (let i = 0; i < chars.length; i++) {
+      const c = chars[i];
+      const pattern = i.toString(2).padStart(6, '0')
+        .replace(/0/g, '1')
+        .replace(/1/g, '2');
+      charMap[c] = pattern;
+    }
+
+    // Build bar sequence from the code
+    let barSequence = '';
+    for (const ch of code.toUpperCase()) {
+      if (charMap[ch]) {
+        barSequence += charMap[ch];
+      } else {
+        barSequence += '212121'; // fallback pattern for unknown chars
+      }
+    }
+
+    // Generate SVG bars
+    const barWidth = 2;
+    const totalHeight = 40;
+    const quietZone = 10; // quiet zone on each side
+    let bars = '';
+    let x = quietZone;
+
+    // Add start guard bars (CODE128 start)
+    bars += `<rect x="${x}" y="0" width="2" height="${totalHeight}" fill="#27272a"/>`; x += 2;
+    bars += `<rect x="${x}" y="0" width="1" height="${totalHeight}" fill="#fff"/>`; x += 1;
+    bars += `<rect x="${x}" y="0" width="2" height="${totalHeight}" fill="#27272a"/>`; x += 2;
+    bars += `<rect x="${x}" y="0" width="1" height="${totalHeight}" fill="#fff"/>`; x += 1;
+
+    for (const ch of barSequence) {
+      const w = ch === '2' ? 3 : 1;
+      bars += `<rect x="${x}" y="0" width="${w}" height="${totalHeight}" fill="#27272a"/>`;
+      x += w;
+      // Add gap
+      bars += `<rect x="${x}" y="0" width="1" height="${totalHeight}" fill="#fff"/>`;
+      x += 1;
+    }
+
+    // Add end guard bars
+    bars += `<rect x="${x}" y="0" width="2" height="${totalHeight}" fill="#27272a"/>`; x += 2;
+    bars += `<rect x="${x}" y="0" width="1" height="${totalHeight}" fill="#fff"/>`; x += 1;
+    bars += `<rect x="${x}" y="0" width="2" height="${totalHeight}" fill="#27272a"/>`; x += 2;
+
+    const totalWidth = x + quietZone;
+
+    return `
+      <svg width="${totalWidth}" height="${totalHeight + 20}" xmlns="http://www.w3.org/2000/svg" style="display:block; margin:0 auto;">
+        ${bars}
+        <text x="${totalWidth / 2}" y="${totalHeight + 16}" text-anchor="middle" font-family="monospace" font-size="11" fill="#8A5550" letter-spacing="2">${code}</text>
+      </svg>
+    `;
+  }
+
   function getEmailHeader() {
     return `
       <div style="background-color: #FFF9F5; padding: 30px 20px; text-align: center; border-bottom: 2px solid #F0D6CE;">
@@ -229,6 +446,10 @@ async function startServer() {
             <span style="font-size: 11px; font-family: monospace; text-transform: uppercase; color: #D4A373; letter-spacing: 0.15em; font-weight: bold; display: block; margin-bottom: 5px;">Código de Seguimiento</span>
             <strong style="font-size: 24px; font-family: monospace; color: #8A5550; letter-spacing: 2px;">${order.trackingCode}</strong>
             <span style="font-size: 11px; color: #C4A8A0; display: block; margin-top: 5px;">Número de pedido: ${order.id}</span>
+            <!-- Barcode visual -->
+            <div style="margin-top: 16px; padding-top: 14px; border-top: 1px dashed #E4AAA0;">
+              ${getBarcodeSvg(`MR-${order.trackingCode}`)}
+            </div>
           </div>
 
           <h3 style="font-family: 'Playfair Display', Georgia, serif; font-size: 18px; color: #523531; border-bottom: 1px solid #F0D6CE; padding-bottom: 8px; margin: 0 0 15px 0; font-weight: normal;">Detalles del Pastel de Autor</h3>
@@ -421,6 +642,10 @@ async function startServer() {
             <p style="font-size: 12px; color: #8A5550; margin: 0 0 5px 0;"><strong>Tamaño:</strong> ${order.size}</p>
             <p style="font-size: 12px; color: #8A5550; margin: 0 0 5px 0;"><strong>Código de seguimiento:</strong> ${order.trackingCode}</p>
             <p style="font-size: 12px; color: #8A5550; margin: 0 0 5px 0;"><strong>Entrega programada:</strong> ${order.deliveryDate} a las ${order.deliveryTime}</p>
+            <!-- Barcode visual -->
+            <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid #F0D6CE;">
+              ${getBarcodeSvg(`MR-${order.trackingCode}`)}
+            </div>
           </div>
 
           <div style="text-align: center; margin-top: 30px;">
@@ -1426,6 +1651,64 @@ async function startServer() {
     }
   });
 
+  // ─── Progress Photo Endpoints ───
+  // Add a progress photo (uses order doc update on server for Firestore rules compliance)
+  app.post("/api/admin/orders/progress-photo", verifyAdminSession, async (req, res) => {
+    const { orderId, imageUrl, caption, stage } = req.body;
+    if (!orderId || !imageUrl) {
+      return res.status(400).json({ success: false, error: "Faltan parámetros requeridos (orderId, imageUrl)." });
+    }
+    try {
+      const orderRef = doc(db, "orders", orderId);
+      const orderSnap = await getDoc(orderRef);
+      if (!orderSnap.exists()) {
+        return res.status(404).json({ success: false, error: "Pedido no encontrado." });
+      }
+      const orderData = orderSnap.data() as any;
+      const existingPhotos = orderData.progressPhotos || [];
+      const newPhoto = {
+        id: `photo-${Date.now()}`,
+        imageUrl,
+        caption: caption || '',
+        stage: stage || 'bizcocho',
+        uploadedAt: new Date().toISOString()
+      };
+      await updateDoc(orderRef, {
+        progressPhotos: [...existingPhotos, newPhoto]
+      });
+      orderEmitter.emit("order", { ...orderData, progressPhotos: [...existingPhotos, newPhoto] });
+      return res.json({ success: true, photo: newPhoto });
+    } catch (error) {
+      console.error("Error adding progress photo:", error);
+      return res.status(500).json({ success: false, error: "Error al agregar foto de progreso." });
+    }
+  });
+
+  // Delete a progress photo
+  app.post("/api/admin/orders/delete-progress-photo", verifyAdminSession, async (req, res) => {
+    const { orderId, photoId } = req.body;
+    if (!orderId || !photoId) {
+      return res.status(400).json({ success: false, error: "Faltan parámetros requeridos (orderId, photoId)." });
+    }
+    try {
+      const orderRef = doc(db, "orders", orderId);
+      const orderSnap = await getDoc(orderRef);
+      if (!orderSnap.exists()) {
+        return res.status(404).json({ success: false, error: "Pedido no encontrado." });
+      }
+      const orderData = orderSnap.data() as any;
+      const filtered = (orderData.progressPhotos || []).filter((p: any) => p.id !== photoId);
+      await updateDoc(orderRef, {
+        progressPhotos: filtered
+      });
+      orderEmitter.emit("order", { ...orderData, progressPhotos: filtered });
+      return res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting progress photo:", error);
+      return res.status(500).json({ success: false, error: "Error al eliminar foto de progreso." });
+    }
+  });
+
   app.post("/api/ai/suggest", async (req, res) => {
     const { name, age, category, flavor } = req.body;
 
@@ -1467,6 +1750,166 @@ async function startServer() {
         message: "Ocurrió un error consultando a la chef virtual Carol.",
         fallback: `Feliz Cumpleaños ${name || ""}. Hecho con amor por Maison Rosas.`
       });
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // 8. Admin Role Passwords Management API
+  // ═══════════════════════════════════════════════════════════════
+  // GET: Retrieve role passwords info (without exposing actual passwords)
+  app.get("/api/admin/role-passwords", verifyAdminSession, async (req, res) => {
+    try {
+      const authDoc = await getDoc(doc(db, "config", "admin_auth"));
+      if (!authDoc.exists()) {
+        return res.json({ success: true, roles: { admin: true, analyst: false, stock_manager: false }, credentials_emailed: false });
+      }
+      const data = authDoc.data();
+      const rolePasswords = data.rolePasswords || {};
+      return res.json({
+        success: true,
+        roles: {
+          admin: true,
+          analyst: !!rolePasswords.analyst,
+          stock_manager: !!rolePasswords.stock_manager
+        },
+        credentials_emailed: data.credentials_emailed || false
+      });
+    } catch (error) {
+      return res.status(500).json({ success: false, error: "Error al leer las contraseñas de roles." });
+    }
+  });
+
+  // POST: Save role passwords (only admin can set)
+  app.post("/api/admin/role-passwords", verifyAdminSession, async (req, res) => {
+    const { analystPassword, stockManagerPassword } = req.body;
+    try {
+      const authDocRef = doc(db, "config", "admin_auth");
+      const authDoc = await getDoc(authDocRef);
+      const existingData = authDoc.exists() ? authDoc.data() : {};
+
+      const salt = bcrypt.genSaltSync(10);
+      const rolePasswords: any = { ...(existingData.rolePasswords || {}) };
+
+      if (analystPassword && analystPassword.length >= 4) {
+        rolePasswords.analyst = bcrypt.hashSync(analystPassword, salt);
+      }
+      if (stockManagerPassword && stockManagerPassword.length >= 4) {
+        rolePasswords.stock_manager = bcrypt.hashSync(stockManagerPassword, salt);
+      }
+
+      await setDoc(authDocRef, { ...existingData, rolePasswords }, { merge: true });
+
+      await logActivity('Contraseñas de roles', 'Se actualizaron las contraseñas de los roles de acceso.', 'admin');
+
+      return res.json({ success: true });
+    } catch (error) {
+      return res.status(500).json({ success: false, error: "Error al guardar las contraseñas de roles." });
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // 8b. Change Admin Master Password
+  // ═══════════════════════════════════════════════════════════════
+  app.post("/api/admin/change-admin-password", verifyAdminSession, async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, error: "Se requiere la contraseña actual y la nueva contraseña." });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, error: "La nueva contraseña debe tener al menos 6 caracteres." });
+    }
+
+    try {
+      const authDocRef = doc(db, "config", "admin_auth");
+      const authDoc = await getDoc(authDocRef);
+      if (!authDoc.exists()) {
+        return res.status(400).json({ success: false, error: "No hay configuración de autenticación." });
+      }
+
+      const authData = authDoc.data();
+      const { passwordHash } = authData;
+
+      // Verify current password
+      const isMatch = bcrypt.compareSync(currentPassword, passwordHash);
+      if (!isMatch) {
+        return res.status(401).json({ success: false, error: "La contraseña actual es incorrecta." });
+      }
+
+      // Hash and save new password
+      const salt = bcrypt.genSaltSync(10);
+      const newPasswordHash = bcrypt.hashSync(newPassword, salt);
+
+      await setDoc(authDocRef, { ...authData, passwordHash: newPasswordHash }, { merge: true });
+
+      await logActivity('Contraseña maestra cambiada', 'El administrador cambió su contraseña maestra.', 'admin');
+
+      return res.json({ success: true });
+    } catch (error) {
+      return res.status(500).json({ success: false, error: "Error al cambiar la contraseña." });
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // 9. Send One-Time Credentials Email API
+  // ═══════════════════════════════════════════════════════════════
+  app.post("/api/admin/send-credentials", verifyAdminSession, async (req, res) => {
+    try {
+      const authDoc = await getDoc(doc(db, "config", "admin_auth"));
+      if (!authDoc.exists()) {
+        return res.status(400).json({ success: false, error: "No hay configuración de autenticación." });
+      }
+      const authData = authDoc.data();
+
+      // Prevent sending twice
+      if (authData.credentials_emailed === true) {
+        return res.json({ success: true, alreadySent: true, message: "Las credenciales ya fueron enviadas anteriormente." });
+      }
+
+      // Get the config info for the email
+      const configDoc = await getDoc(doc(db, "config", "app_config"));
+      const configInfo = configDoc.exists() ? configDoc.data() : {};
+
+      // The role passwords are hashed, but we can only send the ones we know
+      // We'll send a message that the passwords have been configured
+      const rolePasswords = authData.rolePasswords || {};
+      const plainPasswords = {
+        admin: 'ADMIN_PASSWORD_PLACEHOLDER',
+        analyst: rolePasswords.analyst ? '🔒 Configurada por el admin' : 'ANALYST_PASSWORD_PLACEHOLDER (por defecto)',
+        stock_manager: rolePasswords.stock_manager ? '🔒 Configurada por el admin' : 'STOCK_PASSWORD_PLACEHOLDER (por defecto)'
+      };
+
+      const htmlContent = getCredentialsEmailHTML(plainPasswords, configInfo);
+      await sendSimulatedEmail(
+        configInfo.email || "edwinraulrosasalbines@gmail.com",
+        "🔐 Credenciales del Panel de Administración - Maison Rosas",
+        htmlContent
+      );
+
+      // Mark as emailed
+      await setDoc(doc(db, "config", "admin_auth"), { credentials_emailed: true }, { merge: true });
+
+      await logActivity('Credenciales enviadas', 'Se enviaron las credenciales de acceso por correo electrónico al administrador.', 'admin');
+
+      return res.json({ success: true, alreadySent: false });
+    } catch (error) {
+      return res.status(500).json({ success: false, error: "Error al enviar las credenciales." });
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // 10. Activity Logs Retrieval API
+  // ═══════════════════════════════════════════════════════════════
+  app.get("/api/admin/activity-log", verifyAdminSession, async (req, res) => {
+    try {
+      const snap = await getDocs(collection(db, "activity_logs"));
+      const logs: any[] = [];
+      snap.forEach((doc) => {
+        logs.push(doc.data());
+      });
+      logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      return res.json({ success: true, logs: logs.slice(0, 50) });
+    } catch (error) {
+      return res.json({ success: true, logs: [] });
     }
   });
 

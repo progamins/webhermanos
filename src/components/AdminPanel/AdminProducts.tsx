@@ -4,6 +4,8 @@ import { Plus, Edit3, Trash2, ToggleLeft, ToggleRight, X } from 'lucide-react';
 import { Product } from '../../types';
 import { dbService } from '../../dbService';
 import ImageUploader from './ImageUploader';
+import Barcode from '../Barcode';
+import { optimizeImageUrl } from '../../utils/images';
 
 interface AdminProductsProps {
   products: Product[];
@@ -216,8 +218,21 @@ export default function AdminProducts({ products, onRefreshData, showToast }: Ad
             <div key={prod.id} className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800/80 p-5 flex flex-col justify-between"
               id={`admin-product-item-${prod.id}`}>
               <div className="flex space-x-4">
-                <img src={(prod.images && prod.images[0]) || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80'}
-                  alt={prod.name} className="w-16 h-16 rounded-xl object-cover" />
+                <div className="relative">
+                  <img src={optimizeImageUrl((prod.images && prod.images[0]) || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80', 200)}
+                    alt={prod.name} className="w-16 h-16 rounded-xl object-cover" loading="lazy" decoding="async" />
+                  {/* Barcode tiny overlay */}
+                  <div className="absolute -bottom-1 -right-1 bg-white/95 dark:bg-zinc-900/95 rounded-md p-0.5 shadow-sm border border-zinc-100 dark:border-zinc-800">
+                    <Barcode
+                      value={`PROD-${prod.id.slice(-6)}`}
+                      width={1}
+                      height={12}
+                      fontSize={5}
+                      lineColor="#52525b"
+                      margin={0}
+                    />
+                  </div>
+                </div>
                 <div className="flex-1 min-w-0">
                   <span className="text-[9px] font-mono font-bold text-brand-600 dark:text-brand-400 uppercase">{prod.category}</span>
                   <h4 className="font-serif font-bold text-sm text-zinc-900 dark:text-white truncate">{prod.name}</h4>

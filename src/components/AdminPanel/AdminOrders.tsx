@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { X, Plus, Search, Check, Trash2, Pencil, ChevronUp, ChevronDown, ChevronsUpDown, Eye, Download, FilterX, Ban, Save } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Plus, Search, Check, Trash2, Pencil, ChevronUp, ChevronDown, ChevronsUpDown, Eye, Download, FilterX, Ban, Save, Camera, Loader2, Upload } from 'lucide-react';
 import { Order } from '../../types';
 import { dbService } from '../../dbService';
 import { exportOrdersToExcel } from './helpers';
+import Barcode from '../Barcode';
 
 interface AdminOrdersProps {
   orders: Order[];
@@ -106,6 +107,54 @@ export default function AdminOrders({ orders, setOrders, onRefreshData, showToas
     } catch {
       if (setOrders) setOrders(prev);
       showToast('Error al eliminar', 'error', 'Error');
+    }
+  };
+
+  // ── Progress Photos State ──
+  const [photoUploadingId, setPhotoUploadingId] = useState<string | null>(null);
+  const [photoCaption, setPhotoCaption] = useState('');
+  const [photoStage, setPhotoStage] = useState<'bizcocho' | 'decoracion' | 'final'>('bizcocho');
+
+  // Reset photo form when editing a different order
+  useEffect(() => {
+    setPhotoCaption('');
+    setPhotoStage('bizcocho');
+  }, [editingId]);
+
+  const handleUploadProgressPhoto = async (orderId: string) => {
+    const input = document.getElementById(`photo-input-${orderId}`) as HTMLInputElement;
+    if (!input || !input.files || !input.files[0]) {
+      showToast('Selecciona una foto primero.', 'warning', 'Foto requerida');
+      return;
+    }
+    if (!photoCaption) {
+      showToast('Agrega un pie de foto descriptivo.', 'warning', 'Caption requerido');
+      return;
+    }
+    const file = input.files[0];
+    setPhotoUploadingId(orderId);
+    try {
+      const imageUrl = await dbService.uploadImageToStorage(file);
+      await dbService.addProgressPhoto(orderId, imageUrl, photoCaption, photoStage);
+      showToast('Foto de progreso agregada al pedido.', 'success', '📸 Progreso');
+      onRefreshData();
+      setPhotoCaption('');
+      const input = document.getElementById(`photo-input-${orderId}`) as HTMLInputElement;
+      if (input) input.value = '';
+    } catch {
+      showToast('Error al subir la foto.', 'error', 'Error');
+    } finally {
+      setPhotoUploadingId(null);
+    }
+  };
+
+  const handleDeleteProgressPhoto = async (orderId: string, photoId: string) => {
+    try {
+      await dbService.deleteProgressPhoto(orderId, photoId);
+      showToast('Foto de progreso eliminada.', 'info', 'Eliminada');
+      onRefreshData();
+    } catch {
+      showToast('Error al eliminar la foto.', 'error', 'Error');
     }
   };
 
@@ -295,6 +344,9 @@ export default function AdminOrders({ orders, setOrders, onRefreshData, showToas
                   onClick={() => toggleSort('productName')}>
                   Pastel <SortIcon field="productName" />
                 </th>
+                <th className="px-3 py-3 text-center text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider border-r border-zinc-100 dark:border-zinc-800 w-24">
+                  Código
+                </th>
                 <th className="px-3 py-3 text-left text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider border-r border-zinc-100 dark:border-zinc-800">
                   Sabor / Detalles
                 </th>
@@ -353,6 +405,21 @@ export default function AdminOrders({ orders, setOrders, onRefreshData, showToas
                           <span className="block text-[9px] font-mono text-zinc-400 mt-0.5">#{ord.trackingCode || ord.id.slice(0, 8)}</span>
                         </div>
                       )}
+                    </td>
+
+                    {/* Código de Barras */}
+                    <td className="px-3 py-3 border-r border-zinc-100 dark:border-zinc-800/50 text-center align-middle">
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <Barcode
+                          value={`MR-${ord.trackingCode || ord.id.slice(-6)}`}
+                          width={1.5}
+                          height={28}
+                          fontSize={8}
+                          lineColor="#52525b"
+                          margin={0}
+                        />
+                        <span className="text-[7px] font-mono text-zinc-400 tracking-wider">{ord.trackingCode || ord.id.slice(-6)}</span>
+                      </div>
                     </td>
 
                     {/* Sabor / Detalles */}
@@ -434,6 +501,17 @@ export default function AdminOrders({ orders, setOrders, onRefreshData, showToas
                               className="p-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-500 rounded-lg transition-all active:scale-90 cursor-pointer" title="Cancelar edición">
                               <X className="h-3.5 w-3.5" />
                             </button>
+                            {/* Progress Photos Button */}
+                            <button
+                              onClick={() => {
+                                setEditingId(ord.id);
+                                const input = document.getElementById(`photo-input-${ord.id}`) as HTMLInputElement;
+                                if (input) input.click();
+                              }}
+                              className={`p-1.5 rounded-lg transition-all active:scale-90 cursor-pointer ${photoUploadingId === ord.id ? 'bg-brand-100 text-brand-500' : 'bg-purple-50 hover:bg-purple-100 text-purple-600'}`}
+                              title="Subir foto del progreso">
+                              {photoUploadingId === ord.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+                            </button>
                           </>
                         ) : (
                           <button onClick={() => { setEditingId(ord.id); setEditData({}); }}
@@ -460,6 +538,79 @@ export default function AdminOrders({ orders, setOrders, onRefreshData, showToas
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
+
+                      {/* Progress Photos Section (visible when editing) */}
+                      {isEditing && (
+                        <div className="mt-3 pt-3 border-t border-dashed border-purple-200 dark:border-purple-900/30">
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <Camera className="h-3 w-3 text-purple-500" />
+                            <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-purple-600">Fotos del Progreso</span>
+                          </div>
+
+                          {/* Existing photos */}
+                          {ord.progressPhotos && ord.progressPhotos.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {ord.progressPhotos.map((photo) => (
+                                <div key={photo.id} className="relative group/photo">
+                                  <div className="w-14 h-14 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700">
+                                    <img src={photo.imageUrl} alt={photo.caption} className="w-full h-full object-cover" />
+                                  </div>
+                                  <div className="absolute -top-1.5 -right-1.5 opacity-0 group-hover/photo:opacity-100 transition-opacity">
+                                    <button
+                                      onClick={() => handleDeleteProgressPhoto(ord.id, photo.id)}
+                                      className="p-0.5 bg-red-500 text-white rounded-full shadow-sm hover:bg-red-600 cursor-pointer"
+                                      title="Eliminar foto">
+                                      <X className="h-2.5 w-2.5" />
+                                    </button>
+                                  </div>
+                                  <span className="block text-[6px] font-mono text-zinc-400 text-center mt-0.5 truncate max-w-14">{photo.stage}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Upload form */}
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              id={`photo-input-${ord.id}`}
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                if (e.target.files?.[0]) {
+                                  setPhotoCaption(`Progreso: ${photoStage}`);
+                                  handleUploadProgressPhoto(ord.id);
+                                }
+                              }}
+                            />
+                            <input
+                              type="text"
+                              placeholder="¿Qué se muestra?"
+                              value={photoCaption}
+                              onChange={(e) => setPhotoCaption(e.target.value)}
+                              className="flex-1 px-2 py-1 bg-purple-50/50 border border-purple-200 rounded-md text-[9px] placeholder-zinc-400 focus:outline-none focus:border-purple-400"
+                            />
+                            <select
+                              value={photoStage}
+                              onChange={(e) => setPhotoStage(e.target.value as any)}
+                              className="px-1.5 py-1 bg-purple-50/50 border border-purple-200 rounded-md text-[8px] font-mono text-zinc-600 focus:outline-none cursor-pointer">
+                              <option value="bizcocho">Bizcocho</option>
+                              <option value="decoracion">Decoración</option>
+                              <option value="final">Final</option>
+                            </select>
+                            <button
+                              onClick={() => {
+                                const input = document.getElementById(`photo-input-${ord.id}`) as HTMLInputElement;
+                                if (input) input.click();
+                              }}
+                              disabled={photoUploadingId === ord.id}
+                              className="p-1.5 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 text-white rounded-md transition-colors cursor-pointer"
+                              title="Subir foto">
+                              {photoUploadingId === ord.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );

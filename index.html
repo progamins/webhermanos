@@ -11,8 +11,13 @@
     <meta name="author" content="Carol & Edwin Rosas Albines - Maison Rosas" />
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#C4847D" />
-    <!-- 🔧 CAMBIA ESTA URL por tu dominio real al desplegar -->
-    <!-- <link rel="canonical" href="https://tudominio.com/" /> -->
+    <!-- URL Canónica para SEO (actualizar al desplegar) -->
+    <link rel="canonical" href="https://maisonrosas.com/" />
+    <link rel="alternate" href="https://maisonrosas.com/" hreflang="es-PE" />
+    <link rel="alternate" href="https://maisonrosas.com/" hreflang="x-default" />
+
+    <!-- Sitemap -->
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
 
     <!-- Open Graph / Social Sharing -->
     <meta property="og:type" content="website" />
@@ -32,14 +37,20 @@
     <meta name="twitter:description" content="Pasteles personalizados de diseño exclusivo en Sullana, Piura." />
     <meta name="twitter:image" content="https://images.unsplash.com/photo-1535141192574-5d4897c13636?w=1200&auto=format&fit=crop&q=80" />
 
-    <!-- Dynamic Favicon (overwritten by App.tsx from Firestore config) -->
-    <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Dynamic Favicon (set exclusively by App.tsx from Firestore config) -->
+    <link id="dynamic-favicon" rel="icon" />
 
     <!-- Preconnect to performance-critical origins -->
     <link rel="preconnect" href="https://firestore.googleapis.com" />
     <link rel="preconnect" href="https://firebasestorage.googleapis.com" />
     <link rel="preconnect" href="https://images.unsplash.com" />
     <link rel="dns-prefetch" href="https://images.unsplash.com" />
+
+    <!-- Google Analytics 4 (configurado via VITE_GA_MEASUREMENT_ID) -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+    </script>
 
     <!-- Manifest for PWA support -->
     <link rel="manifest" href="/manifest.json" />

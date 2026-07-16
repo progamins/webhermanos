@@ -4,6 +4,7 @@ import { Image, Plus, Edit3, Trash2, X, Sparkles } from 'lucide-react';
 import { GalleryItem, AppConfig } from '../../types';
 import { dbService } from '../../dbService';
 import ImageUploader from './ImageUploader';
+import { optimizeImageUrl } from '../../utils/images';
 
 interface AdminGalleryProps {
   galleryItems: GalleryItem[];
@@ -143,8 +144,8 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
               <div className="space-y-1.5">
                 <span className="text-[9px] font-mono uppercase text-zinc-400 block font-semibold">Vista Previa:</span>
                 <div className="aspect-[4/3] w-full bg-zinc-100 dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
-                  {heroImage ? <img src={heroImage} alt="Vista previa" className="w-full h-full object-cover" referrerPolicy="no-referrer"
-                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1535141192574-5d4897c13636?w=600&auto=format&fit=crop&q=80'; }} />
+                  {heroImage ? <img src={optimizeImageUrl(heroImage, 600)} alt="Vista previa" className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" decoding="async"
+                    onError={(e) => { (e.target as HTMLImageElement).src = optimizeImageUrl('https://images.unsplash.com/photo-1535141192574-5d4897c13636?w=600&auto=format&fit=crop&q=80', 600); }} />
                     : <div className="flex items-center justify-center h-full text-zinc-400 text-xs font-mono">Sin imagen configurada</div>}
                 </div>
               </div>
@@ -176,8 +177,8 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
               <div className="space-y-1.5">
                 <span className="text-[9px] font-mono uppercase text-zinc-400 block font-semibold">Vista Previa:</span>
                 <div className="aspect-[4/3] w-full bg-zinc-100 dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
-                  {aboutImage ? <img src={aboutImage} alt="Vista previa" className="w-full h-full object-cover" referrerPolicy="no-referrer"
-                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80'; }} />
+                  {aboutImage ? <img src={optimizeImageUrl(aboutImage, 800)} alt="Vista previa" className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" decoding="async"
+                    onError={(e) => { (e.target as HTMLImageElement).src = optimizeImageUrl('https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80', 800); }} />
                     : <div className="flex items-center justify-center h-full text-zinc-400 text-xs font-mono">Sin imagen configurada</div>}
                 </div>
               </div>
@@ -283,7 +284,7 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="admin-gallery-list">
           {galleryItems.map((item) => (
             <div key={item.id} className="group relative rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 aspect-[4/3]">
-              <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              <img src={optimizeImageUrl(item.imageUrl, 800)} alt={item.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" decoding="async" />
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-brand-300 font-bold">{item.category}</span>
                 <h4 className="text-sm font-serif font-semibold text-white">{item.title}</h4>

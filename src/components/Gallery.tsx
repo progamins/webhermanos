@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Calendar, Layers, Eye } from 'lucide-react';
 import { GalleryItem } from '../types';
+import { optimizeImageUrl } from '../utils/images';
 
 interface GalleryProps {
   galleryItems: GalleryItem[];
@@ -74,7 +75,7 @@ export default function Gallery({ galleryItems }: GalleryProps) {
                 id={`gallery-card-${item.id}`}
               >
                 <img
-                  src={item.imageUrl}
+                  src={optimizeImageUrl(item.imageUrl, 800)}
                   alt={item.title}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   id={`gallery-img-${item.id}`}
@@ -161,7 +162,7 @@ function GalleryLightbox({ item, onClose }: GalleryLightboxProps) {
         {/* Image side */}
         <div className="md:w-2/3 aspect-square md:aspect-auto md:h-[70vh] bg-zinc-900/50 relative">
           <img
-            src={item.imageUrl}
+            src={optimizeImageUrl(item.imageUrl, 1200)}
             alt={item.title}
             className="w-full h-full object-cover"
             id="lightbox-main-img"

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Printer, CheckCircle2, ShoppingBag, Calendar, Phone, Mail, Award, Download, Loader2 } from 'lucide-react';
 import { Order } from '../types';
 import html2canvas from 'html2canvas';
+import Barcode from './Barcode';
 
 interface VoucherModalProps {
   order: Order | null;
@@ -240,13 +241,19 @@ export default function VoucherModal({ order, isOpen, onClose }: VoucherModalPro
                 ¡Gracias por permitirnos endulzar tu mesa familiar! Sullana, Piura.
               </div>
 
-              {/* Fake aesthetic barcode */}
+              {/* Real scannable barcode */}
               <div className="flex flex-col items-center pt-2 select-none">
-                <div className="h-6 w-48 bg-zinc-800 flex justify-between px-2 items-center text-[5px] text-white font-mono tracking-widest overflow-hidden opacity-85">
-                  ||||| | |||| ||| | || ||||| ||| ||| | |||| || ||| || ||||
-                </div>
-                <span className="text-[8px] font-mono text-zinc-400 mt-1 uppercase tracking-widest">
-                  *MR-{order.trackingCode}*
+                <Barcode
+                  value={`MR-${order.trackingCode}-${order.id.slice(-4)}`}
+                  width={2}
+                  height={50}
+                  fontSize={10}
+                  lineColor="#27272a"
+                  background="transparent"
+                  margin={0}
+                />
+                <span className="text-[8px] font-mono text-zinc-400 mt-0.5 uppercase tracking-widest">
+                  *{order.trackingCode}*
                 </span>
               </div>
             </div>

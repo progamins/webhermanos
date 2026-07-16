@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Plus, Layers, Edit3, Trash2, Package, Check, AlertTriangle } from 'lucide-react';
 import { Product, Order } from '../../types';
 import { dbService } from '../../dbService';
+import Barcode from '../Barcode';
+import { optimizeImageUrl } from '../../utils/images';
 
 interface AdminStockProps {
   products: Product[];
@@ -271,8 +273,8 @@ export default function AdminStock({ products, orders, onRefreshData, showToast 
             return (
               <div key={item.id} className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800/80 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                 <div className="aspect-[4/3] bg-zinc-100 dark:bg-zinc-950 relative overflow-hidden">
-                  <img src={item.imageUrl || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80'}
-                    alt={item.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  <img src={optimizeImageUrl(item.imageUrl || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80', 600)}
+                    alt={item.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" decoding="async" />
                   <div className="absolute top-3 right-3">
                     <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold font-mono ${isLowStock ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'}`}>
                       {item.quantity} uds.
@@ -280,9 +282,23 @@ export default function AdminStock({ products, orders, onRefreshData, showToast 
                   </div>
                 </div>
                 <div className="p-5 space-y-3">
-                  <div>
-                    <h4 className="font-serif font-bold text-zinc-900 dark:text-white text-sm">{item.name}</h4>
-                    <span className="text-[10px] text-zinc-400 font-mono">{item.flavor} • {item.size}</span>
+                  <div className="flex items-start justify-between">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-serif font-bold text-zinc-900 dark:text-white text-sm">{item.name}</h4>
+                      <span className="text-[10px] text-zinc-400 font-mono">{item.flavor} • {item.size}</span>
+                    </div>
+                    {/* Barcode */}
+                    <div className="flex flex-col items-center ml-2 shrink-0">
+                      <Barcode
+                        value={`STK-${item.id.slice(-8)}`}
+                        width={1.2}
+                        height={24}
+                        fontSize={7}
+                        lineColor="#71717a"
+                        margin={0}
+                      />
+                      <span className="text-[6px] font-mono text-zinc-400 mt-0.5">{item.id.slice(-8)}</span>
+                    </div>
                   </div>
                   {item.notes && <p className="text-[10px] text-zinc-500 italic">{item.notes}</p>}
                   <div className="flex justify-between items-center pt-2 border-t border-zinc-100 dark:border-zinc-800">
