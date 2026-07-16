@@ -1,3 +1,5 @@
+/* ============= FONT LOADING OPTIMIZED ============= */
+/* Use font-display: swap and preconnect */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
@@ -42,11 +44,19 @@ section[id], footer {
   content-visibility: visible;
 }
 
+/* Preload hint for the LCP image */
+#hero-cake-image {
+  contain: layout style paint;
+}
+
 /* Set base font configurations to enforce artisanal aesthetic */
 html, body {
   font-family: "Inter", system-ui, sans-serif;
   background-color: #FFF9F5;
   color: #27272a; /* zinc-800 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -92,6 +102,19 @@ h1, h2, h3, h4, h5, h6 {
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.1);
 }
 
+/* Reducir backdrop-filter en mobile para mejorar rendimiento */
+@media (max-width: 768px) {
+  .glass-card, .glass-panel {
+    backdrop-filter: blur(8px) saturate(120%);
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
+  }
+  
+  .dark .glass-card, .dark .glass-panel {
+    backdrop-filter: blur(8px) saturate(120%);
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
+  }
+}
+
 /* Premium Liquid Glass styling */
 .liquid-glass {
   background: linear-gradient(
@@ -122,6 +145,19 @@ h1, h2, h3, h4, h5, h6 {
     0 12px 40px 0 rgba(0, 0, 0, 0.4),
     inset 0 1px 2px 0 rgba(255, 255, 255, 0.15),
     inset 0 -1px 3px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* Reducir liquid-glass en mobile */
+@media (max-width: 768px) {
+  .liquid-glass {
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+  }
+  
+  .dark .liquid-glass {
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+  }
 }
 
 /* High-gloss overlay highlights */
@@ -177,6 +213,67 @@ h1, h2, h3, h4, h5, h6 {
     0 0 12px rgba(196, 132, 125, 0.15),
     inset 0 1px 1px rgba(255, 255, 255, 0.05);
   transform: translateY(-0.5px);
+}
+
+/* ============= ACCESIBILIDAD: RESPETAR PREFERENCIAS DE MOVIMIENTO ============= */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  /* Deshabilitar animaciones de motion en componentes */
+  .motion-safe-hidden {
+    display: none !important;
+  }
+}
+
+/* ============= MOBILE PERFORMANCE: REDUCIR COMPLEJIDAD VISUAL ============= */
+@media (max-width: 640px) {
+  /* Reducir blur en mobile para mejorar rendimiento de GPU */
+  [class*="blur-"] {
+    opacity: 0.6;
+  }
+  
+  /* Simplificar animaciones de fondo en mobile */
+  .animate-orb-slow,
+  .animate-orb-slow-reverse,
+  .animate-orb-drift,
+  .animate-light-sweep,
+  .animate-blob-1,
+  .animate-blob-2,
+  .animate-blob-3 {
+    animation-duration: 30s !important; /* Más lentas = menos GPU */
+  }
+  
+  /* Menos partículas decorativas en mobile */
+  .mobile-hidden-particle {
+    display: none;
+  }
+  
+  /* Reducir efectos glass en mobile */
+  .backdrop-blur-xl,
+  .backdrop-blur-lg {
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+  }
+  
+  .backdrop-blur-md,
+  .backdrop-blur-sm {
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+  }
+  
+  /* Aceleración GPU para elementos fijos */
+  .fixed,
+  [class*="sticky"] {
+    transform: translateZ(0);
+    will-change: transform;
+  }
 }
 
 /* ============= LOADING SCREEN ANIMATIONS ============= */
@@ -384,3 +481,10 @@ img[loading="lazy"] {
 img[loading="lazy"]:not([src]) {
   opacity: 0;
 }
+
+/* ============= SWIPER OVERRIDES FOR PERFORMANCE ============= */
+.recent-orders-swiper {
+  overflow: visible !important;
+}
+
+

@@ -9,8 +9,16 @@ interface HeroProps {
   config?: AppConfig | null;
 }
 
+// Detect mobile for reduced particles
+const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+
 // Pre-generate particle configs for SSR/cache stability (avoid Math.random on re-renders)
-const FLOATING_PARTICLES = Array.from({ length: 28 }, (_, i) => ({
+// Mobile gets ~60% fewer particles for better performance
+const PARTICLE_COUNT = isMobile ? 10 : 28;
+const SPARKLE_COUNT = isMobile ? 3 : 8;
+
+const FLOATING_PARTICLES = Array.from({ length: PARTICLE_COUNT }, (_, i) => ({
   id: i,
   size: 2 + (i % 7) * 2.5,
   x: 3 + (i * 3.7) % 94,
@@ -22,7 +30,7 @@ const FLOATING_PARTICLES = Array.from({ length: 28 }, (_, i) => ({
   isStar: i % 5 === 0,
 }));
 
-const SPARKLE_PARTICLES = Array.from({ length: 8 }, (_, i) => ({
+const SPARKLE_PARTICLES = Array.from({ length: SPARKLE_COUNT }, (_, i) => ({
   id: i + 100,
   x: 10 + (i * 11.3) % 80,
   y: 5 + (i * 9.7 + 3) % 85,
@@ -51,10 +59,11 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
       y: 0,
       filter: 'blur(0px)',
       transition: {
-        type: 'spring' as const,
-        stiffness: 100,
-        damping: 18,
-        mass: 0.8,
+        type: isMobile ? 'tween' as const : 'spring' as const,
+        duration: isMobile ? 0.4 : undefined,
+        stiffness: isMobile ? undefined : 100,
+        damping: isMobile ? undefined : 18,
+        mass: isMobile ? undefined : 0.8,
       },
     },
   };
@@ -80,8 +89,9 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
       </div>
 
       {/* ─── LAYER 2: Extended Floating Particles ─── */}
+      {/* ─── LAYER 2: Extended Floating Particles ─── */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Floating circles */}
+        {/* Floating circles - simplified animation on mobile */}
         {FLOATING_PARTICLES.map((p) => (
           <motion.div
             key={p.id}
@@ -97,25 +107,25 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
               top: `${p.y}%`,
             }}
             animate={{
-              y: [0, -50 - p.driftX * 0.5, -20, -60, 0],
-              x: [0, p.driftX * 0.3, -p.driftX * 0.2, p.driftX * 0.5, 0],
-              opacity: [p.opacityBase, p.opacityBase * 3, p.opacityBase * 1.5, p.opacityBase * 2.5, p.opacityBase],
-              scale: [1, 1.4, 0.8, 1.2, 1],
+              y: isMobile ? [0, -20, 0] : [0, -50 - p.driftX * 0.5, -20, -60, 0],
+              x: isMobile ? [0, 5, 0] : [0, p.driftX * 0.3, -p.driftX * 0.2, p.driftX * 0.5, 0],
+              opacity: isMobile ? [p.opacityBase, p.opacityBase * 2, p.opacityBase] : [p.opacityBase, p.opacityBase * 3, p.opacityBase * 1.5, p.opacityBase * 2.5, p.opacityBase],
+              scale: isMobile ? [1, 1.1, 1] : [1, 1.4, 0.8, 1.2, 1],
             }}
             transition={{
-              duration: p.duration,
+              duration: isMobile ? p.duration * 1.5 : p.duration,
               repeat: Infinity,
-              delay: p.delay,
+              delay: isMobile ? p.delay * 0.5 : p.delay,
               ease: 'easeInOut',
             }}
           />
         ))}
 
-        {/* Twinkling star sparkles */}
-        {SPARKLE_PARTICLES.map((p) => (
+        {/* Twinkling star sparkles - hidden on mobile */}
+        {!isMobile && SPARKLE_PARTICLES.map((p) => (
           <motion.div
             key={p.id}
-            className="absolute will-change-transform"
+            className="absolute will-change-transform motion-safe-hidden"
             style={{
               left: `${p.x}%`,
               top: `${p.y}%`,
@@ -141,8 +151,8 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
         ))}
       </div>
 
-      {/* ─── LAYER 3: Subtle Geometric Pattern Overlay ─── */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.03] dark:opacity-[0.02]">
+      {/* ─── LAYER 3: Subtle Geometric Pattern Overlay (hidden on mobile) ─── */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03] dark:opacity-[0.02] hidden sm:block">
         <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
           <defs>
             <pattern id="hero-dots-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -275,10 +285,11 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
               initial={{ opacity: 0, scale: 0.85, rotate: -3, filter: 'blur(6px)' }}
               animate={{ opacity: 1, scale: 1, rotate: 0, filter: 'blur(0px)' }}
               transition={{ 
-                type: 'spring',
-                stiffness: 60,
-                damping: 14,
-                mass: 1,
+                type: isMobile ? 'tween' as const : 'spring' as const,
+                duration: isMobile ? 0.5 : undefined,
+                stiffness: isMobile ? undefined : 60,
+                damping: isMobile ? undefined : 14,
+                mass: isMobile ? undefined : 1,
                 delay: 0.2,
               }}
               className="glass-panel relative w-full max-w-[420px] aspect-[4/5] rounded-[40px] p-4 overflow-hidden shadow-xl border border-white/30 dark:border-white/5 bg-white/40 dark:bg-zinc-900/40"

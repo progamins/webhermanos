@@ -97,10 +97,11 @@ export default function App() {
   // Cycle loading messages
   useEffect(() => {
     if (!initialLoading) return;
+    const isMobileView = window.innerWidth < 768;
     const interval = setInterval(() => {
       setLoadingMessageIndex(prev => (prev + 1) % LOADING_MESSAGES.length);
-      setLoadingProgress(prev => Math.min(prev + Math.random() * 18 + 5, 98));
-    }, 900);
+      setLoadingProgress(prev => Math.min(prev + Math.random() * (isMobileView ? 28 : 18) + 5, 98)); // Faster progress on mobile
+    }, isMobileView ? 700 : 900);
     return () => clearInterval(interval);
   }, [initialLoading]);
 
@@ -178,10 +179,11 @@ export default function App() {
       console.error('Error fetching data from Firestore:', error);
     } finally {
       setLoadingProgress(100);
-      // Small delay for the final message to show
+      // Small delay for the final message to show (shorter on mobile)
+      const isMobileView = typeof window !== 'undefined' && window.innerWidth < 768;
       setTimeout(() => {
         setInitialLoading(false);
-      }, 600);
+      }, isMobileView ? 300 : 600);
     }
   };
 
@@ -287,10 +289,11 @@ export default function App() {
 
     connectSSE();
 
-    // Safety fallback: force-disable loading screen after 8 seconds to prevent infinite loader
+    // Safety fallback: force-disable loading screen (5s on mobile, 8s desktop) to prevent infinite loader
+    const isMobileView = window.innerWidth < 768;
     const fallbackTimeout = setTimeout(() => {
       setInitialLoading(false);
-    }, 8000);
+    }, isMobileView ? 4000 : 8000);
 
     return () => {
       window.removeEventListener('popstate', handleLocationChange);
@@ -422,23 +425,24 @@ export default function App() {
         
         {/* Floating sparkle particles */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {[...Array(8)].map((_, i) => (
+          {/* Floating sparkle particles (reduced on mobile) */}
+          {[...Array(4)].map((_, i) => (
             <motion.div
               key={i}
               className="absolute w-1.5 h-1.5 rounded-full bg-brand-300/40 dark:bg-brand-400/20"
               style={{
-                left: `${15 + i * 10}%`,
+                left: `${15 + i * 25}%`,
                 top: `${20 + (i % 5) * 15}%`,
               }}
               animate={{
-                y: [0, -30, 0],
-                opacity: [0, 0.8, 0],
+                y: [0, -20, 0],
+                opacity: [0, 0.6, 0],
                 scale: [0, 1, 0],
               }}
               transition={{
-                duration: 2 + i * 0.3,
+                duration: 2.5,
                 repeat: Infinity,
-                delay: i * 0.4,
+                delay: i * 0.6,
                 ease: 'easeInOut',
               }}
             />
@@ -450,37 +454,29 @@ export default function App() {
           animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="text-center space-y-8 relative z-10"
-        >
-          {/* Animated Cake Logo Container */}
+        >            {/* Animated Cake Logo Container (simplified on mobile) */}
           <div className="relative flex justify-center items-center">
             {/* Outer pulsing ring */}
             <motion.div
-              animate={{ scale: [0.9, 1.15, 0.9], opacity: [0.3, 0.1, 0.3] }}
+              animate={{ scale: [0.95, 1.1, 0.95], opacity: [0.2, 0.08, 0.2] }}
               transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-              className="absolute w-32 h-32 rounded-full bg-brand-200/30 dark:bg-brand-500/10 blur-xl"
+              className="absolute w-28 h-28 rounded-full bg-brand-200/30 dark:bg-brand-500/10 blur-xl"
             />
             
             {/* Rotating ring */}
             <motion.div
               animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 6, ease: 'linear' }}
-              className="absolute w-28 h-28 rounded-full border-2 border-dashed border-brand-300/40 dark:border-brand-400/20"
-            />
-            
-            {/* Inner rotating ring (opposite direction) */}
-            <motion.div
-              animate={{ rotate: -360 }}
-              transition={{ repeat: Infinity, duration: 4, ease: 'linear' }}
-              className="absolute w-20 h-20 rounded-full border border-brand-secondary/20 dark:border-brand-300/10"
+              transition={{ repeat: Infinity, duration: 8, ease: 'linear' }}
+              className="absolute w-24 h-24 rounded-full border border-dashed border-brand-300/30 dark:border-brand-400/15"
             />
 
             {/* Cake Icon */}
             <motion.div
-              animate={{ y: [0, -4, 0] }}
-              transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+              animate={{ y: [0, -3, 0] }}
+              transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
               className="relative"
             >
-              <Cake className="w-12 h-12 text-brand-500 dark:text-brand-400" />
+              <Cake className="w-10 h-10 text-brand-500 dark:text-brand-400" />
             </motion.div>
           </div>
 
