@@ -23,7 +23,7 @@ export default function AdminProducts({ products, onRefreshData, showToast }: Ad
   const [prodFlavors, setProdFlavors] = useState('');
   const [prodDecorations, setProdDecorations] = useState('');
   const [prodPrepTime, setProdPrepTime] = useState('48 horas');
-  const [prodImage, setProdImage] = useState('');
+  const [prodImages, setProdImages] = useState<string[]>(['']);
 
   const clearProductForm = () => {
     setProdName('');
@@ -33,7 +33,7 @@ export default function AdminProducts({ products, onRefreshData, showToast }: Ad
     setProdFlavors('');
     setProdDecorations('');
     setProdPrepTime('48 horas');
-    setProdImage('');
+    setProdImages(['']);
   };
 
   const handleSaveProduct = async (e: React.FormEvent) => {
@@ -46,7 +46,11 @@ export default function AdminProducts({ products, onRefreshData, showToast }: Ad
     const flavorsArray = prodFlavors.split(',').map(s => s.trim()).filter(Boolean);
     const decorationsArray = prodDecorations.split(',').map(s => s.trim()).filter(Boolean);
     const targetId = editingProduct ? editingProduct.id : `prod-${Date.now()}`;
-    const targetImages = prodImage ? [prodImage] : (editingProduct ? editingProduct.images : ['https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80']);
+    const targetImages = prodImages.filter(url => url.trim() !== '').length > 0
+      ? prodImages.filter(url => url.trim() !== '')
+      : (editingProduct && editingProduct.images.length > 0
+        ? editingProduct.images
+        : ['https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80']);
 
     const newProduct: Product = {
       id: targetId,
@@ -84,7 +88,7 @@ export default function AdminProducts({ products, onRefreshData, showToast }: Ad
     setProdFlavors(prod.flavors ? prod.flavors.join(', ') : '');
     setProdDecorations(prod.decorations ? prod.decorations.join(', ') : '');
     setProdPrepTime(prod.preparationTime || '48 horas');
-    setProdImage((prod.images && prod.images[0]) || '');
+    setProdImages(prod.images && prod.images.length > 0 ? prod.images : ['']);
     setIsCreatingProduct(false);
   };
 
@@ -177,8 +181,48 @@ export default function AdminProducts({ products, onRefreshData, showToast }: Ad
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-mono uppercase text-zinc-400 mb-1">Imagen del Pastel</label>
-            <ImageUploader value={prodImage} onChange={setProdImage} placeholder="Escribe URL de imagen o sube un archivo local..." />
+            <label className="block text-[10px] font-mono uppercase text-zinc-400 mb-1">Imágenes del Pastel ({prodImages.filter(u => u.trim()).length})</label>
+            <div className="space-y-2">
+              {prodImages.map((url, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <ImageUploader
+                      value={url}
+                      onChange={(val) => {
+                        const next = [...prodImages];
+                        next[idx] = val;
+                        setProdImages(next);
+                      }}
+                      placeholder={`URL de imagen ${idx + 1}...`}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (prodImages.length <= 1) return;
+                      setProdImages(prodImages.filter((_, i) => i !== idx));
+                    }}
+                    disabled={prodImages.length <= 1}
+                    className="p-2 border border-red-200/50 rounded-xl text-red-400 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shrink-0"
+                    title="Eliminar imagen"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setProdImages([...prodImages, ''])}
+                className="w-full py-2 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono text-zinc-400 hover:border-brand-300 hover:text-brand-500 transition-all cursor-pointer"
+              >
+                + Agregar otra imagen
+              </button>
+            </div>
+            {prodImages.filter(u => u.trim()).length > 1 && (
+              <p className="text-[9px] text-zinc-400 mt-1 font-mono">
+                La primera imagen se usará como portada en el catálogo.
+              </p>
+            )}
           </div>
           <div className="flex justify-end space-x-2 pt-4">
             <button type="button" onClick={() => { setEditingProduct(null); setIsCreatingProduct(false); clearProductForm(); }}
@@ -219,8 +263,15 @@ export default function AdminProducts({ products, onRefreshData, showToast }: Ad
               id={`admin-product-item-${prod.id}`}>
               <div className="flex space-x-4">
                 <div className="relative">
-                  <img src={optimizeImageUrl((prod.images && prod.images[0]) || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80', 200)}
-                    alt={prod.name} className="w-16 h-16 rounded-xl object-cover" loading="lazy" decoding="async" />
+                  <div className="relative">
+                    <img src={optimizeImageUrl((prod.images && prod.images[0]) || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80', 200)}
+                      alt={prod.name} className="w-16 h-16 rounded-xl object-cover" loading="lazy" decoding="async" />
+                    {prod.images && prod.images.length > 1 && (
+                      <span className="absolute -top-1 -right-1 bg-brand-500 text-white text-[8px] font-mono font-bold px-1 rounded-full shadow-sm border border-white">
+                        +{prod.images.length - 1}
+                      </span>
+                    )}
+                  </div>
                   {/* Barcode tiny overlay */}
                   <div className="absolute -bottom-1 -right-1 bg-white/95 dark:bg-zinc-900/95 rounded-md p-0.5 shadow-sm border border-zinc-100 dark:border-zinc-800">
                     <Barcode

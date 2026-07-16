@@ -415,8 +415,8 @@ export default function App() {
     </div>
   );
 
-  // Render Premium Initial Loader Screen
-  if (initialLoading) {
+  // Render Premium Initial Loader Screen (omitir para /admin — el login no necesita datos de Firestore)
+  if (initialLoading && currentView !== 'admin') {
     return (
       <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-b from-brand-50 via-white to-brand-50/50 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900">
         {/* Ambient Background Glow */}
@@ -749,14 +749,16 @@ export default function App() {
       {/* Google Analytics 4 */}
       <GoogleAnalytics />
 
-      {/* Main Sticky Header Navbar */}
-      <Navbar
-        currentView={currentView}
-        setCurrentView={handleViewChange}
-        isAdminLoggedIn={isAdminLoggedIn}
-        onLogout={handleAdminLogout}
-        logoUrl={config?.logoUrl}
-      />
+      {/* Main Sticky Header Navbar — oculto en admin (login + panel) */}
+      {currentView !== 'admin' && (
+        <Navbar
+          currentView={currentView}
+          setCurrentView={handleViewChange}
+          isAdminLoggedIn={isAdminLoggedIn}
+          onLogout={handleAdminLogout}
+          logoUrl={config?.logoUrl}
+        />
+      )}
 
       {/* RENDER CURRENT VIEW ROUTE */}
       <AnimatePresence mode="wait">
@@ -791,6 +793,7 @@ export default function App() {
                 onLoginSuccess={handleAdminLogin}
                 isLoggedIn={isAdminLoggedIn}
                 adminRole={adminRole}
+                onLogout={handleAdminLogout}
               />
             </Suspense>
           </motion.main>
@@ -874,8 +877,9 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* FOOTER */}
-      <footer className="bg-zinc-900 text-white py-16 border-t border-zinc-800">
+      {/* FOOTER — oculto en admin */}
+      {currentView !== 'admin' && (
+        <footer className="bg-zinc-900 text-white py-16 border-t border-zinc-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
           
           <div className="space-y-4">
@@ -938,7 +942,8 @@ export default function App() {
             <button onClick={() => setLegalModal({ isOpen: true, tab: 'privacy' })} className="hover:text-zinc-300 cursor-pointer">Políticas de Privacidad</button>
           </div>
         </div>
-      </footer>
+        </footer>
+      )}
 
       {/* LEGAL MODALS: TÉRMINOS DE SERVICIO Y POLÍTICAS DE PRIVACIDAD */}
       <TermsAndPrivacy

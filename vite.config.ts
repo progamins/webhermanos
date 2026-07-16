@@ -17,10 +17,14 @@ export default defineConfig(() => {
     build: {
       // CSS code splitting for smaller per-page CSS
       cssCodeSplit: true,
-      // Enable source maps only in production for debugging
+      // NO source maps en producción — protege el código y llaves
       sourcemap: false,
-      // Minify with esbuild (built-in, no extra deps needed)
+      // Minify con esbuild (built-in, sin deps extra)
       minify: 'esbuild',
+      // Eliminar console.log y debugger del bundle de producción
+      esbuild: {
+        drop: ['console', 'debugger'],
+      },
       rollupOptions: {
         output: {
           manualChunks: {

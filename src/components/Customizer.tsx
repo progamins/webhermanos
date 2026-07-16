@@ -86,6 +86,10 @@ export default function Customizer({ product, onClose, whatsappNumber }: Customi
   const [customerAge, setCustomerAge] = useState('');
   const [message, setMessage] = useState('');
 
+  // Image gallery
+  const [currentImageIdx, setCurrentImageIdx] = useState(0);
+  const allImages = (product.images && product.images.length > 0) ? product.images : [''];
+
   // Validation feedback
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -353,13 +357,37 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                 {/* Real Cake Image Display Card */}
                 <div className="relative w-[110px] h-[110px] sm:w-[160px] sm:h-[160px] lg:w-full lg:max-w-[320px] lg:h-[300px] select-none rounded-[20px] lg:rounded-[24px] overflow-hidden shadow-[0_8px_16px_rgba(0,0,0,0.1)] lg:shadow-[0_16px_32px_rgba(0,0,0,0.12)] border border-zinc-200/60 dark:border-zinc-800/80 shrink-0 lg:my-5 group">
                   <img 
-                    src={product.images && product.images[0] ? product.images[0] : ''} 
+                    src={allImages[currentImageIdx] || ''} 
                     alt={product.name} 
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     referrerPolicy="no-referrer"
                     decoding="async"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/85 via-zinc-950/20 to-zinc-950/10 pointer-events-none" />
+
+                  {/* Image navigation arrows */}
+                  {allImages.length > 1 && (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentImageIdx(prev => prev === 0 ? allImages.length - 1 : prev - 1);
+                        }}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm text-white border border-white/15 flex items-center justify-center hover:bg-black/60 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentImageIdx(prev => prev === allImages.length - 1 ? 0 : prev + 1);
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm text-white border border-white/15 flex items-center justify-center hover:bg-black/60 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+                      >
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
+                    </>
+                  )}
 
                   {/* Desktop overlay panel details */}
                   <div className="hidden lg:flex absolute bottom-3 inset-x-3 p-3 rounded-xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shadow-lg border border-white/20 dark:border-zinc-800 flex-col space-y-1">
@@ -385,7 +413,38 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                   <div className="absolute top-2 left-2 px-2 py-0.5 lg:top-3 lg:left-3 lg:px-2.5 lg:py-1 rounded-full bg-zinc-950/50 backdrop-blur-sm text-[8px] lg:text-[9px] font-mono text-white/90 border border-white/10">
                     {product.name}
                   </div>
+
+                  {/* Image counter badge */}
+                  {allImages.length > 1 && (
+                    <div className="absolute top-2 right-2 lg:top-3 lg:right-3 px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-sm text-white text-[8px] font-mono font-bold border border-white/10">
+                      {currentImageIdx + 1}/{allImages.length}
+                    </div>
+                  )}
                 </div>
+
+                {/* Thumbnail strip — visible on desktop, scrollable on mobile */}
+                {allImages.length > 1 && (
+                  <div className="flex lg:flex-row items-center gap-1.5 overflow-x-auto w-full max-w-full pb-1 scrollbar-none">
+                    {allImages.map((img, imgIdx) => (
+                      <button
+                        key={imgIdx}
+                        onClick={() => setCurrentImageIdx(imgIdx)}
+                        className={`shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden border-2 transition-all ${
+                          currentImageIdx === imgIdx
+                            ? 'border-brand-400 ring-1 ring-brand-400/30 scale-110'
+                            : 'border-zinc-200/50 dark:border-zinc-700/50 opacity-60 hover:opacity-100'
+                        }`}
+                      >
+                        <img
+                          src={img || ''}
+                          alt=""
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
 
                 {/* Technical resumen panel */}
                 <div className="flex-1 lg:w-full bg-white dark:bg-zinc-950 p-2.5 sm:p-4 border border-zinc-200 dark:border-zinc-800 rounded-xl lg:rounded-2xl text-left shadow-sm space-y-1 lg:space-y-2 flex flex-col justify-center">

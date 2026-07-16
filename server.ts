@@ -135,7 +135,15 @@ async function startServer() {
     await signInAnonymously(serverAuth);
     console.log('[AUTH] Firebase anonymous auth initialized for Firestore rules compliance.');
   } catch (authError: any) {
-    console.warn('[AUTH] Could not init anonymous auth:', authError?.message || authError);
+    const errMsg = authError?.message || String(authError);
+    console.warn('[AUTH] Firebase anonymous auth no disponible (modo lectura pública):', errMsg);
+    if (errMsg.includes('admin-restricted-operation')) {
+      console.warn(
+        '  ➜ Para habilitarlo: Ve a Firebase Console > Authentication > Sign-in providers > ' +
+        'Anonymous > Habilitar. O configura reglas de Firestore como público (modo test).\n' +
+        '  ➜ Mientras tanto, la app funciona con reglas de Firestore públicas (Firestore Rules).'
+      );
+    }
   }
 
   // 1. Security Headers Middleware (XSS, Clickjacking, MIME-Sniffing protection)

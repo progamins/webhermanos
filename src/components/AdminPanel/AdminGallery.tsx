@@ -44,22 +44,28 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
     }
   }, [config]);
 
+  const resetGalleryForm = (editing: GalleryItem | null) => {
+    const withDefaults = {
+      title: '',
+      category: 'Bodas',
+      date: new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long' }),
+      imageUrl: '',
+      description: '',
+    };
+    setEditingGalleryItem(editing);
+    setNewGalleryTitle(editing?.title ?? withDefaults.title);
+    setNewGalleryCategory(editing?.category ?? withDefaults.category);
+    setNewGalleryDate(editing?.date ?? withDefaults.date);
+    setNewGalleryImageUrl(editing?.imageUrl ?? withDefaults.imageUrl);
+    setNewGalleryDescription(editing?.description ?? withDefaults.description);
+  };
+
   const handleStartEditGallery = (item: GalleryItem) => {
-    setEditingGalleryItem(item);
-    setNewGalleryTitle(item.title);
-    setNewGalleryCategory(item.category);
-    setNewGalleryDate(item.date);
-    setNewGalleryImageUrl(item.imageUrl);
-    setNewGalleryDescription(item.description || '');
+    resetGalleryForm(item);
   };
 
   const handleCancelEditGallery = () => {
-    setEditingGalleryItem(null);
-    setNewGalleryTitle('');
-    setNewGalleryCategory('Bodas');
-    setNewGalleryDate(new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long' }));
-    setNewGalleryImageUrl('');
-    setNewGalleryDescription('');
+    resetGalleryForm(null);
   };
 
   const handleSaveGalleryItem = async (e: React.FormEvent) => {
@@ -211,9 +217,8 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
           <h4 className="text-sm font-mono font-bold uppercase tracking-wider text-brand-500 flex items-center">
             <Sparkles className="h-4 w-4 mr-2 text-brand-500" />
             2. Creaciones Carol ({galleryItems.length} fotos)
-          </h4>
-          {!editingGalleryItem && (
-            <button onClick={handleCancelEditGallery}
+          </h4>          {!editingGalleryItem && (
+            <button onClick={() => resetGalleryForm({ id: 'new', imageUrl: '', title: '', category: 'Bodas', date: new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long' }), description: '' } as GalleryItem)}
               className="inline-flex items-center space-x-1.5 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-mono font-bold uppercase tracking-wider shadow-sm cursor-pointer">
               <Plus className="h-4 w-4" />
               <span>Agregar Foto</span>
@@ -226,7 +231,7 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
           <form onSubmit={handleSaveGalleryItem} className="mb-8 p-6 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-mono font-bold uppercase tracking-wider text-brand-500">
-                {editingGalleryItem ? `Editando: ${editingGalleryItem.title}` : 'Nueva Foto'}
+                {editingGalleryItem?.id && editingGalleryItem.id !== 'new' ? `Editando: ${editingGalleryItem.title}` : 'Nueva Foto'}
               </span>
               <button type="button" onClick={handleCancelEditGallery}
                 className="text-zinc-400 hover:text-zinc-600 cursor-pointer">

@@ -39,6 +39,8 @@ const itemVariants = {
 export default function Catalog({ products, onSelectCustomize }: CatalogProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [galleryProductId, setGalleryProductId] = useState<string | null>(null);
+  const [galleryImageIndex, setGalleryImageIndex] = useState(0);
 
   const categories = ['Todos', 'Bodas', 'Cumpleaños', 'Infantiles', 'Aniversarios', 'Especiales'];
 
@@ -163,13 +165,56 @@ export default function Catalog({ products, onSelectCustomize }: CatalogProps) {
                   className="relative aspect-[4/3] overflow-hidden bg-zinc-100 dark:bg-zinc-900 cursor-pointer group/img"
                 >
                 <img
-                  src={optimizeImageUrl((product.images && product.images[0]) || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80', 600)}
+                  src={optimizeImageUrl(
+                    (product.images && product.images[
+                      galleryProductId === product.id ? galleryImageIndex : 0
+                    ]) || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80', 600)}
                   alt={product.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   id={`catalog-img-${product.id}`}
                   loading="lazy"
                   decoding="async"
                 />
+                
+                {/* Image count badge */}
+                {product.images && product.images.length > 1 && (
+                  <div className="absolute bottom-4 right-4 flex items-center space-x-1 bg-black/50 backdrop-blur-sm text-white text-[9px] font-mono font-bold px-2 py-1 rounded-full border border-white/10">
+                    <span>{(galleryProductId === product.id ? galleryImageIndex : 0) + 1}/{product.images.length}</span>
+                  </div>
+                )}
+
+                {/* Mini gallery navigation on hover */}
+                {product.images && product.images.length > 1 && (
+                  <div className="absolute bottom-4 left-4 right-14 opacity-0 group-hover/img:opacity-100 transition-opacity duration-300">
+                    <div className="flex items-center gap-1">
+                      {product.images.slice(0, 5).map((img, imgIdx) => (
+                        <button
+                          key={imgIdx}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setGalleryProductId(product.id);
+                            setGalleryImageIndex(imgIdx);
+                          }}
+                          className={`w-6 h-6 rounded-md border-2 overflow-hidden shrink-0 transition-all ${
+                            galleryProductId === product.id && galleryImageIndex === imgIdx
+                              ? 'border-brand-400 scale-110'
+                              : 'border-white/40 hover:border-white'
+                          }`}
+                        >
+                          <img
+                            src={optimizeImageUrl(img, 80)}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        </button>
+                      ))}
+                      {product.images.length > 5 && (
+                        <span className="text-[8px] text-white/60 font-mono ml-1">+{product.images.length - 5}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
                   
                   {/* Eye preview/Customize overlay with glass effect on hover */}
                   {product.stock && (
@@ -255,9 +300,7 @@ export default function Catalog({ products, onSelectCustomize }: CatalogProps) {
                     </button>
                   </div>
 
-                </div>
-
-              </motion.div>
+                </div>                              </motion.div>
             ))}
           </motion.div>
         )}

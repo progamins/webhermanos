@@ -234,8 +234,10 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ============= MOBILE PERFORMANCE: REDUCIR COMPLEJIDAD VISUAL ============= */
 @media (max-width: 640px) {
-  /* Reducir blur en mobile para mejorar rendimiento de GPU */
-  [class*="blur-"] {
+  /* Reducir blur decorativo en mobile para mejorar rendimiento de GPU */
+  /* Solo afecta blur-* (decorativo) NO backdrop-blur-* (modales/interacción) */
+  [class*=" blur-"],
+  [class^="blur-"] {
     opacity: 0.6;
   }
   

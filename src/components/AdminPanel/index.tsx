@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import {
   LayoutDashboard, Cake, ShoppingBag, MessageSquare, Settings, RefreshCw,
-  Image, Layers, CreditCard
+  Image, Layers, CreditCard, LogOut
 } from 'lucide-react';
 import { Product, Order, Review, GalleryItem, AppConfig, AdminRole } from '../../types';
 import { dbService } from '../../dbService';
@@ -31,6 +31,7 @@ export interface AdminPanelProps {
   onLoginSuccess: (role: AdminRole) => void;
   isLoggedIn: boolean;
   adminRole?: AdminRole;
+  onLogout?: () => void;
 }
 
 type ActiveTab = 'dashboard' | 'products' | 'orders' | 'reviews' | 'settings' | 'images' | 'payments' | 'stock';
@@ -81,7 +82,8 @@ const ROLE_COLORS: Record<AdminRole, string> = {
 
 export default function AdminPanel({
   products, orders, setOrders, reviews, galleryItems, config,
-  onRefreshData, onLoginSuccess, isLoggedIn, adminRole = 'admin'
+  onRefreshData, onLoginSuccess, isLoggedIn, adminRole = 'admin',
+  onLogout
 }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [voucherModalOrder, setVoucherModalOrder] = useState<Order | null>(null);
@@ -127,6 +129,13 @@ export default function AdminPanel({
               title="Sincronizar Firestore" id="admin-refresh-data">
               <RefreshCw className="h-4 w-4" />
             </button>
+            {onLogout && (
+              <button onClick={onLogout}
+                className="p-2.5 border border-red-200/50 dark:border-red-900/40 bg-white/40 dark:bg-zinc-900/40 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 text-red-400 hover:text-red-500 transition-all hover:scale-[1.03] shadow-sm flex items-center justify-center cursor-pointer group"
+                title="Cerrar Sesión" id="admin-logout-btn">
+                <LogOut className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
+              </button>
+            )}
           </div>
         </div>
 
