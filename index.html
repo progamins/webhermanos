@@ -46,6 +46,27 @@
     <link rel="preconnect" href="https://images.unsplash.com" />
     <link rel="dns-prefetch" href="https://images.unsplash.com" />
 
+    <!-- PRELOAD CRITICAL ASSETS: Hero LCP image (not the Lottie animation — it loads on-demand) -->
+    <link rel="preload" as="image" href="https://images.unsplash.com/photo-1535141192574-5d4897c13636?w=600&auto=format&fit=crop&q=80" fetchpriority="high" />
+
+    <!-- Dynamic inline preload: if the admin saved a custom hero image in localStorage
+         (set by App.tsx when Firestore config loads), preload it for faster LCP on next visit. -->
+    <script>
+      (function() {
+        try {
+          var savedHero = localStorage.getItem('maison_hero_url');
+          if (savedHero) {
+            var link = document.createElement('link');
+            link.rel = 'preload';
+            link.as = 'image';
+            link.href = savedHero.split('?')[0] + '?w=600&auto=format&fit=crop&q=80&fm=webp';
+            link.fetchPriority = 'high';
+            document.head.appendChild(link);
+          }
+        } catch(e) {}
+      })();
+    </script>
+
     <!-- Google Analytics 4 (configurado via VITE_GA_MEASUREMENT_ID) -->
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -85,5 +106,18 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Service Worker: cache images & assets for faster repeat visits -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then((reg) => {
+            console.log('[SW] Registered successfully:', reg.scope);
+          }).catch((err) => {
+            console.warn('[SW] Registration failed:', err);
+          });
+        });
+      }
+    </script>
   </body>
 </html>

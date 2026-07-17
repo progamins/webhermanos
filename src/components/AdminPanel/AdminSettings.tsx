@@ -29,6 +29,7 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
   const [maintenanceBadge, setMaintenanceBadge] = useState(config.maintenanceBadge || 'En mantenimiento');
   const [logoUrl, setLogoUrl] = useState(config.logoUrl || '');
   const [faviconUrl, setFaviconUrl] = useState(config.faviconUrl || '');
+  const [imageQuality, setImageQuality] = useState(config.imageQuality ?? 0.8);
   const [showPreview, setShowPreview] = useState(false);
   // Role password management
   const [analystPassword, setAnalystPassword] = useState('');
@@ -71,6 +72,7 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
       setMaintenanceBadge(config.maintenanceBadge || 'En mantenimiento');
       setLogoUrl(config.logoUrl || '');
       setFaviconUrl(config.faviconUrl || '');
+      setImageQuality(config.imageQuality ?? 0.8);
     }
   }, [config]);
 
@@ -91,11 +93,14 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
       maintenanceTitle,
       maintenanceDescription,
       maintenanceBadge,
+      imageQuality,
       logoUrl,
       faviconUrl
     };
     try {
       await dbService.saveConfig(newConfig);
+      // Actualizar localStorage inmediatamente para que la compresión se aplique ya
+      try { localStorage.setItem('maison_image_quality', String(imageQuality)); } catch {}
       onRefreshData();
       showToast('Configuración del negocio actualizada en tiempo real.', 'success', 'Ajustes guardados');
     } catch {
@@ -326,6 +331,71 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
                 </div>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Image Compression Quality */}
+        <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 mt-6">
+          <div className="bg-brand-50/30 dark:bg-brand-950/10 border border-brand-200/60 dark:border-brand-900/30 rounded-2xl p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-1.5 bg-brand-100 dark:bg-brand-950/30 rounded-lg">
+                <Cake className="h-4 w-4 text-brand-600 dark:text-brand-400" />
+              </div>
+              <div>
+                <h4 className="text-sm font-serif font-bold text-zinc-900 dark:text-white">Calidad de Compresión de Imágenes</h4>
+                <p className="text-[10px] text-zinc-500 font-sans">Controla el nivel de compresión al subir imágenes. Menor calidad = archivos más pequeños y carga más rápida.</p>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-mono font-bold text-zinc-600 dark:text-zinc-400">
+                  Calidad: <span className="text-brand-600 dark:text-brand-400">{Math.round(imageQuality * 100)}%</span>
+                </span>
+                <div className="flex items-center gap-3 text-[9px] font-mono text-zinc-400">
+                  <span className={imageQuality <= 0.4 ? 'text-brand-600 font-bold' : ''}>Máx. compresión</span>
+                  <span className={imageQuality >= 0.9 ? 'text-brand-600 font-bold' : ''}>Máx. calidad</span>
+                </div>
+              </div>
+              <input
+                type="range"
+                min="0.1"
+                max="1.0"
+                step="0.1"
+                value={imageQuality}
+                onChange={(e) => setImageQuality(parseFloat(e.target.value))}
+                className="w-full h-2 rounded-full appearance-none cursor-pointer bg-zinc-200 dark:bg-zinc-700 accent-brand-500"
+                style={{
+                  background: `linear-gradient(to right, #C4847D 0%, #C4847D ${(imageQuality - 0.1) / 0.9 * 100}%, #e4e4e7 ${(imageQuality - 0.1) / 0.9 * 100}%, #e4e4e7 100%)`,
+                }}
+              />
+              <div className="flex justify-between mt-1">
+                <span className="text-[9px] font-mono text-zinc-400">10%</span>
+                <span className="text-[9px] font-mono text-zinc-400">50%</span>
+                <span className="text-[9px] font-mono text-zinc-400">100%</span>
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {[
+                  { val: 0.3, label: 'Muy comprimido', desc: '⏩ Carga rápida' },
+                  { val: 0.6, label: 'Balanceado', desc: '⚖️ Calidad/velocidad' },
+                  { val: 0.9, label: 'Alta calidad', desc: '✨ Máxima fidelidad' },
+                ].map((preset) => (
+                  <button
+                    key={preset.val}
+                    type="button"
+                    onClick={() => setImageQuality(preset.val)}
+                    className={`px-2 py-1.5 rounded-lg text-[9px] font-mono font-bold uppercase tracking-wider transition-all border cursor-pointer ${
+                      Math.abs(imageQuality - preset.val) < 0.05
+                        ? 'bg-brand-500 text-white border-brand-500'
+                        : 'bg-zinc-50 dark:bg-zinc-950 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:border-brand-300'
+                    }`}
+                  >
+                    <span className="block">{preset.label}</span>
+                    <span className="block text-[7px] font-normal normal-case tracking-normal opacity-75">{preset.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 

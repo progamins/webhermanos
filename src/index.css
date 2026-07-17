@@ -278,44 +278,8 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* ============= LOADING SCREEN ANIMATIONS ============= */
-@keyframes loading-pulse-ring {
-  0% { transform: scale(0.8); opacity: 0.4; }
-  50% { transform: scale(1.3); opacity: 0.1; }
-  100% { transform: scale(0.8); opacity: 0.4; }
-}
-
-@keyframes loading-progress {
-  0% { width: 0%; }
-  20% { width: 22%; }
-  40% { width: 45%; }
-  60% { width: 62%; }
-  80% { width: 82%; }
-  100% { width: 100%; }
-}
-
-@keyframes loading-text-fade {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 1; }
-}
-
-@keyframes cake-float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  25% { transform: translateY(-6px) rotate(1deg); }
-  50% { transform: translateY(-2px) rotate(-0.5deg); }
-  75% { transform: translateY(-8px) rotate(0.5deg); }
-}
-
-@keyframes sparkle-twinkle {
-  0%, 100% { opacity: 0; transform: scale(0); }
-  50% { opacity: 1; transform: scale(1); }
-}
-
-@keyframes logo-gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
+/* ============= ENTRANCE ANIMATION ============= */
+/* (handled via motion/react) */
 
 /* ============= MODERN ENTRANCE/SCROLL ANIMATIONS ============= */
 @keyframes float-up {

@@ -13,6 +13,7 @@ import {
 import { getAuth } from 'firebase/auth';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from './firebase';
+import { compressImage } from './utils/images';
 import { Product, Review, Order, GalleryItem, AppConfig, CakeStock } from './types';
 
 // Standardized operation types for error handling
@@ -614,9 +615,24 @@ export const dbService = {
 
   async uploadVoucher(orderId: string, file: File): Promise<any> {
     const token = localStorage.getItem('maison_admin_token') || '';
+
+    // Comprimir el comprobante antes de subir para optimizar almacenamiento
+    let fileToUpload = file;
+    try {
+      if (file.type.startsWith('image/')) {
+        const compressed = await compressImage(file, { maxWidth: 1200 });
+        fileToUpload = new File([compressed], file.name.replace(/\.[^.]+$/, '.webp'), {
+          type: compressed.type || 'image/webp'
+        });
+      }
+    } catch (e) {
+      console.warn('[uploadVoucher] Error al comprimir, se usará el original:', e);
+      // Si falla la compresión, usar el archivo original
+    }
+
     const formData = new FormData();
     formData.append('orderId', orderId);
-    formData.append('voucher', file);
+    formData.append('voucher', fileToUpload);
 
     const res = await fetch('/api/admin/orders/upload-voucher', {
       method: 'POST',
@@ -986,13 +1002,25 @@ export const dbService = {
   },
 
   // Upload image directly to Firebase Storage from the browser (persists across server restarts)
+  // Se comprime en el cliente antes de subir para optimizar almacenamiento y velocidad
   async uploadImageToStorage(file: File): Promise<string> {
-    const uniqueName = `uploads/${Date.now()}-${Math.round(Math.random() * 1e9)}${file.name.substring(file.name.lastIndexOf('.'))}`;
+    let fileToUpload = file;
+    try {
+      const compressed = await compressImage(file, { maxWidth: 1200 }); // quality se obtiene de getImageQuality() por defecto
+      fileToUpload = new File([compressed], file.name.replace(/\.[^.]+$/, '.webp'), {
+        type: compressed.type || 'image/webp'
+      });
+    } catch (e) {
+      console.warn('[uploadImageToStorage] Error al comprimir, se usará el original:', e);
+      // Si falla la compresión, usar el archivo original
+    }
+
+    const uniqueName = `uploads/${Date.now()}-${Math.round(Math.random() * 1e9)}.webp`;
     const storageReference = storageRef(storage, uniqueName);
     const metadata = {
-      contentType: file.type,
+      contentType: fileToUpload.type || 'image/webp',
     };
-    const snapshot = await uploadBytes(storageReference, file, metadata);
+    const snapshot = await uploadBytes(storageReference, fileToUpload, metadata);
     const downloadUrl = await getDownloadURL(snapshot.ref);
     return downloadUrl;
   }

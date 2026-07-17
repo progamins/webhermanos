@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Link } from 'lucide-react';
+import { compressImage } from '../../utils/images';
+import { showToast } from '../../utils/toast';
 
 interface ImageUploaderProps {
   value: string;
@@ -7,10 +9,17 @@ interface ImageUploaderProps {
   placeholder?: string;
 }
 
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
 export default function ImageUploader({ value, onChange, placeholder }: ImageUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
+  const [compressionStats, setCompressionStats] = useState<{ original: number; compressed: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File) => {
@@ -21,10 +30,33 @@ export default function ImageUploader({ value, onChange, placeholder }: ImageUpl
 
     setUploading(true);
     setError('');
+    setCompressionStats(null);
+
+    let compressed = file;
+    let originalSize = file.size;
+    let compressedSize = file.size;
+    try {
+      // Comprimir imagen en el cliente antes de subir (~60-80% más pequeño)
+      originalSize = file.size;
+      compressed = await compressImage(file, { maxWidth: 1200 });
+      compressedSize = compressed.size;
+    } catch (compressionError) {
+      showToast('Error al comprimir la imagen. Se subirá el archivo original.', 'warning', '🧩 Compresión');
+      console.warn('[ImageUploader] Error de compresión:', compressionError);
+    }
 
     try {
+      // Mostrar indicador de compresión
+      setCompressionStats({ original: originalSize, compressed: compressedSize });
+
+      const ext = compressed.type === 'image/jpeg' ? '.jpg' : '.webp';
+      const compressedFile = new File([compressed], file.name.replace(/\.[^.]+$/, ext), {
+        type: compressed.type || 'image/webp',
+        lastModified: Date.now()
+      });
+
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('image', compressedFile);
       const token = localStorage.getItem('maison_admin_token') || '';
       const res = await fetch('/api/upload', {
         method: 'POST',
@@ -37,8 +69,10 @@ export default function ImageUploader({ value, onChange, placeholder }: ImageUpl
       } else {
         setError(data.error || 'Error subiendo archivo');
       }
-    } catch {
+    } catch (uploadError) {
+      console.error('[ImageUploader] Error de subida:', uploadError);
       setError('Error de red al subir la imagen');
+      showToast('Error al subir la imagen al servidor.', 'error', '📤 Subida');
     } finally {
       setUploading(false);
     }
@@ -133,6 +167,33 @@ export default function ImageUploader({ value, onChange, placeholder }: ImageUpl
           <div className="flex flex-col items-center space-y-2">
             <div className="w-8 h-8 rounded-full border-2 border-brand-200 border-t-brand-500 animate-spin" />
             <span className="text-[10px] font-mono text-zinc-400">Subiendo imagen...</span>
+            {compressionStats && (
+              <div className="flex items-center gap-2 mt-1 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-900/30 rounded-lg transition-all duration-300">
+                {/* Barra visual de comparación */}
+                <div className="flex flex-col items-end">
+                  <span className="text-[8px] font-mono text-red-500/70 line-through">
+                    {formatBytes(compressionStats.original)}
+                  </span>
+                  <span className="text-[9px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    {formatBytes(compressionStats.compressed)}
+                  </span>
+                </div>
+                <div className="flex flex-col items-center gap-0.5">
+                  <div className="relative w-16 h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                    {/* Barra original (ancho completo) */}
+                    <div className="absolute inset-0 rounded-full bg-red-200/50" />
+                    {/* Barra comprimida */}
+                    <div
+                      className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-500"
+                      style={{ width: `${Math.min(100, (compressionStats.compressed / compressionStats.original) * 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-[8px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    -{Math.round((1 - compressionStats.compressed / compressionStats.original) * 100)}%
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         ) : isDragOver ? (
           <div className="flex flex-col items-center space-y-1.5">

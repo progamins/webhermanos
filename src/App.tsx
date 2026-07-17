@@ -49,21 +49,9 @@ const Contact = lazy(() => import('./components/Contact'));
 const AdminPanel = lazy(() => import('./components/AdminPanel'));
 const OrderTracking = lazy(() => import('./components/OrderTracking'));
 
-// Loading messages for the splash screen
-const LOADING_MESSAGES = [
-  'Preparando recetas familiares...',
-  'Caramelizando ingredientes frescos...',
-  'Decorando con amor artesanal...',
-  'Horneando el bizcocho perfecto...',
-  'Espolvoreando polvo de estrellas...',
-  '¡Bienvenido a Maison Rosas! ✨',
-];
-
 export default function App() {
-  // Page load screen state
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
-  const [loadingProgress, setLoadingProgress] = useState(0);
+  // Elegant entrance animation (auto-dismiss after ~1.6s)
+  const [showEntrance, setShowEntrance] = useState(true);
 
   // Core App states loaded from Firestore
   const [products, setProducts] = useState<Product[]>([]);
@@ -93,17 +81,6 @@ export default function App() {
 
   // Legal modals state
   const [legalModal, setLegalModal] = useState<{ isOpen: boolean; tab: 'terms' | 'privacy' }>({ isOpen: false, tab: 'terms' });
-
-  // Cycle loading messages
-  useEffect(() => {
-    if (!initialLoading) return;
-    const isMobileView = window.innerWidth < 768;
-    const interval = setInterval(() => {
-      setLoadingMessageIndex(prev => (prev + 1) % LOADING_MESSAGES.length);
-      setLoadingProgress(prev => Math.min(prev + Math.random() * (isMobileView ? 28 : 18) + 5, 98)); // Faster progress on mobile
-    }, isMobileView ? 700 : 900);
-    return () => clearInterval(interval);
-  }, [initialLoading]);
 
   // Note: Hero image preload removed intentionally.
   // The Hero component already uses fetchPriority="high" and decoding="async"
@@ -136,6 +113,21 @@ export default function App() {
         try { localStorage.removeItem('maison_favicon_url'); } catch {}
       }
     }
+
+    // Persistir hero image en localStorage para preload en próxima carga
+    if (config.heroImage) {
+      try { localStorage.setItem('maison_hero_url', config.heroImage.split('?')[0]); } catch {}
+    } else {
+      try { localStorage.removeItem('maison_hero_url'); } catch {}
+    }
+
+    // Persistir calidad de compresión de imágenes
+    if (config.imageQuality) {
+      try { localStorage.setItem('maison_image_quality', String(config.imageQuality)); } catch {}
+    } else {
+      // Si no está configurada, guardar el default 0.8
+      try { localStorage.setItem('maison_image_quality', '0.8'); } catch {}
+    }
   }, [config]);
 
   // Initialize and load data from Firestore
@@ -143,9 +135,6 @@ export default function App() {
     try {
       // 1. Seed if empty
       await seedDatabaseIfNeeded();
-
-      // Set progress after seed
-      setLoadingProgress(20);
 
       // 2. Fetch everything parallelly for high-speed performance
       const [fetchedProducts, fetchedReviews, fetchedGallery, fetchedConfig, fetchedOrders] = await Promise.all([
@@ -174,16 +163,8 @@ export default function App() {
           }
         }
       }
-      setLoadingProgress(85);
     } catch (error) {
       console.error('Error fetching data from Firestore:', error);
-    } finally {
-      setLoadingProgress(100);
-      // Small delay for the final message to show (shorter on mobile)
-      const isMobileView = typeof window !== 'undefined' && window.innerWidth < 768;
-      setTimeout(() => {
-        setInitialLoading(false);
-      }, isMobileView ? 300 : 600);
     }
   };
 
@@ -289,12 +270,6 @@ export default function App() {
 
     connectSSE();
 
-    // Safety fallback: force-disable loading screen (5s on mobile, 8s desktop) to prevent infinite loader
-    const isMobileView = window.innerWidth < 768;
-    const fallbackTimeout = setTimeout(() => {
-      setInitialLoading(false);
-    }, isMobileView ? 4000 : 8000);
-
     return () => {
       window.removeEventListener('popstate', handleLocationChange);
       if (sse) {
@@ -306,7 +281,6 @@ export default function App() {
       if (fallbackPollInterval) {
         clearInterval(fallbackPollInterval);
       }
-      clearTimeout(fallbackTimeout);
     };
   }, []);
 
@@ -405,6 +379,12 @@ export default function App() {
     },
   };
 
+  // Auto-dismiss entrance animation after ~1.6s
+  useEffect(() => {
+    const timer = setTimeout(() => setShowEntrance(false), 1600);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Fallback component for Suspense
   const SectionFallback = () => (
     <div className="py-24 flex items-center justify-center">
@@ -414,125 +394,6 @@ export default function App() {
       </div>
     </div>
   );
-
-  // Render Premium Initial Loader Screen (omitir para /admin — el login no necesita datos de Firestore)
-  if (initialLoading && currentView !== 'admin') {
-    return (
-      <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-b from-brand-50 via-white to-brand-50/50 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900">
-        {/* Ambient Background Glow */}
-        <div className="absolute top-1/4 left-1/4 w-72 h-72 rounded-full bg-brand-200/20 dark:bg-brand-500/5 blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-brand-secondary/10 dark:bg-brand-300/5 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
-        
-        {/* Floating sparkle particles */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Floating sparkle particles (reduced on mobile) */}
-          {[...Array(4)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-1.5 h-1.5 rounded-full bg-brand-300/40 dark:bg-brand-400/20"
-              style={{
-                left: `${15 + i * 25}%`,
-                top: `${20 + (i % 5) * 15}%`,
-              }}
-              animate={{
-                y: [0, -20, 0],
-                opacity: [0, 0.6, 0],
-                scale: [0, 1, 0],
-              }}
-              transition={{
-                duration: 2.5,
-                repeat: Infinity,
-                delay: i * 0.6,
-                ease: 'easeInOut',
-              }}
-            />
-          ))}
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.85, filter: 'blur(8px)' }}
-          animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center space-y-8 relative z-10"
-        >            {/* Animated Cake Logo Container (simplified on mobile) */}
-          <div className="relative flex justify-center items-center">
-            {/* Outer pulsing ring */}
-            <motion.div
-              animate={{ scale: [0.95, 1.1, 0.95], opacity: [0.2, 0.08, 0.2] }}
-              transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-              className="absolute w-28 h-28 rounded-full bg-brand-200/30 dark:bg-brand-500/10 blur-xl"
-            />
-            
-            {/* Rotating ring */}
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 8, ease: 'linear' }}
-              className="absolute w-24 h-24 rounded-full border border-dashed border-brand-300/30 dark:border-brand-400/15"
-            />
-
-            {/* Cake Icon */}
-            <motion.div
-              animate={{ y: [0, -3, 0] }}
-              transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-              className="relative"
-            >
-              <Cake className="w-10 h-10 text-brand-500 dark:text-brand-400" />
-            </motion.div>
-          </div>
-
-          {/* Logo Text with Gradient */}
-          <div>
-            <motion.h1
-              className="font-serif text-4xl font-bold tracking-tight text-zinc-900 dark:text-white"
-              animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
-              transition={{ repeat: Infinity, duration: 4, ease: 'linear' }}
-              style={{
-                background: 'linear-gradient(135deg, #C4847D 0%, #D4A373 50%, #C4847D 100%)',
-                backgroundSize: '200% 200%',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              Maison Rosas
-            </motion.h1>
-            <motion.span
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-              className="text-xs font-mono tracking-[0.3em] text-brand-600 dark:text-brand-400 uppercase mt-2 block"
-            >
-              PASTELERÍA DE AUTOR
-            </motion.span>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="w-56 mx-auto space-y-3">
-            <div className="h-0.5 bg-brand-200/40 dark:bg-brand-800/30 rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-gradient-to-r from-brand-400 to-brand-secondary rounded-full"
-                animate={{ width: `${loadingProgress}%` }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
-              />
-            </div>
-            
-            {/* Animated Loading Messages */}
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={loadingMessageIndex}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.3 }}
-                className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono tracking-wider"
-              >
-                {LOADING_MESSAGES[loadingMessageIndex]}
-              </motion.p>
-            </AnimatePresence>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
 
   // Maintenance Mode Screen (clients see this, admin can still access /admin to disable it)
   if (maintenanceMode && currentView !== 'admin') {
@@ -748,6 +609,75 @@ export default function App() {
       
       {/* Google Analytics 4 */}
       <GoogleAnalytics />
+
+      {/* Elegant Entrance Animation Overlay — auto-dismisses after ~1.6s */}
+      <AnimatePresence>
+        {showEntrance && currentView === 'inicio' && (
+          <motion.div
+            key="entrance"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-brand-bg"
+          >
+            {/* Ambient warm glow */}
+            <div className="absolute top-1/3 left-1/3 w-64 h-64 rounded-full bg-brand-100/40 blur-3xl" />
+            <div className="absolute bottom-1/3 right-1/3 w-48 h-48 rounded-full bg-brand-secondary/15 blur-3xl" />
+
+            <div className="text-center relative z-10">
+              {/* Animated Cake Icon */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.6, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
+                className="flex justify-center mb-2"
+              >
+                <motion.div
+                  animate={{ y: [0, -4, 0] }}
+                  transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+                >
+                  <Cake className="w-8 h-8 text-brand-400" />
+                </motion.div>
+              </motion.div>
+
+              {/* Maison Rosas — elegant blur-to-clear reveal */}
+              <motion.h1
+                initial={{ opacity: 0, scale: 0.92, y: 12, filter: 'blur(6px)' }}
+                animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
+                transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                className="font-serif text-4xl font-bold tracking-tight"
+                style={{
+                  background: 'linear-gradient(135deg, #C4847D 0%, #D4A373 50%, #C4847D 100%)',
+                  backgroundSize: '200% 200%',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                Maison Rosas
+              </motion.h1>
+
+              {/* Decorative line expanding from center */}
+              <motion.div
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ duration: 0.45, delay: 0.38, ease: [0.16, 1, 0.3, 1] }}
+                className="h-px bg-gradient-to-r from-transparent via-brand-300/60 to-transparent mt-3 mx-auto origin-center"
+                style={{ width: '50%' }}
+              />
+
+              {/* Tagline fade-in */}
+              <motion.p
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 0.7, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.6, ease: 'easeOut' }}
+                className="text-[10px] font-mono tracking-[0.3em] text-brand-500 uppercase mt-3"
+              >
+                Alma Artesanal
+              </motion.p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Sticky Header Navbar — oculto en admin (login + panel) */}
       {currentView !== 'admin' && (

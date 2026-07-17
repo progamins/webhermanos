@@ -123,6 +123,7 @@ export interface AppConfig {
   aboutImage?: string;
   logoUrl?: string;
   faviconUrl?: string;
+  imageQuality?: number; // Calidad de compresión de imágenes 0.1-1.0 (default 0.8)
 }
 
 export type AdminRole = 'admin' | 'analyst' | 'stock_manager';

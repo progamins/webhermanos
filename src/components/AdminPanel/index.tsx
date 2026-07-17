@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import {
   LayoutDashboard, Cake, ShoppingBag, MessageSquare, Settings, RefreshCw,
-  Image, Layers, CreditCard, LogOut
+  Image, Layers, CreditCard, LogOut, Trash2, HardDrive
 } from 'lucide-react';
 import { Product, Order, Review, GalleryItem, AppConfig, AdminRole } from '../../types';
 import { dbService } from '../../dbService';
@@ -16,6 +16,7 @@ import AdminReviews from './AdminReviews';
 import AdminGallery from './AdminGallery';
 import AdminSettings from './AdminSettings';
 import AdminStock from './AdminStock';
+import AdminImageManager from './AdminImageManager';
 import AdminPaymentModal from './AdminPaymentModal';
 import VoucherModal from '../VoucherModal';
 import ScreenshotModal from '../ScreenshotModal';
@@ -34,7 +35,7 @@ export interface AdminPanelProps {
   onLogout?: () => void;
 }
 
-type ActiveTab = 'dashboard' | 'products' | 'orders' | 'reviews' | 'settings' | 'images' | 'payments' | 'stock';
+type ActiveTab = 'dashboard' | 'products' | 'orders' | 'reviews' | 'settings' | 'images' | 'payments' | 'stock' | 'storage';
 
 interface ToastItem {
   id: string;
@@ -53,6 +54,7 @@ const ROLE_TABS: Record<AdminRole, { id: ActiveTab; label: string; icon: React.E
     { id: 'payments', label: 'Pagos y Comprobantes', icon: CreditCard },
     { id: 'reviews', label: 'Opiniones', icon: MessageSquare },
     { id: 'images', label: 'Galería', icon: Image },
+    { id: 'storage', label: 'Almacenamiento', icon: HardDrive },
     { id: 'settings', label: 'Configuración', icon: Settings },
   ],
   analyst: [
@@ -128,6 +130,29 @@ export default function AdminPanel({
               className="p-2.5 border border-white/30 dark:border-zinc-800/80 bg-white/40 dark:bg-zinc-900/40 rounded-xl hover:bg-white/60 dark:hover:bg-zinc-800/60 text-zinc-500 dark:text-zinc-400 transition-all hover:scale-[1.03] shadow-sm flex items-center justify-center cursor-pointer"
               title="Sincronizar Firestore" id="admin-refresh-data">
               <RefreshCw className="h-4 w-4" />
+            </button>
+            <button
+              onClick={async () => {
+                if (!('caches' in window)) {
+                  showToast('El API de caché no está disponible en este navegador.', 'warning', 'No soportado');
+                  return;
+                }
+                try {
+                  const keys = await caches.keys();
+                  const maisonCaches = keys.filter(k => k.startsWith('maison-'));
+                  if (maisonCaches.length === 0) {
+                    showToast('No hay caché del Service Worker para limpiar.', 'info', 'Cache vacío');
+                    return;
+                  }
+                  await Promise.all(maisonCaches.map(k => caches.delete(k)));
+                  showToast(`Cache de Service Worker limpiado (${maisonCaches.length} almacén${maisonCaches.length > 1 ? 'es' : ''}). Las imágenes se recargarán frescas.`, 'success', '🧹 Cache eliminado');
+                } catch {
+                  showToast('Error al limpiar el caché del Service Worker.', 'error', 'Error');
+                }
+              }}
+              className="p-2.5 border border-amber-200/50 dark:border-amber-900/30 bg-white/40 dark:bg-zinc-900/40 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-950/20 text-amber-500 hover:text-amber-600 transition-all hover:scale-[1.03] shadow-sm flex items-center justify-center cursor-pointer group"
+              title="Limpiar caché del Service Worker (imágenes, fuentes, assets)" id="admin-clear-cache-btn">
+              <Trash2 className="h-4 w-4 group-hover:scale-90 transition-transform" />
             </button>
             {onLogout && (
               <button onClick={onLogout}
@@ -231,6 +256,10 @@ export default function AdminPanel({
               onRefreshData={onRefreshData}
               showToast={showToast}
             />
+          )}
+
+          {activeTab === 'storage' && (
+            <AdminImageManager />
           )}
         </div>
       </div>

@@ -24,7 +24,7 @@ import {
   orderBy,
   limit
 } from "firebase/firestore";
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata } from "firebase/storage";
 import { getAuth, signInAnonymously } from "firebase/auth";
 import bcrypt from "bcryptjs";
 import multer from "multer";
@@ -72,7 +72,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  limits: { fileSize: 3 * 1024 * 1024 }, // 3MB limit (las imágenes se comprimen en el cliente antes de subir)
   fileFilter: (req, file, cb) => {
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/x-icon", "image/svg+xml", "image/vnd.microsoft.icon"];
     if (allowedTypes.includes(file.mimetype)) {
@@ -155,8 +155,8 @@ async function startServer() {
     next();
   });
 
-  // Serve static uploaded files
-  app.use("/uploads", express.static(uploadsDir));
+  // Serve static uploaded files with caching (7 días)
+  app.use("/uploads", express.static(uploadsDir, { maxAge: '7d' }));
 
   // 2. Health check API
   app.get("/api/health", (req, res) => {
@@ -1280,7 +1280,26 @@ async function startServer() {
           return res.status(400).json({ success: false, error: "No se seleccionó ningún archivo." });
         }
         const localUrl = `/uploads/${req.file.filename}`;
-        res.json({ success: true, imageUrl: localUrl });
+
+        // Also upload to Firebase Storage for CDN delivery and persistence
+        let firebaseUrl = localUrl;
+        try {
+          const filePath = req.file.path;
+          const fileBuffer = fs.readFileSync(filePath);
+          const firebaseFileName = `uploads/${req.file.filename}`;
+          const firebaseRefPath = storageRef(storageObj, firebaseFileName);
+          const uploadMetadata = {
+            contentType: req.file.mimetype || 'image/webp',
+          };
+          const snapshot = await uploadBytes(firebaseRefPath, fileBuffer, uploadMetadata);
+          firebaseUrl = await getDownloadURL(snapshot.ref);
+          console.log(`[UPLOAD] Image also uploaded to Firebase Storage: ${firebaseFileName}`);
+        } catch (fbError) {
+          console.warn('[UPLOAD] Firebase upload failed, using local URL:', fbError);
+          // Fallback to local URL if Firebase upload fails
+        }
+
+        res.json({ success: true, imageUrl: firebaseUrl, localUrl });
       } catch (error) {
         console.error("[UPLOAD] Error inesperado:", error);
         res.status(500).json({ success: false, error: "Error interno del servidor al subir la imagen." });
@@ -1396,6 +1415,285 @@ async function startServer() {
       res.status(500).json({ success: false, error: "Error al eliminar el comprobante." });
     }
   });
+
+  // ── Storage Manager API ──
+  // List all files in Firebase Storage (vouchers/ and uploads/) + local disk uploads
+  app.get("/api/admin/storage/list", verifyAdminSession, async (req, res) => {
+    try {
+      const folders = ['uploads', 'vouchers'];
+      const allFiles: any[] = [];
+
+      for (const folder of folders) {
+        try {
+          const folderRef = storageRef(storageObj, folder);
+          const result = await listAll(folderRef);
+
+          for (const item of result.items) {
+            try {
+              const meta = await getMetadata(item);
+              const downloadUrl = await getDownloadURL(item);
+              allFiles.push({
+                name: item.name,
+                fullPath: item.fullPath,
+                folder,
+                size: meta.size,
+                contentType: meta.contentType,
+                timeCreated: meta.timeCreated,
+                updated: meta.updated,
+                downloadUrl,
+              });
+            } catch (metaErr) {
+              allFiles.push({
+                name: item.name,
+                fullPath: item.fullPath,
+                folder,
+                size: 0,
+                contentType: 'unknown',
+                timeCreated: null,
+                updated: null,
+                downloadUrl: null,
+              });
+            }
+          }
+        } catch (folderErr) {
+          console.warn(`[STORAGE] Could not list folder "${folder}":`, folderErr);
+        }
+      }
+
+      // Also list local disk uploads
+      let localFiles: any[] = [];
+      try {
+        if (fs.existsSync(uploadsDir)) {
+          const localEntries = fs.readdirSync(uploadsDir);
+          localFiles = localEntries
+            .filter(f => f !== '.gitkeep')
+            .map(f => {
+              const filePath = path.join(uploadsDir, f);
+              let stat: fs.Stats | null = null;
+              try { stat = fs.statSync(filePath); } catch {}
+              return {
+                name: f,
+                fullPath: `local/${f}`,
+                folder: 'local',
+                size: stat?.size || 0,
+                contentType: getContentType(f),
+                timeCreated: stat ? new Date(stat.birthtime).toISOString() : null,
+                updated: stat ? new Date(stat.mtime).toISOString() : null,
+                downloadUrl: `/uploads/${f}`,
+                localPath: filePath,
+              };
+            });
+        }
+      } catch (localErr) {
+        console.warn('[STORAGE] Could not list local uploads:', localErr);
+      }
+
+      const allItems = [...allFiles, ...localFiles];
+      const totalSize = allItems.reduce((sum, f) => sum + (f.size || 0), 0);
+
+      res.json({
+        success: true,
+        files: allItems,
+        totalSize,
+        totalFiles: allItems.length,
+        firebaseFiles: allFiles,
+        localFiles,
+      });
+    } catch (error) {
+      console.error('[STORAGE] Error listing storage:', error);
+      res.status(500).json({ success: false, error: 'Error al listar el almacenamiento.' });
+    }
+  });
+
+  // Delete a file from Firebase Storage or local disk
+  app.delete("/api/admin/storage/delete", verifyAdminSession, async (req, res) => {
+    const { fullPath, folder } = req.query;
+    if (!fullPath || !folder) {
+      return res.status(400).json({ success: false, error: 'Se requiere fullPath y folder.' });
+    }
+
+    try {
+      if (folder === 'local') {
+        const localPath = path.join(uploadsDir, path.basename(fullPath as string));
+        if (fs.existsSync(localPath)) fs.unlinkSync(localPath);
+        await logActivity('Eliminación de archivo local', `Archivo "${fullPath}" eliminado del servidor.`);
+      } else {
+        const fileRef = storageRef(storageObj, fullPath as string);
+        await deleteObject(fileRef);
+        await logActivity('Eliminación de archivo Firebase', `Archivo "${fullPath}" eliminado de Firebase Storage.`);
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[STORAGE] Error deleting file:', error);
+      res.status(500).json({ success: false, error: 'Error al eliminar el archivo.' });
+    }
+  });
+
+  // Delete multiple files from storage
+  app.post("/api/admin/storage/delete-bulk", verifyAdminSession, async (req, res) => {
+    const { files } = req.body;
+    if (!Array.isArray(files) || files.length === 0) {
+      return res.status(400).json({ success: false, error: 'Se requiere un array de archivos.' });
+    }
+
+    let deleted = 0;
+    let errors = 0;
+
+    for (const file of files) {
+      try {
+        if (file.folder === 'local') {
+          const localPath = path.join(uploadsDir, path.basename(file.fullPath));
+          if (fs.existsSync(localPath)) { fs.unlinkSync(localPath); deleted++; }
+        } else {
+          const fileRef = storageRef(storageObj, file.fullPath);
+          await deleteObject(fileRef);
+          deleted++;
+        }
+      } catch (e) {
+        console.warn('[STORAGE] Bulk delete error:', file.fullPath, e);
+        errors++;
+      }
+    }
+
+    await logActivity('Eliminación masiva', `${deleted} archivos eliminados del almacenamiento.`);
+    res.json({ success: true, deleted, errors });
+  });
+
+  // ── URL Audit: scan all Firestore docs for image URLs and classify them ──
+  app.get("/api/admin/audit/urls", verifyAdminSession, async (req, res) => {
+    try {
+      const collections = [
+        { name: 'products', fields: ['images'] },
+        { name: 'gallery', fields: ['imageUrl'] },
+        { name: 'config', docId: 'app_config', fields: ['heroImage', 'aboutImage', 'faviconUrl'] },
+        { name: 'orders', fields: ['voucherUrl', 'progressPhotos'] },
+        { name: 'stock', fields: ['imageUrl'] },
+      ];
+
+      const results: {
+        collection: string;
+        docId: string;
+        field: string;
+        url: string;
+        type: 'firebase' | 'local' | 'unsplash' | 'external' | 'empty';
+      }[] = [];
+
+      function classifyUrl(url: string): 'firebase' | 'local' | 'unsplash' | 'external' | 'empty' {
+        if (!url || url === '') return 'empty';
+        if (url.includes('firebasestorage.googleapis.com') || url.includes('storage.googleapis.com')) return 'firebase';
+        if (url.startsWith('/uploads/')) return 'local';
+        if (url.includes('images.unsplash.com')) return 'unsplash';
+        return 'external';
+      }
+
+      function extractUrls(value: any, field: string): string[] {
+        if (field === 'images' && Array.isArray(value)) return value.filter(v => typeof v === 'string');
+        if (field === 'progressPhotos' && Array.isArray(value)) {
+          return value.map((p: any) => p?.imageUrl || '').filter(Boolean);
+        }
+        if (typeof value === 'string') return [value];
+        return [];
+      }
+
+      for (const col of collections) {
+        try {
+          let docs;
+          if (col.docId) {
+            // Single doc lookup
+            const snap = await getDoc(doc(db, col.name, col.docId));
+            docs = snap.exists() ? [{ id: col.docId, data: snap.data() }] : [];
+          } else {
+            // Collection scan
+            const snap = await getDocs(collection(db, col.name));
+            docs = snap.docs.map(d => ({ id: d.id, data: d.data() }));
+          }
+
+          for (const d of docs) {
+            for (const field of col.fields) {
+              const rawValue = d.data[field];
+              const urls = extractUrls(rawValue, field);
+              for (const url of urls) {
+                results.push({
+                  collection: col.name,
+                  docId: d.id,
+                  field,
+                  url,
+                  type: classifyUrl(url),
+                });
+              }
+            }
+          }
+        } catch (colErr) {
+          console.warn(`[AUDIT] Could not scan "${col.name}":`, colErr);
+        }
+      }
+
+      const counts = {
+        total: results.length,
+        firebase: results.filter(r => r.type === 'firebase').length,
+        local: results.filter(r => r.type === 'local').length,
+        unsplash: results.filter(r => r.type === 'unsplash').length,
+        external: results.filter(r => r.type === 'external').length,
+        empty: results.filter(r => r.type === 'empty').length,
+      };
+
+      res.json({ success: true, urls: results, counts });
+    } catch (error) {
+      console.error('[AUDIT] Error scanning URLs:', error);
+      res.status(500).json({ success: false, error: 'Error al auditar las URLs de Firestore.' });
+    }
+  });
+
+  // ── Migrate local images to Firebase Storage ──
+  app.post("/api/admin/storage/migrate-local", verifyAdminSession, async (req, res) => {
+    try {
+      if (!fs.existsSync(uploadsDir)) {
+        return res.json({ success: true, migrated: 0, total: 0 });
+      }
+
+      const localEntries = fs.readdirSync(uploadsDir);
+      const files = localEntries.filter(f => f !== '.gitkeep' && !f.startsWith('.'));
+      const results: { name: string; success: boolean; firebaseUrl?: string; error?: string }[] = [];
+
+      for (const file of files) {
+        try {
+          const filePath = path.join(uploadsDir, file);
+          const fileBuffer = fs.readFileSync(filePath);
+          const contentType = getContentType(file);
+          const firebaseFileName = `uploads/${file}`;
+          const firebaseRefPath = storageRef(storageObj, firebaseFileName);
+          const uploadMetadata = { contentType };
+          const snapshot = await uploadBytes(firebaseRefPath, fileBuffer, uploadMetadata);
+          const firebaseUrl = await getDownloadURL(snapshot.ref);
+
+          results.push({ name: file, success: true, firebaseUrl });
+          console.log(`[MIGRATE] "${file}" → Firebase Storage`);
+        } catch (fileError: any) {
+          console.warn(`[MIGRATE] Error migrating "${file}":`, fileError.message || fileError);
+          results.push({ name: file, success: false, error: fileError.message || String(fileError) });
+        }
+      }
+
+      const migrated = results.filter(r => r.success).length;
+      await logActivity('Migración a Firebase', `${migrated} de ${files.length} archivos migrados a Firebase Storage.`);
+
+      res.json({ success: true, migrated, total: files.length, results });
+    } catch (error) {
+      console.error('[MIGRATE] Error during migration:', error);
+      res.status(500).json({ success: false, error: 'Error durante la migración a Firebase Storage.' });
+    }
+  });
+
+  // Helper to guess content type from filename
+  function getContentType(filename: string): string {
+    const ext = path.extname(filename).toLowerCase();
+    const mimeMap: Record<string, string> = {
+      '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+      '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml',
+      '.ico': 'image/x-icon', '.pdf': 'application/pdf',
+    };
+    return mimeMap[ext] || 'application/octet-stream';
+  }
 
   // Update order payment status details
   app.post("/api/admin/orders/update-payment", verifyAdminSession, async (req, res) => {
@@ -1930,7 +2228,13 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
+    // Hashed assets (JS/CSS with hash in filename) = inmutable, 1 año de caché
+    app.use("/assets", express.static(path.join(distPath, "assets"), {
+      maxAge: '1y',
+      immutable: true
+    }));
+    // Otros archivos estáticos (sin hash) = 1 hora de caché
+    app.use(express.static(distPath, { maxAge: '1h' }));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
