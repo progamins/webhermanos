@@ -131,9 +131,7 @@ self.addEventListener('activate', (event) => {
       return self.clients.claim();
     })
   );
-});
-
-// ── Fetch: cache-first for images & fonts, network-first for API ──
+});  // ── Fetch: cache-first for images & fonts, network-first for API ──
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
@@ -143,9 +141,31 @@ self.addEventListener('fetch', (event) => {
   if (url.origin === self.location.origin && url.pathname === '/sw.js') return;
 
   const isImage = event.request.destination === 'image';
+  const isLocalUpload = url.origin === self.location.origin && url.pathname.startsWith('/uploads/');
   const isFont = event.request.destination === 'font';
   const isHashedAsset = (event.request.destination === 'script' || event.request.destination === 'style')
     && /\/assets\/[a-zA-Z0-9_-]+-[a-f0-9]{8,}\.(js|css)$/i.test(url.pathname);
+
+  // ── Uploads locales: Cache-First con prioridad máxima ──
+  if (isLocalUpload) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+
+        return fetch(event.request).then((response) => {
+          if (response && response.ok) {
+            caches.open(CACHE_NAME).then((cache) => {
+              safeCachePut(cache, event.request, response);
+            });
+          }
+          return response;
+        }).catch(() => {
+          return new Response('', { status: 204 });
+        });
+      })
+    );
+    return;
+  }
 
   // ── Images & Fonts & Hashed Assets: Cache-First ──
   if (isImage || isFont || isHashedAsset) {

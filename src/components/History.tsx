@@ -149,7 +149,7 @@ export default function History({ config }: HistoryProps) {
           >
             <div className="absolute inset-0 bg-brand-500 rounded-3xl rotate-3 scale-[0.98] opacity-10" />
             <CachedImage
-              src={config?.aboutImage || 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=600&auto=format&fit=crop&q=80'}
+              src={config?.aboutImage}
               width={800}
               alt="Carol horneando con amor"
               className="relative w-full aspect-[4/3] object-cover rounded-3xl shadow-xl border border-white/20"

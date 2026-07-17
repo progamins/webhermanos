@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Plus, Edit3, Trash2, ToggleLeft, ToggleRight, X } from 'lucide-react';
+import { Plus, Edit3, Trash2, ToggleLeft, ToggleRight, X, Package } from 'lucide-react';
 import { Product } from '../../types';
 import { dbService } from '../../dbService';
 import ImageUploader from './ImageUploader';
@@ -50,7 +50,7 @@ export default function AdminProducts({ products, onRefreshData, showToast }: Ad
       ? prodImages.filter(url => url.trim() !== '')
       : (editingProduct && editingProduct.images.length > 0
         ? editingProduct.images
-        : ['https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80']);
+        : []);
 
     const newProduct: Product = {
       id: targetId,
@@ -264,8 +264,13 @@ export default function AdminProducts({ products, onRefreshData, showToast }: Ad
               <div className="flex space-x-4">
                 <div className="relative">
                   <div className="relative">
-                    <img src={optimizeImageUrl((prod.images && prod.images[0]) || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80', 200)}
-                      alt={prod.name} className="w-16 h-16 rounded-xl object-cover" loading="lazy" decoding="async" />
+                    {prod.images && prod.images[0] ? (
+                      <img src={optimizeImageUrl(prod.images[0], 200)} alt={prod.name} className="w-16 h-16 rounded-xl object-cover" loading="lazy" decoding="async" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400">
+                        <Package className="h-5 w-5" />
+                      </div>
+                    )}
                     {prod.images && prod.images.length > 1 && (
                       <span className="absolute -top-1 -right-1 bg-brand-500 text-white text-[8px] font-mono font-bold px-1 rounded-full shadow-sm border border-white">
                         +{prod.images.length - 1}

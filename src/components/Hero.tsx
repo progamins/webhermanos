@@ -1,7 +1,7 @@
+import { memo } from 'react';
 import { motion } from 'motion/react';
 import { Sparkles, Star } from 'lucide-react';
 import { AppConfig } from '../types';
-import { optimizeImageUrl } from '../utils/images';
 import CachedImage from './CachedImage';
 
 interface HeroProps {
@@ -40,8 +40,8 @@ const SPARKLE_PARTICLES = Array.from({ length: SPARKLE_COUNT }, (_, i) => ({
   duration: 2.5 + (i % 3) * 1.5,
 }));
 
-export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps) {
-  // Modern spring-based animation variants
+function Hero({ onViewCatalog, onViewHistory, config }: HeroProps) {
+  // Modern spring-based animation variants (static objects, no useMemo needed)
   const heroContainerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -288,15 +288,15 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
             />
 
             <motion.div
-              initial={{ opacity: 0, scale: 0.85, rotate: -3, filter: 'blur(6px)' }}
-              animate={{ opacity: 1, scale: 1, rotate: 0, filter: 'blur(0px)' }}
+              initial={{ opacity: 1, scale: 0.92, rotate: -2 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
               transition={{ 
                 type: isMobile ? 'tween' as const : 'spring' as const,
                 duration: isMobile ? 0.5 : undefined,
-                stiffness: isMobile ? undefined : 60,
-                damping: isMobile ? undefined : 14,
-                mass: isMobile ? undefined : 1,
-                delay: 0.2,
+                stiffness: isMobile ? undefined : 80,
+                damping: isMobile ? undefined : 16,
+                mass: isMobile ? undefined : 0.8,
+                delay: 0.15,
               }}
               className="glass-panel relative w-full max-w-[420px] aspect-[4/5] rounded-[40px] p-4 overflow-hidden shadow-xl border border-white/30 dark:border-white/5 bg-white/40 dark:bg-zinc-900/40"
               id="hero-image-container"
@@ -307,7 +307,7 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
                 className="w-full h-full bg-white/20 dark:bg-zinc-950/20 rounded-[32px] relative overflow-hidden"
               >
                 <CachedImage
-                  src={config?.heroImage || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80'}
+                  src={config?.heroImage}
                   width={600}
                   alt="Pastel de Boda Rosas"
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
@@ -395,3 +395,5 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
     </section>
   );
 }
+
+export default memo(Hero);

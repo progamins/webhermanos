@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { memo, useState, useEffect, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { Cake, Menu, X, LogIn, ShoppingBag, HelpCircle, PhoneCall, Star, Sun, Moon } from 'lucide-react';
 import { optimizeImageUrl } from '../utils/images';
@@ -14,7 +14,7 @@ interface NavbarProps {
   onToggleTheme?: () => void;
 }
 
-export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, onLogout, logoUrl, theme = 'dark', onToggleTheme }: NavbarProps) {
+function Navbar({ currentView, setCurrentView, isAdminLoggedIn, onLogout, logoUrl, theme = 'dark', onToggleTheme }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -26,14 +26,14 @@ export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, o
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navItems = [
+  const navItems = useMemo(() => [
     { id: 'inicio', label: 'Inicio', icon: Cake },
     { id: 'historia', label: 'Nuestra Historia', icon: HelpCircle },
     { id: 'catalogo', label: 'Catálogo', icon: ShoppingBag },
     { id: 'tracking', label: 'Consultar Pedido', icon: Cake },
     { id: 'opiniones', label: 'Opiniones', icon: Star },
     { id: 'contacto', label: 'Contacto', icon: PhoneCall },
-  ];
+  ], []);
 
   const handleNavigate = (viewId: string) => {
     if (viewId === 'tracking') {
@@ -91,7 +91,7 @@ export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, o
                   alt="Maison Rosas Logo" 
                   className="w-full h-full object-cover"
                   wrapperClassName="w-full h-full"
-                  spinnerSize={16}
+                  priority
                 />
               </div>
             ) : (
@@ -274,3 +274,5 @@ export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, o
     </motion.nav>
   );
 }
+
+export default memo(Navbar);

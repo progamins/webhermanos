@@ -40,13 +40,92 @@
     <!-- Dynamic Favicon (set exclusively by App.tsx from Firestore config) -->
     <link id="dynamic-favicon" rel="icon" />
 
+    <!-- Google Fonts: Spectral + Quicksand (optimized with preconnect + preload) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Quicksand:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+
+    <!-- Precarga instantánea de imágenes críticas inyectadas por el servidor desde Firestore -->
+    <!-- El servidor Express reemplaza este placeholder con <link rel="preload"> tags reales -->
+    <!-- SERVER_PRELOAD_IMAGES -->
+
+    <!-- Precarga instantánea de imágenes críticas (hero + logo) -->
+    <!-- 1. <link rel="preload"> desde localStorage (para que el navegador descargue durante parseo) -->
+    <!-- 2. new Image() JS preload (inicia descarga aunque <link> no se hubiera ejecutado) -->
+    <!-- 3. preconnect al mismo origen (cero latencia de conexión) -->
+    <link rel="preconnect" href="/" />
+    <script>
+      (function() {
+        try {
+          var keys = ['maison_hero_url', 'maison_logo_url', 'maison_favicon_url'];
+          for (var i = 0; i < keys.length; i++) {
+            var url = localStorage.getItem(keys[i]);
+            if (url && url !== 'data:,' && url.length > 10) {
+              var clean = url.split('?')[0];
+              // 1. <link rel="preload"> para que el navegador priorice la descarga
+              var link = document.createElement('link');
+              link.rel = 'preload';
+              link.as = 'image';
+              link.href = clean;
+              link.fetchPriority = 'high';
+              document.head.appendChild(link);
+              // 2. new Image() para que el navegador comience a descargar INMEDIATAMENTE
+              var img = new Image();
+              img.fetchPriority = 'high';
+              img.src = clean;
+            }
+          }
+        } catch(e) {}
+      })();
+    </script>
+
     <!-- Preconnect to performance-critical origins -->
     <link rel="preconnect" href="https://firestore.googleapis.com" />
     <link rel="preconnect" href="https://firebasestorage.googleapis.com" />
-    <link rel="preconnect" href="https://images.unsplash.com" />
     <link rel="dns-prefetch" href="https://images.unsplash.com" />
 
-    <!-- Hero image is handled by CachedImage with instant URL loading + background caching -->
+    <!-- Perf metrics: LCP, FCP, CLS, TTFB, INP -->
+    <script>
+      if ('performance' in window && 'PerformanceObserver' in window) {
+        try {
+          // LCP (Largest Contentful Paint)
+          var lcpObs = new PerformanceObserver(function(list) {
+            var entries = list.getEntries();
+            if (entries.length > 0) {
+              var last = entries[entries.length - 1];
+              console.log('[PERF] LCP:', (last.startTime / 1000).toFixed(2) + 's', '-', last.url || '(texto)');
+            }
+          });
+          lcpObs.observe({type: 'largest-contentful-paint', buffered: true});
+
+          // FCP (First Contentful Paint)
+          var fcpObs = new PerformanceObserver(function(list) {
+            var entries = list.getEntries();
+            if (entries.length > 0) {
+              console.log('[PERF] FCP:', (entries[0].startTime / 1000).toFixed(2) + 's');
+            }
+          });
+          fcpObs.observe({type: 'paint', buffered: true});
+
+          // CLS (Cumulative Layout Shift)
+          var clsObs = new PerformanceObserver(function(list) {
+            var entries = list.getEntries();
+            var cls = 0;
+            for (var j = 0; j < entries.length; j++) {
+              if (!entries[j].hadRecentInput) cls += entries[j].value;
+            }
+            console.log('[PERF] CLS:', cls.toFixed(3));
+          });
+          clsObs.observe({type: 'layout-shift', buffered: true});
+
+          // TTFB (Time to First Byte)
+          var nav = performance.getEntriesByType('navigation')[0];
+          if (nav) {
+            console.log('[PERF] TTFB:', (nav.responseStart - nav.requestStart).toFixed(0) + 'ms');
+          }
+        } catch(e) {}
+      }
+    </script>
 
     <!-- Google Analytics 4 (configurado via VITE_GA_MEASUREMENT_ID) -->
     <script>

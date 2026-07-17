@@ -1,4 +1,24 @@
 /**
+ * Convierte URLs de imágenes externas a URLs locales del servidor.
+ * Las imágenes de Firebase Storage y otros orígenes externos
+ * se sirven a través del proxy local /api/image-proxy para:
+ * - Eliminar SSL handshake + DNS lookup externos
+ * - Aprovechar la caché del mismo origen (Cache-Control: immutable)
+ * - Cargar más rápido al no depender de conexiones externas
+ *
+ * Las URLs que ya son locales (/uploads/) o data: se devuelven tal cual.
+ */
+export function getLocalImageUrl(url: string): string {
+  if (!url) return url;
+  // Ya es local → no tocar
+  if (url.startsWith('/uploads/') || url.startsWith('data:')) return url;
+  // Ya está en el mismo origen → no tocar
+  if (typeof window !== 'undefined' && url.startsWith(window.location.origin)) return url;
+  // URL externa → proxy local
+  return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+}
+
+/**
  * Detects if the current device is likely mobile based on screen width.
  * This runs during SSR/build too, where window is undefined (returns false).
  */

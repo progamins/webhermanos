@@ -37,8 +37,11 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import TermsAndPrivacy from './components/TermsAndPrivacy';
 
-// Precargar imágenes críticas en caché (hero + logo) desde el inicio
+// MemoryCache global para reutilizar instancias HTMLImageElement
+import { imageMemoryCache } from './utils/imageMemoryCache';
+// IndexedDB solo para imágenes críticas (Hero, Logo, About, Favicon)
 import { preloadImages } from './utils/imageCache';
+import { getLocalImageUrl } from './utils/images';
 
 // Lazy-loaded components (below the fold / heavy)
 const History = lazy(() => import('./components/History'));
@@ -106,14 +109,57 @@ export default function App() {
   // Legal modals state
   const [legalModal, setLegalModal] = useState<{ isOpen: boolean; tab: 'terms' | 'privacy' }>({ isOpen: false, tab: 'terms' });
 
-  // Precargar imágenes críticas en la caché base64 cuando el config esté listo
+  // Precargar imágenes críticas inmediatamente desde localStorage (sin esperar Firestore)
   useEffect(() => {
-    if (!config) return;
-    const heroImg = config.heroImage;
-    if (heroImg) {
-      preloadImages([heroImg]);
+    const savedHero = (() => { try { return localStorage.getItem('maison_hero_url'); } catch { return null; } })();
+    const savedLogo = (() => { try { return localStorage.getItem('maison_logo_url'); } catch { return null; } })();
+    const savedAbout = (() => { try { return localStorage.getItem('maison_about_url'); } catch { return null; } })();
+
+    const urls = [savedHero, savedLogo, savedAbout].filter(Boolean) as string[];
+    if (urls.length > 0) {
+      // MemoryCache: new Image() → descarga iniciada, lista para el render
+      imageMemoryCache.preloadAll(urls);
+
+      // También convertir las URLs para que CachedImage pueda encontrarlas
+      // (CachedImage aplica getLocalImageUrl() + optimizeImageUrl() antes de buscar)
+      const convertedUrls = urls.map(u => getLocalImageUrl(u)).filter(Boolean);
+      if (convertedUrls.length > 0) imageMemoryCache.preloadAll(convertedUrls);
+      // IndexedDB: background fetch para visitas futuras
+      preloadImages(urls);
+
+      // Log de rendimiento: origen de la imagen
+      setTimeout(() => {
+        for (const url of urls) {
+          const origin = imageMemoryCache.has(url) ? 'memory_cache' : 'network';
+          console.log(`[PERF] Imagen cargada desde: ${origin} | ${url.substring(0, 60)}...`);
+        }
+      }, 100);
+    }
+  }, []);
+
+  // Cuando Firestore entrega el config, actualizar en background sin bloquear
+  useEffect(() => {
+    if (!config?.heroImage) return;
+    // Verificar si la URL cambió vs localStorage
+    const current = (() => { try { return localStorage.getItem('maison_hero_url'); } catch { return null; } })();
+    const newUrl = config.heroImage.split('?')[0];
+    if (current !== newUrl) {
+      // Nueva URL detectada → precargar en background sin afectar el render
+      imageMemoryCache.update(newUrl);
+      preloadImages([newUrl]);
     }
   }, [config?.heroImage]);
+
+  // Logo background sync (misma lógica que hero)
+  useEffect(() => {
+    if (!config?.logoUrl) return;
+    const current = (() => { try { return localStorage.getItem('maison_logo_url'); } catch { return null; } })();
+    const newUrl = config.logoUrl.split('?')[0];
+    if (current !== newUrl) {
+      imageMemoryCache.update(newUrl);
+      preloadImages([newUrl]);
+    }
+  }, [config?.logoUrl]);
 
   // Dynamic favicon & document title from Firestore config
   useEffect(() => {

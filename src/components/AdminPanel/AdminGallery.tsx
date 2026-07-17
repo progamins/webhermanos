@@ -150,8 +150,7 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
               <div className="space-y-1.5">
                 <span className="text-[9px] font-mono uppercase text-zinc-400 block font-semibold">Vista Previa:</span>
                 <div className="aspect-[4/3] w-full bg-zinc-100 dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
-                  {heroImage ? <img src={optimizeImageUrl(heroImage, 600)} alt="Vista previa" className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" decoding="async"
-                    onError={(e) => { (e.target as HTMLImageElement).src = optimizeImageUrl('https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80', 600); }} />
+                  {heroImage ? <img src={optimizeImageUrl(heroImage, 600)} alt="Vista previa" className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" decoding="async" />
                     : <div className="flex items-center justify-center h-full text-zinc-400 text-xs font-mono">Sin imagen configurada</div>}
                 </div>
               </div>
@@ -183,8 +182,7 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
               <div className="space-y-1.5">
                 <span className="text-[9px] font-mono uppercase text-zinc-400 block font-semibold">Vista Previa:</span>
                 <div className="aspect-[4/3] w-full bg-zinc-100 dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
-                  {aboutImage ? <img src={optimizeImageUrl(aboutImage, 800)} alt="Vista previa" className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" decoding="async"
-                    onError={(e) => { (e.target as HTMLImageElement).src = optimizeImageUrl('https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80', 800); }} />
+                  {aboutImage ? <img src={optimizeImageUrl(aboutImage, 800)} alt="Vista previa" className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" decoding="async" />
                     : <div className="flex items-center justify-center h-full text-zinc-400 text-xs font-mono">Sin imagen configurada</div>}
                 </div>
               </div>

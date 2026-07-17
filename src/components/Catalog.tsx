@@ -171,9 +171,7 @@ export default function Catalog({ products, onSelectCustomize }: CatalogProps) {
                   className="relative aspect-[4/3] overflow-hidden bg-zinc-100 dark:bg-zinc-900 cursor-pointer group/img"
                 >
                 <CachedImage
-                  src={(product.images && product.images[
-                    galleryProductId === product.id ? galleryImageIndex : 0
-                  ]) || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80'}
+                  src={product.images?.[galleryProductId === product.id ? galleryImageIndex : 0]}
                   width={600}
                   alt={product.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

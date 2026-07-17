@@ -9,11 +9,11 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        serif: ['"Playfair Display"', 'Georgia', 'serif'],
-        sans: ['"Inter"', 'system-ui', 'sans-serif'],
+        serif: ['"Spectral"', 'Georgia', 'serif'],
+        sans: ['"Quicksand"', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'monospace'],
-        display: ['"Playfair Display"', 'Georgia', 'serif'],
-        script: ['"Playfair Display"', 'Georgia', 'serif'],
+        display: ['"Spectral"', 'Georgia', 'serif'],
+        script: ['"Spectral"', 'Georgia', 'serif'],
       },
       colors: {
         brand: {

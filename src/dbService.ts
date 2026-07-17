@@ -11,8 +11,7 @@ import {
   where 
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from './firebase';
+import { db } from './firebase';
 import { compressImage } from './utils/images';
 import { Product, Review, Order, GalleryItem, AppConfig, CakeStock } from './types';
 
@@ -87,10 +86,7 @@ const INITIAL_PRODUCTS: Product[] = [
     description: 'Exquisito pastel de chocolate belga con capas de ganache suave de cacao y cobertura texturizada coronada por trufas artesanales elaboradas por Carol.',
     basePrice: 120,
     category: 'Especiales',
-    images: [
-      'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80'
-    ],
+    images: [],
     flavors: ['Chocolate Belga', 'Fudge Intenso', 'Café Moca'],
     decorations: ['Trufas de la Casa', 'Polvo de Oro Comestible', 'Salsa Fudge Caliente'],
     preparationTime: '48 horas',
@@ -104,10 +100,7 @@ const INITIAL_PRODUCTS: Product[] = [
     description: 'Diseño romántico con cobertura en crema de mantequilla vintage color pastel, adornado con rosas naturales seleccionadas y perlas de azúcar.',
     basePrice: 135,
     category: 'Bodas',
-    images: [
-      'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1527481138388-31827a7c94d5?w=600&auto=format&fit=crop&q=80'
-    ],
+    images: [],
     flavors: ['Vainilla Francesa', 'Red Velvet', 'Manjar Blanco de Leche'],
     decorations: ['Flores Frescas', 'Macarons de Frambuesa', 'Perlas Comestibles'],
     preparationTime: '72 horas',
@@ -121,10 +114,7 @@ const INITIAL_PRODUCTS: Product[] = [
     description: 'Sutil y fina cobertura cremosa de degradado celeste y lila, coronado con crujientes macarons artesanales de Carol y merengues suizos.',
     basePrice: 110,
     category: 'Infantiles',
-    images: [
-      'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=600&auto=format&fit=crop&q=80'
-    ],
+    images: [],
     flavors: ['Vainilla Francesa', 'Chocolate Blanco', 'Manjar de Lúcuma'],
     decorations: ['Macarons de Colores', 'Destellos de Azúcar', 'Merengues Suizos'],
     preparationTime: '48 horas',
@@ -138,10 +128,7 @@ const INITIAL_PRODUCTS: Product[] = [
     description: 'Bizcocho aterciopelado Red Velvet con frosting de queso crema premium de consistencia sedosa, decorado con pan de oro comestible de 24k.',
     basePrice: 140,
     category: 'Aniversarios',
-    images: [
-      'https://images.unsplash.com/photo-1508737027454-e6454ef45afd?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1616690710400-a16d146927c5?w=600&auto=format&fit=crop&q=80'
-    ],
+    images: [],
     flavors: ['Red Velvet', 'Chocolate Amargo', 'Vainilla con Frutos Rojos'],
     decorations: ['Pan de Oro 24K', 'Frutas del Bosque', 'Hojas de Menta'],
     preparationTime: '48 horas',
@@ -155,9 +142,7 @@ const INITIAL_PRODUCTS: Product[] = [
     description: 'Un pastel repleto de alegría con bizcochos coloridos y cobertura de crema sedosa de vainilla, coronado con minidonuts artesanales.',
     basePrice: 95,
     category: 'Cumpleaños',
-    images: [
-      'https://images.unsplash.com/photo-1519340333755-56e9c1d04579?w=600&auto=format&fit=crop&q=80'
-    ],
+    images: [],
     flavors: ['Vainilla Multicolor', 'Doble Chocolate', 'Dulce de Leche'],
     decorations: ['Lluvia de Sprinkles', 'Minidonuts Artesanales', 'Chispas de Chocolate'],
     preparationTime: '24 horas',
@@ -171,9 +156,7 @@ const INITIAL_PRODUCTS: Product[] = [
     description: 'Una obra de arte geométrica para verdaderos amantes del chocolate. Glaseado espejo brillante, decoraciones de chocolate templado y fresas frescas.',
     basePrice: 115,
     category: 'Especiales',
-    images: [
-      'https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?w=600&auto=format&fit=crop&q=80'
-    ],
+    images: [],
     flavors: ['Chocolate Belga', 'Ganache Semi-Amargo', 'Mousse de Chocolate'],
     decorations: ['Láminas de Chocolate Templado', 'Fresas Bañadas en Fudge', 'Salsa de Frambuesa'],
     preparationTime: '48 horas',
@@ -187,9 +170,7 @@ const INITIAL_PRODUCTS: Product[] = [
     description: 'Pastel de estilo Naked Cake (semi-cubierto) con crema ligera de mantequilla, decorado delicadamente con romero fresco silvestre y bayas.',
     basePrice: 150,
     category: 'Bodas',
-    images: [
-      'https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=600&auto=format&fit=crop&q=80'
-    ],
+    images: [],
     flavors: ['Bizcocho de Zanahoria & Nueces', 'Vainilla Francesa', 'Manjar Casero'],
     decorations: ['Arándanos y Fresas', 'Romero Fresco', 'Hojas de Azúcar rústicas'],
     preparationTime: '72 horas',
@@ -203,9 +184,7 @@ const INITIAL_PRODUCTS: Product[] = [
     description: 'Dulce pastel de fresa con corona de merengues secos horneados a fuego lento y decoración tierna ideal para los más pequeños de casa.',
     basePrice: 105,
     category: 'Infantiles',
-    images: [
-      'https://images.unsplash.com/photo-1534432586043-ead5b99229fb?w=600&auto=format&fit=crop&q=80'
-    ],
+    images: [],
     flavors: ['Dulce de Fresa', 'Chocolate con Leche', 'Vainilla Clásica'],
     decorations: ['Merengues de Colores', 'Estrellitas de Fondant', 'Flores de Azúcar'],
     preparationTime: '48 horas',
@@ -253,42 +232,42 @@ const INITIAL_REVIEWS: Review[] = [
 const INITIAL_GALLERY: GalleryItem[] = [
   {
     id: 'gal-1',
-    imageUrl: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800&auto=format&fit=crop&q=80',
+    imageUrl: '',
     title: 'Tarta de Boda Vintage',
     category: 'Bodas',
     date: '2026-05-10'
   },
   {
     id: 'gal-2',
-    imageUrl: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800&auto=format&fit=crop&q=80',
+    imageUrl: '',
     title: 'Imperial de Trufas',
     category: 'Especiales',
     date: '2026-05-24'
   },
   {
     id: 'gal-3',
-    imageUrl: 'https://images.unsplash.com/photo-1519340333755-56e9c1d04579?w=800&auto=format&fit=crop&q=80',
+    imageUrl: '',
     title: 'Fantasía de Cumpleaños Arcoíris',
     category: 'Cumpleaños',
     date: '2026-06-02'
   },
   {
     id: 'gal-4',
-    imageUrl: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=800&auto=format&fit=crop&q=80',
+    imageUrl: '',
     title: 'Macaron Pastel Delight',
     category: 'Infantiles',
     date: '2026-06-14'
   },
   {
     id: 'gal-5',
-    imageUrl: 'https://images.unsplash.com/photo-1508737027454-e6454ef45afd?w=800&auto=format&fit=crop&q=80',
+    imageUrl: '',
     title: 'Elegancia de Oro 24K Red Velvet',
     category: 'Aniversarios',
     date: '2026-06-25'
   },
   {
     id: 'gal-6',
-    imageUrl: 'https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=800&auto=format&fit=crop&q=80',
+    imageUrl: '',
     title: 'Naked Cake de Romero y Bayas',
     category: 'Bodas',
     date: '2026-06-30'
@@ -312,10 +291,10 @@ const DEFAULT_CONFIG: AppConfig = {
   heroTitle: 'El Arte de Compartir',
   heroDescription: 'Diseños exclusivos creados por Carol Rosas para transformar tus momentos especiales en legados de sabor.',
   heroBadge: 'Por Carol & Edwin Rosas Albines',
-  heroImage: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80',
+  heroImage: '',
   aboutTitle: 'Nuestra Esencia Familiar',
   aboutDescription: 'En Maison Rosas, la repostería no es solo un oficio, sino un legado familiar de amor y dedicación. Cada pastel es esculpido a mano por Carol, cuidando texturas finas e ingredientes orgánicos de la más alta selección, mientras que Edwin garantiza una atención segura, coordinada y personalizada para que cada celebración en Piura y Sullana sea perfecta.',
-  aboutImage: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80',
+  aboutImage: '',
   faviconUrl: ''
 };
 
@@ -1001,27 +980,37 @@ export const dbService = {
     }
   },
 
-  // Upload image directly to Firebase Storage from the browser (persists across server restarts)
-  // Se comprime en el cliente antes de subir para optimizar almacenamiento y velocidad
+  // Upload image through the server API — saves to local /uploads/ for fastest loading
+  // (same-origin = no SSL handshake, no DNS lookup, 7-day cache via Express static)
   async uploadImageToStorage(file: File): Promise<string> {
     let fileToUpload = file;
     try {
-      const compressed = await compressImage(file, { maxWidth: 1200 }); // quality se obtiene de getImageQuality() por defecto
+      const compressed = await compressImage(file, { maxWidth: 1200 });
       fileToUpload = new File([compressed], file.name.replace(/\.[^.]+$/, '.webp'), {
         type: compressed.type || 'image/webp'
       });
     } catch (e) {
       console.warn('[uploadImageToStorage] Error al comprimir, se usará el original:', e);
-      // Si falla la compresión, usar el archivo original
     }
 
-    const uniqueName = `uploads/${Date.now()}-${Math.round(Math.random() * 1e9)}.webp`;
-    const storageReference = storageRef(storage, uniqueName);
-    const metadata = {
-      contentType: fileToUpload.type || 'image/webp',
-    };
-    const snapshot = await uploadBytes(storageReference, fileToUpload, metadata);
-    const downloadUrl = await getDownloadURL(snapshot.ref);
-    return downloadUrl;
+    const formData = new FormData();
+    formData.append('image', fileToUpload);
+
+    const token = localStorage.getItem('maison_admin_token') || '';
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      headers: {
+        'x-admin-token': token
+      },
+      body: formData
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Error al subir la imagen al servidor.');
+    }
+
+    const data = await res.json();
+    return data.imageUrl; // ← Ahora devuelve URL local (/uploads/filename.webp)
   }
 };

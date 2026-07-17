@@ -155,8 +155,92 @@ async function startServer() {
     next();
   });
 
-  // Serve static uploaded files with caching (7 días)
-  app.use("/uploads", express.static(uploadsDir, { maxAge: '7d' }));
+  // ─── Config Cache: Firestore → preload crítico en HTML ───
+  // Cachea las URLs de imágenes críticas (hero, logo, favicon) desde Firestore
+  // para inyectarlas como <link rel="preload"> en el HTML servido al cliente.
+  // Esto evita depender de React + Firebase en el cliente para la primera carga.
+  let cachedCriticalUrls: { heroImage?: string; logoUrl?: string; faviconUrl?: string } = {};
+  let configCacheTimestamp = 0;
+  const CONFIG_CACHE_TTL = 30_000; // 30 segundos
+
+  async function refreshConfigCache() {
+    try {
+      const configDoc = await getDoc(doc(db, 'config', 'app_config'));
+      if (configDoc.exists()) {
+        const data = configDoc.data();
+        cachedCriticalUrls = {
+          heroImage: data.heroImage || undefined,
+          logoUrl: data.logoUrl || undefined,
+          faviconUrl: data.faviconUrl || undefined
+        };
+        const urlCount = [cachedCriticalUrls.heroImage, cachedCriticalUrls.logoUrl, cachedCriticalUrls.faviconUrl].filter(Boolean).length;
+        console.log(`[CONFIG CACHE] ${urlCount} URL(s) crítica(s) cacheadas desde Firestore`);
+      }
+    } catch (err) {
+      console.warn('[CONFIG CACHE] Error al leer config de Firestore:', (err as Error)?.message || err);
+    }
+  }
+
+  async function getCriticalUrls() {
+    const now = Date.now();
+    if (now - configCacheTimestamp > CONFIG_CACHE_TTL) {
+      configCacheTimestamp = now;
+      await refreshConfigCache();
+    }
+    return cachedCriticalUrls;
+  }
+
+  function generatePreloadLinksHtml(config: { heroImage?: string; logoUrl?: string; faviconUrl?: string }): string {
+    const links: string[] = [];
+    const urls = [
+      { url: config.heroImage, label: 'hero' },
+      { url: config.logoUrl, label: 'logo' },
+      { url: config.faviconUrl, label: 'favicon' },
+    ];
+    for (const { url, label } of urls) {
+      if (url && url.length > 10 && !url.startsWith('data:')) {
+        const cleanUrl = url.split('?')[0]; // strip query params for cache
+        links.push(`    <link rel="preload" as="image" href="${cleanUrl}" fetchpriority="high" />`);
+      }
+    }
+    return links.join('\n');
+  }
+
+  // Carga inicial de la caché (en background, no bloqueante)
+  refreshConfigCache().catch(() => {});
+
+  // ─── Middleware para inyectar preload links en HTML (Vite dev mode) ───
+  // Intercepta TODAS las respuestas HTML (cubre SPA: /, /tracking, /admin, etc.)
+  // y reemplaza el placeholder con los preload links del servidor
+  app.use((req, res, next) => {
+    const originalSend = res.send.bind(res);
+    res.send = function (body: any) {
+      if (typeof body === 'string' && body.includes('SERVER_PRELOAD_IMAGES')) {
+        const urls = cachedCriticalUrls;
+        const preloadHtml = generatePreloadLinksHtml(urls);
+        if (preloadHtml) {
+          body = body.replace('<!-- SERVER_PRELOAD_IMAGES -->', preloadHtml);
+        }
+      }
+      return originalSend(body);
+    };
+    next();
+  });
+
+  // Serve static uploaded files with maximum caching optimization
+  // ETag + Last-Modified = el navegador responde 304 si no cambió
+  // immutable = no necesita revalidar durante maxAge
+  // maxAge = 7 días con immutable + Accept-Ranges para reanudar descargas
+  app.use("/uploads", express.static(uploadsDir, {
+    maxAge: '7d',
+    immutable: true,
+    etag: true,
+    lastModified: true,
+    setHeaders: (res) => {
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+    }
+  }));
 
   // 2. Health check API
   app.get("/api/health", (req, res) => {
@@ -298,13 +382,13 @@ async function startServer() {
   // ─────────────────────────────────────────
   function getCredentialsEmailHTML(passwords: { admin: string; analyst: string; stock_manager: string }, configInfo: any) {
     return `
-      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #F0D6CE; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; color: #27272a;">
+      <div style="font-family: 'Quicksand', sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #F0D6CE; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; color: #27272a;">
         <div style="background-color: #2D1C1A; padding: 30px 20px; text-align: center;">
-          <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 28px; color: #F8E3DE; margin: 0; font-style: italic; font-weight: normal; letter-spacing: 1px;">Maison Rosas</h1>
-          <p style="font-family: 'Inter', Helvetica, Arial, sans-serif; font-size: 10px; text-transform: uppercase; letter-spacing: 0.2em; color: #D4A373; margin: 8px 0 0 0; font-weight: bold;">Panel de Administración</p>
+          <h1 style="font-family: 'Spectral', Georgia, serif; font-size: 28px; color: #F8E3DE; margin: 0; font-style: italic; font-weight: normal; letter-spacing: 1px;">Maison Rosas</h1>
+          <p style="font-family: 'Quicksand', Helvetica, Arial, sans-serif; font-size: 10px; text-transform: uppercase; letter-spacing: 0.2em; color: #D4A373; margin: 8px 0 0 0; font-weight: bold;">Panel de Administración</p>
         </div>
         <div style="padding: 40px 30px; background-color: #ffffff;">
-          <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 22px; color: #523531; margin: 0 0 15px 0; text-align: center; font-style: italic; font-weight: normal;">🔐 Credenciales de Acceso</h2>
+          <h2 style="font-family: 'Spectral', Georgia, serif; font-size: 22px; color: #523531; margin: 0 0 15px 0; text-align: center; font-style: italic; font-weight: normal;">🔐 Credenciales de Acceso</h2>
           <p style="font-size: 14px; color: #8A5550; line-height: 1.6; text-align: center; margin: 0 0 25px 0;">
             Estas son las credenciales configuradas para el panel de administración de Maison Rosas. 
             <strong>Este correo se envía una sola vez.</strong> Guarda esta información en un lugar seguro.
@@ -337,14 +421,14 @@ async function startServer() {
           </div>
 
           <div style="background-color: #FFF9F5; border: 1px solid #F0D6CE; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-            <h4 style="font-family: 'Playfair Display', Georgia, serif; font-size: 15px; color: #523531; margin: 0 0 10px 0; font-weight: normal;">📋 Información del Negocio</h4>
+            <h4 style="font-family: 'Spectral', Georgia, serif; font-size: 15px; color: #523531; margin: 0 0 10px 0; font-weight: normal;">📋 Información del Negocio</h4>
             <p style="font-size: 12px; color: #8A5550; margin: 0 0 4px 0;"><strong>WhatsApp:</strong> +${configInfo?.whatsappNumber || '51902568187'}</p>
             <p style="font-size: 12px; color: #8A5550; margin: 0 0 4px 0;"><strong>Email:</strong> ${configInfo?.email || 'edwinraulrosasalbines@gmail.com'}</p>
             <p style="font-size: 12px; color: #8A5550; margin: 0 0 4px 0;"><strong>Dirección:</strong> ${configInfo?.address || 'Av. Ricardo Palma 213, Sullana'}</p>
             <p style="font-size: 12px; color: #8A5550; margin: 0;"><strong>URL Admin:</strong> <a href="https://maisonrosas.com/admin" style="color: #C4847D;">maisonrosas.com/admin</a></p>
           </div>
 
-          <p style="font-family: 'Inter', sans-serif; font-size: 11px; color: #C4A8A0; text-align: center; margin: 0; line-height: 1.5;">
+          <p style="font-family: 'Quicksand', sans-serif; font-size: 11px; color: #C4A8A0; text-align: center; margin: 0; line-height: 1.5;">
             ⚠️ No compartas estas credenciales con nadie que no sea de confianza. 
             Si crees que alguna contraseña ha sido comprometida, cámbiala desde Configuración en el panel.
           </p>
@@ -421,8 +505,8 @@ async function startServer() {
   function getEmailHeader() {
     return `
       <div style="background-color: #FFF9F5; padding: 30px 20px; text-align: center; border-bottom: 2px solid #F0D6CE;">
-        <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 28px; color: #8A5550; margin: 0; font-style: italic; font-weight: normal; letter-spacing: 1px;">Maison Rosas</h1>
-        <p style="font-family: 'Inter', Helvetica, Arial, sans-serif; font-size: 10px; text-transform: uppercase; letter-spacing: 0.2em; color: #D4A373; margin: 8px 0 0 0; font-weight: bold;">Pastelería de Autor & Repostería Fina</p>
+        <h1 style="font-family: 'Spectral', Georgia, serif; font-size: 28px; color: #8A5550; margin: 0; font-style: italic; font-weight: normal; letter-spacing: 1px;">Maison Rosas</h1>
+        <p style="font-family: 'Quicksand', Helvetica, Arial, sans-serif; font-size: 10px; text-transform: uppercase; letter-spacing: 0.2em; color: #D4A373; margin: 8px 0 0 0; font-weight: bold;">Pastelería de Autor & Repostería Fina</p>
       </div>
     `;
   }
@@ -430,9 +514,9 @@ async function startServer() {
   function getEmailFooter() {
     return `
       <div style="background-color: #2D1C1A; padding: 30px 20px; text-align: center; color: #F8E3DE; border-top: 1px solid #6D4440; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
-        <p style="font-family: 'Playfair Display', Georgia, serif; font-size: 16px; font-style: italic; margin: 0 0 10px 0;">Hecho a mano con amor familiar por Carol & Edwin.</p>
-        <p style="font-family: 'Inter', sans-serif; font-size: 11px; color: #E4AAA0; margin: 0 0 5px 0; line-height: 1.5;">Av. Ricardo Palma 213, Urb. Sánchez Cerro, Sullana, Piura, Perú</p>
-        <p style="font-family: 'Inter', sans-serif; font-size: 11px; color: #E4AAA0; margin: 0 0 15px 0;">WhatsApp: +51 902 568 187 | Email: edwinraulrosasalbines@gmail.com</p>
+        <p style="font-family: 'Spectral', Georgia, serif; font-size: 16px; font-style: italic; margin: 0 0 10px 0;">Hecho a mano con amor familiar por Carol & Edwin.</p>
+        <p style="font-family: 'Quicksand', sans-serif; font-size: 11px; color: #E4AAA0; margin: 0 0 5px 0; line-height: 1.5;">Av. Ricardo Palma 213, Urb. Sánchez Cerro, Sullana, Piura, Perú</p>
+        <p style="font-family: 'Quicksand', sans-serif; font-size: 11px; color: #E4AAA0; margin: 0 0 15px 0;">WhatsApp: +51 902 568 187 | Email: edwinraulrosasalbines@gmail.com</p>
         <div style="border-top: 1px solid #6D4440; padding-top: 15px; font-size: 10px; color: #C4A8A0;">
           &copy; ${new Date().getFullYear()} Maison Rosas. Todos los derechos reservados.
         </div>
@@ -442,10 +526,10 @@ async function startServer() {
 
   function getConfirmationEmailHTML(order: any) {
     return `
-      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #F0D6CE; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; color: #27272a;">
+      <div style="font-family: 'Quicksand', sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #F0D6CE; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; color: #27272a;">
         ${getEmailHeader()}
         <div style="padding: 40px 30px; background-color: #ffffff;">
-          <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 22px; color: #523531; margin: 0 0 15px 0; text-align: center; font-style: italic; font-weight: normal;">¡Tu Pedido ha sido Recibido!</h2>
+          <h2 style="font-family: 'Spectral', Georgia, serif; font-size: 22px; color: #523531; margin: 0 0 15px 0; text-align: center; font-style: italic; font-weight: normal;">¡Tu Pedido ha sido Recibido!</h2>
           <p style="font-size: 14px; color: #8A5550; line-height: 1.6; text-align: center; margin: 0 0 25px 0;">
             Estimado/a <strong>${order.customerName}</strong>, Carol ya tiene tu solicitud de diseño personalizado en su taller. Hemos generado tu código de seguimiento exclusivo para que puedas consultar el estado de tu pastel en cualquier momento.
           </p>
@@ -460,7 +544,7 @@ async function startServer() {
             </div>
           </div>
 
-          <h3 style="font-family: 'Playfair Display', Georgia, serif; font-size: 18px; color: #523531; border-bottom: 1px solid #F0D6CE; padding-bottom: 8px; margin: 0 0 15px 0; font-weight: normal;">Detalles del Pastel de Autor</h3>
+          <h3 style="font-family: 'Spectral', Georgia, serif; font-size: 18px; color: #523531; border-bottom: 1px solid #F0D6CE; padding-bottom: 8px; margin: 0 0 15px 0; font-weight: normal;">Detalles del Pastel de Autor</h3>
           <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #523531; margin-bottom: 25px;">
             <tr>
               <td style="padding: 8px 0; color: #C4A8A0; font-weight: 500;">Modelo Referencial:</td>
@@ -510,7 +594,7 @@ async function startServer() {
             </tr>
           </table>
 
-          <h3 style="font-family: 'Playfair Display', Georgia, serif; font-size: 18px; color: #523531; border-bottom: 1px solid #F0D6CE; padding-bottom: 8px; margin: 0 0 15px 0; font-weight: normal;">Datos de Entrega</h3>
+          <h3 style="font-family: 'Spectral', Georgia, serif; font-size: 18px; color: #523531; border-bottom: 1px solid #F0D6CE; padding-bottom: 8px; margin: 0 0 15px 0; font-weight: normal;">Datos de Entrega</h3>
           <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #523531; margin-bottom: 30px;">
             <tr>
               <td style="padding: 6px 0; color: #C4A8A0;">Fecha y Hora:</td>
@@ -528,7 +612,7 @@ async function startServer() {
           </table>
 
           <div style="text-align: center; margin-top: 30px;">
-            <a href="/?trackingCode=${order.trackingCode}&email=${encodeURIComponent(order.customerEmail)}" style="display: inline-block; background-color: #C4847D; color: #ffffff; padding: 14px 28px; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; text-decoration: none; border-radius: 8px; box-shadow: 0 4px 10px rgba(196, 132, 125, 0.25);">Consultar Estado del Pedido</a>
+            <a href="/?trackingCode=${order.trackingCode}&email=${encodeURIComponent(order.customerEmail)}" style="display: inline-block; background-color: #C4847D; color: #ffffff; padding: 14px 28px; font-family: 'Quicksand', sans-serif; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; text-decoration: none; border-radius: 8px; box-shadow: 0 4px 10px rgba(196, 132, 125, 0.25);">Consultar Estado del Pedido</a>
           </div>
         </div>
         ${getEmailFooter()}
@@ -592,14 +676,14 @@ async function startServer() {
     }
 
     return `
-      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #F0D6CE; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; color: #27272a;">
+      <div style="font-family: 'Quicksand', sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #F0D6CE; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; color: #27272a;">
         ${getEmailHeader()}
         <div style="padding: 40px 30px; background-color: #ffffff;">
-          <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 22px; color: #523531; margin: 0 0 10px 0; text-align: center; font-style: italic; font-weight: normal;">Actualización de tu Pedido</h2>
+          <h2 style="font-family: 'Spectral', Georgia, serif; font-size: 22px; color: #523531; margin: 0 0 10px 0; text-align: center; font-style: italic; font-weight: normal;">Actualización de tu Pedido</h2>
           <p style="font-size: 13px; color: #71717a; text-align: center; margin: 0 0 25px 0;">Pedido: <strong>#${order.id}</strong></p>
           
           <div style="text-align: center; margin-bottom: 35px;">
-            <span style="display: inline-block; background-color: ${statusColor}; color: #ffffff; padding: 8px 18px; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.15em; border-radius: 30px;">
+            <span style="display: inline-block; background-color: ${statusColor}; color: #ffffff; padding: 8px 18px; font-family: 'Quicksand', sans-serif; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.15em; border-radius: 30px;">
               ${statusLabel}
             </span>
           </div>
@@ -645,7 +729,7 @@ async function startServer() {
           </div>
 
           <div style="background-color: #FFF9F5; border: 1px solid #F0D6CE; border-radius: 12px; padding: 20px; margin-top: 30px;">
-            <h4 style="font-family: 'Playfair Display', Georgia, serif; font-size: 15px; color: #523531; margin: 0 0 10px 0; font-weight: normal;">Detalles de tu Pastel</h4>
+            <h4 style="font-family: 'Spectral', Georgia, serif; font-size: 15px; color: #523531; margin: 0 0 10px 0; font-weight: normal;">Detalles de tu Pastel</h4>
             <p style="font-size: 12px; color: #8A5550; margin: 0 0 5px 0;"><strong>Modelo:</strong> ${order.productName}</p>
             <p style="font-size: 12px; color: #8A5550; margin: 0 0 5px 0;"><strong>Tamaño:</strong> ${order.size}</p>
             <p style="font-size: 12px; color: #8A5550; margin: 0 0 5px 0;"><strong>Código de seguimiento:</strong> ${order.trackingCode}</p>
@@ -657,7 +741,7 @@ async function startServer() {
           </div>
 
           <div style="text-align: center; margin-top: 30px;">
-            <a href="/?trackingCode=${order.trackingCode}&email=${encodeURIComponent(order.customerEmail)}" style="display: inline-block; background-color: #C4847D; color: #ffffff; padding: 14px 28px; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; text-decoration: none; border-radius: 8px;">Ver Progreso del Pedido</a>
+            <a href="/?trackingCode=${order.trackingCode}&email=${encodeURIComponent(order.customerEmail)}" style="display: inline-block; background-color: #C4847D; color: #ffffff; padding: 14px 28px; font-family: 'Quicksand', sans-serif; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; text-decoration: none; border-radius: 8px;">Ver Progreso del Pedido</a>
           </div>
         </div>
         ${getEmailFooter()}
@@ -667,10 +751,10 @@ async function startServer() {
 
   function getContactEmailHTML(name: string, email: string | undefined, message: string) {
     return `
-      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #F0D6CE; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; color: #27272a;">
+      <div style="font-family: 'Quicksand', sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #F0D6CE; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; color: #27272a;">
         ${getEmailHeader()}
         <div style="padding: 30px;">
-          <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 20px; color: #523531; margin: 0 0 15px 0; font-weight: normal;">Nuevo mensaje del formulario de contacto</h2>
+          <h2 style="font-family: 'Spectral', Georgia, serif; font-size: 20px; color: #523531; margin: 0 0 15px 0; font-weight: normal;">Nuevo mensaje del formulario de contacto</h2>
           <p style="font-size: 13px; color: #8A5550; line-height: 1.6; margin: 0 0 20px 0;">Has recibido un nuevo mensaje desde el formulario de contacto de la web Maison Rosas.</p>
           <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin: 20px 0;">
             <tr>
@@ -722,8 +806,8 @@ async function startServer() {
       : '';
 
     const orderSummarySection = orders && orders.length > 0 ? `
-      <h3 style="font-family: 'Playfair Display', Georgia, serif; font-size: 16px; color: #523531; margin: 25px 0 10px 0; font-weight: normal;">📋 Resumen de tus Pedidos</h3>
-      <table style="width: 100%; border-collapse: collapse; border: 1px solid #F0D6CE; border-radius: 8px; overflow: hidden; font-family: 'Inter', sans-serif; margin-bottom: 25px;">
+      <h3 style="font-family: 'Spectral', Georgia, serif; font-size: 16px; color: #523531; margin: 25px 0 10px 0; font-weight: normal;">📋 Resumen de tus Pedidos</h3>
+      <table style="width: 100%; border-collapse: collapse; border: 1px solid #F0D6CE; border-radius: 8px; overflow: hidden; font-family: 'Quicksand', sans-serif; margin-bottom: 25px;">
         <thead>
           <tr style="background-color: #FFF9F5;">
             <th style="padding: 10px 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #8A5550; text-align: left; font-weight: bold;">Pastel</th>
@@ -736,21 +820,21 @@ async function startServer() {
           ${orderSummaryRows}
         </tbody>
       </table>
-      <p style="font-family: 'Inter', sans-serif; font-size: 11px; color: #C4A8A0; text-align: center; margin: 0 0 10px 0;">
+      <p style="font-family: 'Quicksand', sans-serif; font-size: 11px; color: #C4A8A0; text-align: center; margin: 0 0 10px 0;">
         Ingresa el código de verificación en la web de Maison Rosas para ver los detalles completos de cada pedido y su timeline de preparación.
       </p>` : '';
 
     return `
-      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #F0D6CE; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; color: #27272a;">
+      <div style="font-family: 'Quicksand', sans-serif; max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 1px solid #F0D6CE; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; color: #27272a;">
         ${getEmailHeader()}
         <div style="padding: 40px 30px; background-color: #ffffff;">
-          <h2 style="font-family: 'Playfair Display', Georgia, serif; font-size: 22px; color: #523531; margin: 0 0 20px 0; text-align: center; font-style: italic; font-weight: normal;">🔐 Acceso a tus Pedidos</h2>
+          <h2 style="font-family: 'Spectral', Georgia, serif; font-size: 22px; color: #523531; margin: 0 0 20px 0; text-align: center; font-style: italic; font-weight: normal;">🔐 Acceso a tus Pedidos</h2>
           
-          <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: #8A5550; line-height: 1.6; margin: 0 0 15px 0;">
+          <p style="font-family: 'Quicksand', sans-serif; font-size: 14px; color: #8A5550; line-height: 1.6; margin: 0 0 15px 0;">
             Hola, <strong>${customerName}</strong>.
           </p>
           
-          <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: #8A5550; line-height: 1.6; margin: 0 0 20px 0;">
+          <p style="font-family: 'Quicksand', sans-serif; font-size: 14px; color: #8A5550; line-height: 1.6; margin: 0 0 20px 0;">
             Has solicitado acceso a tus pedidos. Ingresa este código en la web de Maison Rosas:
           </p>
           
@@ -762,7 +846,7 @@ async function startServer() {
           
           ${orderSummarySection}
           
-          <p style="font-family: 'Inter', sans-serif; font-size: 13px; color: #C4A8A0; text-align: center; margin: 0; line-height: 1.5;">
+          <p style="font-family: 'Quicksand', sans-serif; font-size: 13px; color: #C4A8A0; text-align: center; margin: 0; line-height: 1.5;">
             Si no solicitaste este código, puedes ignorar este correo de forma segura.
           </p>
         </div>
@@ -1281,8 +1365,11 @@ async function startServer() {
         }
         const localUrl = `/uploads/${req.file.filename}`;
 
-        // Also upload to Firebase Storage for CDN delivery and persistence
-        let firebaseUrl = localUrl;
+        // 🏠 Servir imágenes desde el servidor local para máxima velocidad
+        // (mismo origen = sin SSL handshake, sin DNS externo, caché de 7 días)
+        res.json({ success: true, imageUrl: localUrl, localUrl });
+
+        // Opcional: subir a Firebase Storage como respaldo (no afecta la URL devuelta)
         try {
           const filePath = req.file.path;
           const fileBuffer = fs.readFileSync(filePath);
@@ -1292,19 +1379,49 @@ async function startServer() {
             contentType: req.file.mimetype || 'image/webp',
           };
           const snapshot = await uploadBytes(firebaseRefPath, fileBuffer, uploadMetadata);
-          firebaseUrl = await getDownloadURL(snapshot.ref);
-          console.log(`[UPLOAD] Image also uploaded to Firebase Storage: ${firebaseFileName}`);
+          console.log(`[UPLOAD] Backup saved to Firebase Storage: ${firebaseFileName}`);
         } catch (fbError) {
-          console.warn('[UPLOAD] Firebase upload failed, using local URL:', fbError);
-          // Fallback to local URL if Firebase upload fails
+          // Firebase upload es opcional; si falla, no importa
         }
-
-        res.json({ success: true, imageUrl: firebaseUrl, localUrl });
       } catch (error) {
         console.error("[UPLOAD] Error inesperado:", error);
         res.status(500).json({ success: false, error: "Error interno del servidor al subir la imagen." });
       }
     });
+  });
+
+  // ─── Image Proxy: sirve imágenes externas a través del servidor local ───
+  // Las URLs de Firebase Storage o Unsplash se sirven desde el mismo origen,
+  // eliminando la latencia de conexiones externas (DNS + SSL + handshake).
+  // Las imágenes se cachean en el navegador con Cache-Control: 1 año.
+  app.get("/api/image-proxy", async (req, res) => {
+    const url = req.query.url as string;
+    if (!url || url.length < 5) {
+      return res.status(400).json({ error: "URL inválida" });
+    }
+
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'MaisonRosas/1.0',
+          'Accept': 'image/webp,image/avif,image/*,*/*;q=0.8',
+        },
+      });
+
+      if (!response.ok) {
+        return res.redirect(url); // fallback: redirigir a la URL original
+      }
+
+      const contentType = response.headers.get('content-type') || 'image/webp';
+      const buffer = Buffer.from(await response.arrayBuffer());
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.send(buffer);
+    } catch (err) {
+      res.redirect(url); // fallback: redirigir a la URL original
+    }
   });
 
   // Memory storage for vouchers (uploaded to Firebase Storage for persistence)
@@ -2235,8 +2352,19 @@ async function startServer() {
     }));
     // Otros archivos estáticos (sin hash) = 1 hora de caché
     app.use(express.static(distPath, { maxAge: '1h' }));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
+    app.get("*", async (req, res) => {
+      const filePath = path.join(distPath, "index.html");
+      try {
+        let html = fs.readFileSync(filePath, 'utf-8');
+        const urls = await getCriticalUrls();
+        const preloadHtml = generatePreloadLinksHtml(urls);
+        if (preloadHtml) {
+          html = html.replace('<!-- SERVER_PRELOAD_IMAGES -->', preloadHtml);
+        }
+        res.type('html').send(html);
+      } catch {
+        res.sendFile(filePath);
+      }
     });
   }
 

@@ -1,11 +1,11 @@
 /* ============= FONT LOADING OPTIMIZED ============= */
-/* Use font-display: swap and preconnect */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+/* Fonts loaded via <link> in index.html with preconnect for faster loading */
+/* Spectral (serif) + Quicksand (sans-serif) + JetBrains Mono */
 @import "tailwindcss";
 
 @theme {
-  --font-serif: "Playfair Display", Georgia, serif;
-  --font-sans: "Inter", system-ui, sans-serif;
+  --font-serif: "Spectral", Georgia, serif;
+  --font-sans: "Quicksand", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 
   --color-brand-bg: #FFF9F5;
@@ -86,7 +86,7 @@ section[id], footer {
 
 /* Set base font configurations to enforce artisanal aesthetic */
 html, body {
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: "Quicksand", system-ui, sans-serif;
   background-color: var(--theme-bg);
   color: var(--theme-text);
   -webkit-font-smoothing: antialiased;
@@ -96,7 +96,7 @@ html, body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: "Spectral", Georgia, serif;
 }
 
 /* Global placeholder color using theme variable for dark mode visibility */
@@ -487,17 +487,28 @@ input, textarea, select, button, a {
   animation: shimmer 1.5s infinite ease-in-out;
 }
 
-/* Smooth image loading */
+/* Smooth image loading — sin fade-in para carga instantánea */
 img {
   color: transparent;
 }
 
-img[loading="lazy"] {
-  transition: opacity 0.3s ease;
+img:not([src]),
+img[src=""] {
+  opacity: 0;
 }
 
-img[loading="lazy"]:not([src]) {
-  opacity: 0;
+/* Loading shimmer skeleton for images (brand-colored) */
+.img-skeleton {
+  background-color: rgba(196, 132, 125, 0.06);
+  background-image: linear-gradient(
+    90deg,
+    transparent 25%,
+    rgba(196, 132, 125, 0.10) 50%,
+    transparent 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite ease-in-out;
+  border-radius: inherit;
 }
 
 /* ============= SWIPER OVERRIDES FOR PERFORMANCE ============= */

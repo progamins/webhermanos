@@ -67,7 +67,6 @@ export default function AdminStock({ products, orders, onRefreshData, showToast 
     }
     try {
       const targetId = editingStockItem ? editingStockItem.id : `stock-${Date.now()}`;
-      const defaultImg = 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80';
       const newItem = {
         id: targetId,
         name: stockName,
@@ -78,7 +77,7 @@ export default function AdminStock({ products, orders, onRefreshData, showToast 
         quantity: Number(stockQuantity) || 0,
         createdAt: editingStockItem ? editingStockItem.createdAt : new Date().toISOString(),
         notes: stockNotes,
-        imageUrl: stockImageUrl || defaultImg
+        imageUrl: stockImageUrl || ''
       };
 
       await dbService.saveCakeStock(newItem);
@@ -273,8 +272,13 @@ export default function AdminStock({ products, orders, onRefreshData, showToast 
             return (
               <div key={item.id} className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800/80 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                 <div className="aspect-[4/3] bg-zinc-100 dark:bg-zinc-950 relative overflow-hidden">
-                  <img src={optimizeImageUrl(item.imageUrl || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80', 600)}
-                    alt={item.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" decoding="async" />
+                  {item.imageUrl ? (
+                    <img src={optimizeImageUrl(item.imageUrl, 600)} alt={item.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" decoding="async" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-zinc-200/50 dark:bg-zinc-800/50">
+                      <Package className="h-8 w-8 text-zinc-400" />
+                    </div>
+                  )}
                   <div className="absolute top-3 right-3">
                     <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold font-mono ${isLowStock ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'}`}>
                       {item.quantity} uds.
