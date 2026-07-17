@@ -365,7 +365,7 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/85 via-zinc-950/20 to-zinc-950/10 pointer-events-none" />
 
-                  {/* Image navigation arrows */}
+                  {/* Image navigation arrows — siempre visibles en mobile, hover en desktop */}
                   {allImages.length > 1 && (
                     <>
                       <button
@@ -373,18 +373,18 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                           e.stopPropagation();
                           setCurrentImageIdx(prev => prev === 0 ? allImages.length - 1 : prev - 1);
                         }}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm text-white border border-white/15 flex items-center justify-center hover:bg-black/60 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+                        className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm text-white border border-white/20 flex items-center justify-center hover:bg-black/70 active:scale-90 transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100 cursor-pointer z-10 shadow-lg"
                       >
-                        <ChevronLeft className="h-3.5 w-3.5" />
+                        <ChevronLeft className="h-4 w-4" />
                       </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setCurrentImageIdx(prev => prev === allImages.length - 1 ? 0 : prev + 1);
                         }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm text-white border border-white/15 flex items-center justify-center hover:bg-black/60 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm text-white border border-white/20 flex items-center justify-center hover:bg-black/70 active:scale-90 transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100 cursor-pointer z-10 shadow-lg"
                       >
-                        <ChevronRight className="h-3.5 w-3.5" />
+                        <ChevronRight className="h-4 w-4" />
                       </button>
                     </>
                   )}
@@ -422,49 +422,25 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                   )}
                 </div>
 
-                {/* Thumbnail strip — visible on desktop, scrollable on mobile */}
-                {allImages.length > 1 && (
-                  <div className="flex lg:flex-row items-center gap-1.5 overflow-x-auto w-full max-w-full pb-1 scrollbar-none">
-                    {allImages.map((img, imgIdx) => (
-                      <button
-                        key={imgIdx}
-                        onClick={() => setCurrentImageIdx(imgIdx)}
-                        className={`shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden border-2 transition-all ${
-                          currentImageIdx === imgIdx
-                            ? 'border-brand-400 ring-1 ring-brand-400/30 scale-110'
-                            : 'border-zinc-200/50 dark:border-zinc-700/50 opacity-60 hover:opacity-100'
-                        }`}
-                      >
-                        <img
-                          src={img || ''}
-                          alt=""
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                )}
-
                 {/* Technical resumen panel */}
                 <div className="flex-1 lg:w-full bg-white dark:bg-zinc-950 p-2.5 sm:p-4 border border-zinc-200 dark:border-zinc-800 rounded-xl lg:rounded-2xl text-left shadow-sm space-y-1 lg:space-y-2 flex flex-col justify-center">
                   <h5 className="text-[9px] font-mono font-bold tracking-wider text-brand-secondary dark:text-brand-400 uppercase mb-0.5 lg:mb-0">
                     Resumen del Pedido
                   </h5>
                   <div className="grid grid-cols-2 gap-y-1 lg:gap-y-1.5 gap-x-2 lg:gap-x-3 text-[10px] sm:text-[11px] font-sans text-zinc-600 dark:text-zinc-400">
-                    <div>
+                    <div className="min-w-0">
                       <span className="text-zinc-400 block text-[8px] lg:text-[9px] font-mono uppercase">Medida / Porciones</span>
-                      <strong className="text-zinc-800 dark:text-zinc-100 font-medium truncate block">{size.name}</strong>
+                      <strong className="text-zinc-800 dark:text-zinc-100 font-medium block break-words leading-tight">{size.name}</strong>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <span className="text-zinc-400 block text-[8px] lg:text-[9px] font-mono uppercase">Bizcocho</span>
-                      <strong className="text-zinc-800 dark:text-zinc-100 font-medium truncate block">{selectedFlavor}</strong>
+                      <strong className="text-zinc-800 dark:text-zinc-100 font-medium block break-words leading-tight">{selectedFlavor}</strong>
                     </div>
-                    <div className="col-span-2 border-t border-zinc-100 dark:border-zinc-900 pt-1 lg:pt-1.5">
+                    <div className="col-span-2 border-t border-zinc-100 dark:border-zinc-900 pt-1 lg:pt-1.5 min-w-0">
                       <span className="text-zinc-400 block text-[8px] lg:text-[9px] font-mono uppercase">Relleno Gourmet</span>
-                      <strong className="text-zinc-800 dark:text-zinc-100 font-medium flex justify-between items-center text-[10px] sm:text-[11px] truncate">
-                        <span className="truncate pr-1">{selectedFilling.name}</span>
-                        {selectedFilling.price > 0 && <span className="text-brand-primary font-bold shrink-0">+S/. {selectedFilling.price}</span>}
+                      <strong className="text-zinc-800 dark:text-zinc-100 font-medium flex justify-between items-center text-[10px] sm:text-[11px] gap-1">
+                        <span className="break-words leading-tight">{selectedFilling.name}</span>
+                        {selectedFilling.price > 0 && <span className="text-brand-primary font-bold shrink-0 whitespace-nowrap">+S/. {selectedFilling.price}</span>}
                       </strong>
                     </div>
                   </div>

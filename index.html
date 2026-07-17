@@ -26,7 +26,7 @@
     <meta property="og:url" content="https://maisonrosas.com/" />
     <meta property="og:site_name" content="Maison Rosas" />
     <meta property="og:locale" content="es_PE" />
-    <meta property="og:image" content="https://images.unsplash.com/photo-1535141192574-5d4897c13636?w=1200&auto=format&fit=crop&q=80" />
+    <meta property="og:image" content="https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=1200&auto=format&fit=crop&q=80" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Pastel artesanal Maison Rosas" />
@@ -35,7 +35,7 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Maison Rosas | Pastelería de Autor" />
     <meta name="twitter:description" content="Pasteles personalizados de diseño exclusivo en Sullana, Piura." />
-    <meta name="twitter:image" content="https://images.unsplash.com/photo-1535141192574-5d4897c13636?w=1200&auto=format&fit=crop&q=80" />
+    <meta name="twitter:image" content="https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=1200&auto=format&fit=crop&q=80" />
 
     <!-- Dynamic Favicon (set exclusively by App.tsx from Firestore config) -->
     <link id="dynamic-favicon" rel="icon" />
@@ -46,26 +46,7 @@
     <link rel="preconnect" href="https://images.unsplash.com" />
     <link rel="dns-prefetch" href="https://images.unsplash.com" />
 
-    <!-- PRELOAD CRITICAL ASSETS: Hero LCP image (not the Lottie animation — it loads on-demand) -->
-    <link rel="preload" as="image" href="https://images.unsplash.com/photo-1535141192574-5d4897c13636?w=600&auto=format&fit=crop&q=80" fetchpriority="high" />
-
-    <!-- Dynamic inline preload: if the admin saved a custom hero image in localStorage
-         (set by App.tsx when Firestore config loads), preload it for faster LCP on next visit. -->
-    <script>
-      (function() {
-        try {
-          var savedHero = localStorage.getItem('maison_hero_url');
-          if (savedHero) {
-            var link = document.createElement('link');
-            link.rel = 'preload';
-            link.as = 'image';
-            link.href = savedHero.split('?')[0] + '?w=600&auto=format&fit=crop&q=80&fm=webp';
-            link.fetchPriority = 'high';
-            document.head.appendChild(link);
-          }
-        } catch(e) {}
-      })();
-    </script>
+    <!-- Hero image is handled by CachedImage with instant URL loading + background caching -->
 
     <!-- Google Analytics 4 (configurado via VITE_GA_MEASUREMENT_ID) -->
     <script>
@@ -82,7 +63,7 @@
         "@context": "https://schema.org",
         "@type": "Bakery",
         "name": "Maison Rosas",
-        "image": "https://images.unsplash.com/photo-1535141192574-5d4897c13636?w=800&auto=format&fit=crop&q=80",
+        "image": "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800&auto=format&fit=crop&q=80",
         "description": "Pastelería de autor y repostería fina en Sullana, Piura. Pasteles personalizados para bodas, cumpleaños y eventos especiales.",
         "address": {
           "@type": "PostalAddress",

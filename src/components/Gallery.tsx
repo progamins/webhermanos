@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Calendar, Layers, Eye } from 'lucide-react';
 import { GalleryItem } from '../types';
 import { optimizeImageUrl } from '../utils/images';
+import CachedImage from './CachedImage';
 
 interface GalleryProps {
   galleryItems: GalleryItem[];
@@ -74,14 +75,13 @@ export default function Gallery({ galleryItems }: GalleryProps) {
                 className="group relative aspect-[4/5] rounded-[24px] overflow-hidden shadow-sm hover:shadow-xl border border-white/30 dark:border-white/5 cursor-pointer bg-zinc-100 dark:bg-zinc-900"
                 id={`gallery-card-${item.id}`}
               >
-                <img
-                  src={optimizeImageUrl(item.imageUrl, 800)}
+                <CachedImage
+                  src={item.imageUrl}
+                  width={800}
                   alt={item.title}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  wrapperClassName="w-full h-full"
                   id={`gallery-img-${item.id}`}
-                  referrerPolicy="no-referrer"
-                  loading="lazy"
-                  decoding="async"
                 />
                 
                 {/* Dark Hover Overlay */}
@@ -161,13 +161,13 @@ function GalleryLightbox({ item, onClose }: GalleryLightboxProps) {
       >
         {/* Image side */}
         <div className="md:w-2/3 aspect-square md:aspect-auto md:h-[70vh] bg-zinc-900/50 relative">
-          <img
-            src={optimizeImageUrl(item.imageUrl, 1200)}
+          <CachedImage
+            src={item.imageUrl}
+            width={1200}
             alt={item.title}
             className="w-full h-full object-cover"
+            wrapperClassName="w-full h-full"
             id="lightbox-main-img"
-            referrerPolicy="no-referrer"
-            decoding="async"
           />
           {/* Glass indicator on image */}
           <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/40 backdrop-blur-md border border-white/10 text-[9px] font-mono tracking-widest text-white/90 uppercase">

@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import { Sparkles, Star } from 'lucide-react';
 import { AppConfig } from '../types';
 import { optimizeImageUrl } from '../utils/images';
+import CachedImage from './CachedImage';
 
 interface HeroProps {
   onViewCatalog: () => void;
@@ -305,14 +306,14 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
                 transition={{ repeat: Infinity, duration: 6, ease: 'easeInOut' }}
                 className="w-full h-full bg-white/20 dark:bg-zinc-950/20 rounded-[32px] relative overflow-hidden"
               >
-                <img
-                  src={optimizeImageUrl(config?.heroImage || 'https://images.unsplash.com/photo-1535141192574-5d4897c13636?w=600&auto=format&fit=crop&q=80', 600)}
+                <CachedImage
+                  src={config?.heroImage || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80'}
+                  width={600}
                   alt="Pastel de Boda Rosas"
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                  wrapperClassName="w-full h-full rounded-[32px]"
                   id="hero-cake-image"
-                  referrerPolicy="no-referrer"
-                  fetchPriority="high"
-                  decoding="async"
+                  priority
                 />
                 
                 {/* Subtle gradient overlay for better text readability */}

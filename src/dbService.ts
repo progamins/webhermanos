@@ -105,7 +105,7 @@ const INITIAL_PRODUCTS: Product[] = [
     basePrice: 135,
     category: 'Bodas',
     images: [
-      'https://images.unsplash.com/photo-1535141192574-5d4897c13636?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1527481138388-31827a7c94d5?w=600&auto=format&fit=crop&q=80'
     ],
     flavors: ['Vainilla Francesa', 'Red Velvet', 'Manjar Blanco de Leche'],
@@ -122,7 +122,7 @@ const INITIAL_PRODUCTS: Product[] = [
     basePrice: 110,
     category: 'Infantiles',
     images: [
-      'https://images.unsplash.com/photo-1558961309-db6f1a3eb64e?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=600&auto=format&fit=crop&q=80'
     ],
     flavors: ['Vainilla Francesa', 'Chocolate Blanco', 'Manjar de Lúcuma'],
@@ -253,7 +253,7 @@ const INITIAL_REVIEWS: Review[] = [
 const INITIAL_GALLERY: GalleryItem[] = [
   {
     id: 'gal-1',
-    imageUrl: 'https://images.unsplash.com/photo-1535141192574-5d4897c13636?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800&auto=format&fit=crop&q=80',
     title: 'Tarta de Boda Vintage',
     category: 'Bodas',
     date: '2026-05-10'
@@ -274,7 +274,7 @@ const INITIAL_GALLERY: GalleryItem[] = [
   },
   {
     id: 'gal-4',
-    imageUrl: 'https://images.unsplash.com/photo-1558961309-db6f1a3eb64e?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=800&auto=format&fit=crop&q=80',
     title: 'Macaron Pastel Delight',
     category: 'Infantiles',
     date: '2026-06-14'
@@ -312,7 +312,7 @@ const DEFAULT_CONFIG: AppConfig = {
   heroTitle: 'El Arte de Compartir',
   heroDescription: 'Diseños exclusivos creados por Carol Rosas para transformar tus momentos especiales en legados de sabor.',
   heroBadge: 'Por Carol & Edwin Rosas Albines',
-  heroImage: 'https://images.unsplash.com/photo-1535141192574-5d4897c13636?w=600&auto=format&fit=crop&q=80',
+  heroImage: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80',
   aboutTitle: 'Nuestra Esencia Familiar',
   aboutDescription: 'En Maison Rosas, la repostería no es solo un oficio, sino un legado familiar de amor y dedicación. Cada pastel es esculpido a mano por Carol, cuidando texturas finas e ingredientes orgánicos de la más alta selección, mientras que Edwin garantiza una atención segura, coordinada y personalizada para que cada celebración en Piura y Sullana sea perfecta.',
   aboutImage: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=80',

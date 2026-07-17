@@ -35,8 +35,10 @@ setFaviconFromLocalStorage();
 // Eager-loaded components (above the fold)
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
-import RecentPurchases from './components/RecentPurchases';
 import TermsAndPrivacy from './components/TermsAndPrivacy';
+
+// Precargar imágenes críticas en caché (hero + logo) desde el inicio
+import { preloadImages } from './utils/imageCache';
 
 // Lazy-loaded components (below the fold / heavy)
 const History = lazy(() => import('./components/History'));
@@ -104,10 +106,14 @@ export default function App() {
   // Legal modals state
   const [legalModal, setLegalModal] = useState<{ isOpen: boolean; tab: 'terms' | 'privacy' }>({ isOpen: false, tab: 'terms' });
 
-  // Note: Hero image preload removed intentionally.
-  // The Hero component already uses fetchPriority="high" and decoding="async"
-  // on its <img> tag, which is sufficient for LCP optimization.
-  // A separate <link rel="preload"> caused browser warnings about unused preloads.
+  // Precargar imágenes críticas en la caché base64 cuando el config esté listo
+  useEffect(() => {
+    if (!config) return;
+    const heroImg = config.heroImage;
+    if (heroImg) {
+      preloadImages([heroImg]);
+    }
+  }, [config?.heroImage]);
 
   // Dynamic favicon & document title from Firestore config
   useEffect(() => {
@@ -136,11 +142,16 @@ export default function App() {
       }
     }
 
-    // Persistir hero image en localStorage para preload en próxima carga
+    // Persistir hero image y logo en localStorage para precarga durante la animación de entrada
     if (config.heroImage) {
       try { localStorage.setItem('maison_hero_url', config.heroImage.split('?')[0]); } catch {}
     } else {
       try { localStorage.removeItem('maison_hero_url'); } catch {}
+    }
+    if (config.logoUrl) {
+      try { localStorage.setItem('maison_logo_url', config.logoUrl.split('?')[0]); } catch {}
+    } else {
+      try { localStorage.removeItem('maison_logo_url'); } catch {}
     }
 
     // Persistir calidad de compresión de imágenes
@@ -423,8 +434,28 @@ export default function App() {
   };
 
   // Auto-dismiss entrance animation after ~1.6s
+  // Durante la animación, precargamos las imágenes críticas (hero + logo)
+  // usando las URLs guardadas en localStorage de visitas anteriores
   useEffect(() => {
-    const timer = setTimeout(() => setShowEntrance(false), 1600);
+    // Precargar hero image y logo desde localStorage (guardados en visitas previas)
+    // Esto se ejecuta INMEDIATAMENTE, aprovechando los 1.6s de animación
+    const savedHeroUrl = (() => {
+      try { return localStorage.getItem('maison_hero_url'); } catch { return null; }
+    })();
+    const savedLogoUrl = (() => {
+      try { return localStorage.getItem('maison_logo_url'); } catch { return null; }
+    })();
+
+    const urlsToPreload: string[] = [];
+    if (savedHeroUrl) urlsToPreload.push(savedHeroUrl);
+    if (savedLogoUrl) urlsToPreload.push(savedLogoUrl);
+
+    if (urlsToPreload.length > 0) {
+      // Disparar la precarga en background (no bloquear la animación)
+      preloadImages(urlsToPreload);
+    }
+
+    const timer = setTimeout(() => setShowEntrance(false), 2500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -659,8 +690,8 @@ export default function App() {
           <motion.div
             key="entrance"
             initial={{ opacity: 1 }}
-            exit={{ opacity: 0, scale: 1.02 }}
-            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            exit={{ opacity: 0, scale: 1.04, filter: 'blur(2px)' }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             className="fixed inset-0 z-[9999] flex items-center justify-center"
             style={{backgroundColor: 'var(--theme-bg)'}}
           >
@@ -805,20 +836,17 @@ export default function App() {
               config={config}
             />
 
-            {/* Live activity social proof recent purchases ticker */}
-            <RecentPurchases orders={orders} />
-
-            {/* 2. Story / About Us Timeline Section */}
-            <Suspense fallback={<SectionFallback />}>
-              <History config={config} />
-            </Suspense>
-
-            {/* 3. Catalog Section with Customization trigger */}
+{/* 2. Catalog Section — pasteles primero para enganchar al cliente */}
             <Suspense fallback={<SectionFallback />}>
               <Catalog
                 products={products}
                 onSelectCustomize={(prod) => setSelectedProductForCustomize(prod)}
               />
+            </Suspense>
+
+            {/* 3. Story / About Us Timeline Section */}
+            <Suspense fallback={<SectionFallback />}>
+              <History config={config} />
             </Suspense>
 
             {/* 4. Shared Gallery Section */}

@@ -151,7 +151,7 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
                 <span className="text-[9px] font-mono uppercase text-zinc-400 block font-semibold">Vista Previa:</span>
                 <div className="aspect-[4/3] w-full bg-zinc-100 dark:bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
                   {heroImage ? <img src={optimizeImageUrl(heroImage, 600)} alt="Vista previa" className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" decoding="async"
-                    onError={(e) => { (e.target as HTMLImageElement).src = optimizeImageUrl('https://images.unsplash.com/photo-1535141192574-5d4897c13636?w=600&auto=format&fit=crop&q=80', 600); }} />
+                    onError={(e) => { (e.target as HTMLImageElement).src = optimizeImageUrl('https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80', 600); }} />
                     : <div className="flex items-center justify-center h-full text-zinc-400 text-xs font-mono">Sin imagen configurada</div>}
                 </div>
               </div>

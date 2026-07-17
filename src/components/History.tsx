@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import { Award, Heart, ShieldCheck, Users, Clock, Coffee } from 'lucide-react';
 import { AppConfig } from '../types';
 import { optimizeImageUrl } from '../utils/images';
+import CachedImage from './CachedImage';
 
 const timelineContainerVariants = {
   hidden: { opacity: 0 },
@@ -147,13 +148,12 @@ export default function History({ config }: HistoryProps) {
             id="history-chef-photo"
           >
             <div className="absolute inset-0 bg-brand-500 rounded-3xl rotate-3 scale-[0.98] opacity-10" />
-            <img
-              src={optimizeImageUrl(config?.aboutImage || 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=600&auto=format&fit=crop&q=80', 800)}
+            <CachedImage
+              src={config?.aboutImage || 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=600&auto=format&fit=crop&q=80'}
+              width={800}
               alt="Carol horneando con amor"
               className="relative w-full aspect-[4/3] object-cover rounded-3xl shadow-xl border border-white/20"
-              referrerPolicy="no-referrer"
-              loading="lazy"
-              decoding="async"
+              wrapperClassName="w-full aspect-[4/3] rounded-3xl"
             />
             <div className="absolute -bottom-4 -left-4 glass-panel p-4 rounded-none shadow-lg border backdrop-blur-md" style={{borderColor: 'var(--theme-glass-border)', backgroundColor: 'var(--theme-surface-glass)'}}>
               <span className="block text-[9px] font-mono font-bold uppercase tracking-widest text-brand-secondary dark:text-brand-400">Pastelera Principal</span>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Cake, Menu, X, LogIn, ShoppingBag, HelpCircle, PhoneCall, Star, Sun, Moon } from 'lucide-react';
 import { optimizeImageUrl } from '../utils/images';
+import CachedImage from './CachedImage';
 
 interface NavbarProps {
   currentView: string;
@@ -84,13 +85,13 @@ export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, o
           >
             {logoUrl ? (
               <div className="h-11 w-11 rounded-full overflow-hidden shrink-0 group-hover:scale-110 transition-transform duration-300 border-2" style={{borderColor: 'var(--theme-border)'}}>
-                <img 
-                  src={optimizeImageUrl(logoUrl, 100)} 
+                <CachedImage 
+                  src={logoUrl || ''} 
+                  width={100}
                   alt="Maison Rosas Logo" 
-                  referrerPolicy="no-referrer" 
                   className="w-full h-full object-cover"
-                  loading="lazy"
-                  decoding="async"
+                  wrapperClassName="w-full h-full"
+                  spinnerSize={16}
                 />
               </div>
             ) : (
