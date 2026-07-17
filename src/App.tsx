@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Moon, Sun, AlertCircle, ShoppingBag, Eye, LogOut, Cake } from 'lucide-react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
@@ -66,8 +66,30 @@ export default function App() {
   // Customizer pop-up trigger
   const [selectedProductForCustomize, setSelectedProductForCustomize] = useState<Product | null>(null);
 
-  // Theme configuration (light/dark/high-contrast)
-  const [theme, setTheme] = useState<'light' | 'dark' | 'contrast'>('light');
+  // Detect system preferred color scheme
+  const getSystemTheme = (): 'light' | 'dark' => {
+    try {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } catch {
+      return 'dark'; // safe fallback
+    }
+  };
+
+  // Restore saved preference or auto-detect system preference
+  const getInitialTheme = (): 'light' | 'dark' | 'contrast' => {
+    try {
+      const saved = localStorage.getItem('maison_theme');
+      if (saved === 'light' || saved === 'dark' || saved === 'contrast') return saved;
+    } catch {}
+    // No saved preference → detect device's preferred color scheme
+    return getSystemTheme();
+  };
+  const [theme, setTheme] = useState<'light' | 'dark' | 'contrast'>(getInitialTheme);
+
+  // Track whether user has manually toggled theme (persisted in localStorage)
+  const hasUserInteracted = useRef<boolean>(
+    (() => { try { return localStorage.getItem('maison_theme') !== null; } catch { return false; }})()
+  );
 
   // Admin authentication state saved locally
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
@@ -308,18 +330,39 @@ export default function App() {
     return () => clearInterval(interval);
   }, [countdownActive, config?.maintenanceEndTime]);
 
-  // Theme updates
+  // Follow system color scheme changes until user manually toggles themes
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e: MediaQueryListEvent) => {
+      if (!hasUserInteracted.current) {
+        setTheme(e.matches ? 'dark' : 'light');
+      }
+    };
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  // Theme application with admin isolation:
+  // - Admin panel → force clean slate (no .dark class) so it always renders in light mode
+  // - Public site → apply user's saved or auto-detected theme preference
   useEffect(() => {
     const root = window.document.documentElement;
-    root.classList.remove('dark', 'contrast');
+    
+    // Clean all theme classes and custom properties
+    root.classList.remove('dark', 'contrast', 'light-theme');
+    root.style.removeProperty('--color-brand-500');
+    
+    if (currentView === 'admin') return; // Clean slate = default light mode
     
     if (theme === 'dark') {
       root.classList.add('dark');
     } else if (theme === 'contrast') {
-      root.classList.add('contrast');
-      root.style.setProperty('--color-brand-500', '#FFD700'); // Highly visible yellow
+      root.classList.add('contrast', 'dark');
+      root.style.setProperty('--color-brand-500', '#FFD700');
+    } else {
+      root.classList.add('light-theme');
     }
-  }, [theme]);
+  }, [theme, currentView]);
 
   // Synchronized route-changing helper using HTML5 PushState history API
   const handleViewChange = (viewId: string) => {
@@ -605,7 +648,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-brand-bg text-zinc-800 transition-colors duration-300 relative selection:bg-brand-100 selection:text-brand-900 dot-pattern">
+    <div className="min-h-screen relative dot-pattern" style={{backgroundColor: 'var(--theme-bg)', color: 'var(--theme-text)'}}>
       
       {/* Google Analytics 4 */}
       <GoogleAnalytics />
@@ -618,7 +661,8 @@ export default function App() {
             initial={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 1.02 }}
             transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-brand-bg"
+            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            style={{backgroundColor: 'var(--theme-bg)'}}
           >
             {/* Ambient warm glow */}
             <div className="absolute top-1/3 left-1/3 w-64 h-64 rounded-full bg-brand-100/40 blur-3xl" />
@@ -687,6 +731,13 @@ export default function App() {
           isAdminLoggedIn={isAdminLoggedIn}
           onLogout={handleAdminLogout}
           logoUrl={config?.logoUrl}
+          theme={theme}
+          onToggleTheme={() => {
+            hasUserInteracted.current = true;
+            const next = theme === 'dark' ? 'light' : 'dark';
+            try { localStorage.setItem('maison_theme', next); } catch {}
+            setTheme(next);
+          }}
         />
       )}
 
@@ -809,12 +860,12 @@ export default function App() {
 
       {/* FOOTER — oculto en admin */}
       {currentView !== 'admin' && (
-        <footer className="bg-zinc-900 text-white py-16 border-t border-zinc-800">
+        <footer className="py-16" style={{backgroundColor: 'var(--theme-bg-alt)', color: 'var(--theme-text)', borderTop: '1px solid var(--theme-border)'}}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
           
           <div className="space-y-4">
             <span className="font-serif text-2xl font-bold tracking-tight">Maison Rosas</span>
-            <p className="text-xs text-zinc-400 leading-relaxed font-sans">
+            <p className="text-xs leading-relaxed font-sans" style={{color: 'var(--theme-text-secondary)'}}>
               Pastelería de Autor & Repostería Fina hecha con amor en Sullana, Piura. 
               Modelos exclusivos de Carol Rosas Albines coordinados de forma segura por Edwin Raúl Rosas.
             </p>
@@ -822,33 +873,33 @@ export default function App() {
 
           <div>
             <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-brand-400 mb-4">Nuestra Casa</h4>
-            <ul className="space-y-2 text-xs text-zinc-400">
+            <ul className="space-y-2 text-xs" style={{color: 'var(--theme-text-secondary)'}}>
               <li>{config?.address || 'Av. Ricardo Palma 213, Sánchez Cerro'}</li>
               <li>Sullana, Piura, Perú</li>
-              <li><a href="mailto:edwinraulrosasalbines@gmail.com" className="hover:text-white transition-colors">{config?.email || 'edwinraulrosasalbines@gmail.com'}</a></li>
-              <li><a href="https://wa.me/51902568187" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">+{config?.whatsappNumber || '51902568187'}</a></li>
+              <li><a href="mailto:edwinraulrosasalbines@gmail.com" className="hover:opacity-80 transition-opacity" style={{color: 'var(--theme-text-secondary)'}}>{config?.email || 'edwinraulrosasalbines@gmail.com'}</a></li>
+              <li><a href="https://wa.me/51902568187" target="_blank" rel="noreferrer" className="hover:opacity-80 transition-opacity" style={{color: 'var(--theme-text-secondary)'}}>+{config?.whatsappNumber || '51902568187'}</a></li>
             </ul>
           </div>
 
           <div>              <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-brand-400 mb-4">Enlaces</h4>
-            <ul className="space-y-2 text-xs text-zinc-400">
+            <ul className="space-y-2 text-xs" style={{color: 'var(--theme-text-secondary)'}}>
               <li>
-                <button onClick={() => scrollToSection('inicio')} className="hover:text-white transition-colors">
+                <button onClick={() => scrollToSection('inicio')} className="transition-opacity hover:opacity-80 cursor-pointer">
                   Inicio
                 </button>
               </li>
               <li>
-                <button onClick={() => scrollToSection('historia')} className="hover:text-white transition-colors">
+                <button onClick={() => scrollToSection('historia')} className="transition-opacity hover:opacity-80 cursor-pointer">
                   Nuestra Historia
                 </button>
               </li>
               <li>
-                <button onClick={() => scrollToSection('catalogo')} className="hover:text-white transition-colors">
+                <button onClick={() => scrollToSection('catalogo')} className="transition-opacity hover:opacity-80 cursor-pointer">
                   Catálogo de Modelos
                 </button>
               </li>
               <li>
-                <button onClick={() => scrollToSection('opiniones')} className="hover:text-white transition-colors">
+                <button onClick={() => scrollToSection('opiniones')} className="transition-opacity hover:opacity-80 cursor-pointer">
                   Opiniones de Clientes
                 </button>
               </li>
@@ -857,7 +908,7 @@ export default function App() {
 
           <div>
             <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-brand-400 mb-4">Políticas & Confianza</h4>
-            <p className="text-[11px] text-zinc-400 leading-relaxed">
+            <p className="text-[11px] leading-relaxed" style={{color: 'var(--theme-text-secondary)'}}>
               Todos nuestros pasteles se hornean a pedido con un mínimo de 48 horas de anticipación. 
               Higiene, ingredientes premium y empaque Maison garantizado en cada entrega.
             </p>
@@ -865,11 +916,11 @@ export default function App() {
 
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-zinc-800 mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between text-[11px] text-zinc-500 gap-4">
-          <span>&copy; {new Date().getFullYear()} Maison Rosas. Todos los derechos reservados.</span>
-          <div className="flex space-x-4">
-            <button onClick={() => setLegalModal({ isOpen: true, tab: 'terms' })} className="hover:text-zinc-300 cursor-pointer">Términos de Servicio</button>
-            <button onClick={() => setLegalModal({ isOpen: true, tab: 'privacy' })} className="hover:text-zinc-300 cursor-pointer">Políticas de Privacidad</button>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between text-[11px] gap-4" style={{borderTop: '1px solid var(--theme-border)'}}>
+          <span style={{color: 'var(--theme-text-muted)'}}>&copy; {new Date().getFullYear()} Maison Rosas. Todos los derechos reservados.</span>
+          <div className="flex space-x-4" style={{color: 'var(--theme-text-muted)'}}>
+            <button onClick={() => setLegalModal({ isOpen: true, tab: 'terms' })} className="transition-opacity hover:opacity-80 cursor-pointer">Términos de Servicio</button>
+            <button onClick={() => setLegalModal({ isOpen: true, tab: 'privacy' })} className="transition-opacity hover:opacity-80 cursor-pointer">Políticas de Privacidad</button>
           </div>
         </div>
         </footer>

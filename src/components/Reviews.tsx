@@ -73,11 +73,11 @@ export default function Reviews({ reviews, onRefreshReviews }: ReviewsProps) {
           <span className="text-[10px] tracking-[0.3em] uppercase opacity-75 text-brand-secondary dark:text-brand-300 block font-semibold">
             CONFÍA EN MAISON ROSAS
           </span>
-          <h2 className="text-4xl sm:text-5xl font-serif font-light italic text-zinc-900 dark:text-white mt-3">
+          <h2 className="text-4xl sm:text-5xl font-serif font-light italic mt-3" style={{color: 'var(--theme-text)'}}>
             Lo que Dicen Nuestros Clientes
           </h2>
           <div className="w-12 h-[1px] bg-brand-secondary/30 mx-auto mt-5" />
-          <p className="text-sm font-light text-zinc-600 dark:text-zinc-400 mt-5 max-w-xl mx-auto leading-relaxed">
+          <p className="text-sm font-light mt-5 max-w-xl mx-auto leading-relaxed" style={{color: 'var(--theme-text-secondary)'}}>
             La confianza de Edwin y el sabor de Carol reflejados en opiniones de familias reales. 
             Nos esforzamos diariamente para superar tus expectativas.
           </p>
@@ -101,13 +101,14 @@ export default function Reviews({ reviews, onRefreshReviews }: ReviewsProps) {
                   {[...Array(5)].map((_, i) => (
                     <Star 
                       key={i} 
-                      className={`h-4 w-4 ${i < review.rating ? 'fill-amber-400 text-amber-400' : 'text-zinc-200'}`} 
+                      className={`h-4 w-4 ${i < review.rating ? 'fill-amber-400 text-amber-400' : ''}`} 
+                      style={i < review.rating ? {filter: 'drop-shadow(0 0 3px rgba(251,191,36,0.3))'} : {color: 'var(--theme-text-muted)'}}
                     />
                   ))}
                 </div>
 
                 {/* Comment */}
-                <p className="text-sm text-zinc-600 dark:text-zinc-300 italic font-sans leading-relaxed">
+                <p className="text-sm italic font-sans leading-relaxed" style={{color: 'var(--theme-text)'}}>
                   "{review.comment}"
                 </p>
               </div>
@@ -116,32 +117,32 @@ export default function Reviews({ reviews, onRefreshReviews }: ReviewsProps) {
               <div className="mt-6 pt-6 border-t border-zinc-200/20 dark:border-zinc-800/20">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h4 className="text-base font-serif font-light italic text-zinc-900 dark:text-white">
+                    <h4 className="text-base font-serif font-light italic" style={{color: 'var(--theme-text)'}}>
                       {review.author}
                     </h4>
-                    <span className="text-[10px] text-zinc-400 font-sans">
+                    <span className="text-[10px] font-sans" style={{color: 'var(--theme-text-muted)'}}>
                       {review.role || 'Cliente'}
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono text-zinc-400">
+                  <span className="text-[10px] font-mono" style={{color: 'var(--theme-text-muted)'}}>
                     {review.date}
                   </span>
                 </div>
                 
-                <span className="inline-block mt-3 bg-white/30 dark:bg-zinc-900/30 border border-white/40 dark:border-white/5 text-zinc-500 dark:text-zinc-400 px-2.5 py-1 rounded-none text-[9px] font-mono font-bold uppercase tracking-widest">
+                <span className="inline-block mt-3 px-2.5 py-1 rounded-none text-[9px] font-mono font-bold uppercase tracking-widest border" style={{backgroundColor: 'var(--theme-surface)', borderColor: 'var(--theme-border)', color: 'var(--theme-text-secondary)'}}>
                   Modelo: {review.cakeModel}
                 </span>
 
                 {/* Admin response bubble */}
                 {review.response && (
-                  <div className="mt-4 p-3 bg-white/20 dark:bg-zinc-900/20 rounded-2xl border border-white/20 dark:border-white/5 relative">
-                    <div className="absolute top-2 right-2 text-brand-500">
+                  <div className="mt-4 p-3 rounded-2xl border relative" style={{backgroundColor: 'var(--theme-surface)', borderColor: 'var(--theme-border)'}}>
+                    <div className="absolute top-2 right-2" style={{color: 'var(--theme-brand-primary)'}}>
                       <Sparkles className="h-3 w-3" />
                     </div>
-                    <span className="block text-[9px] font-mono font-bold text-brand-600 dark:text-brand-400 uppercase">
+                    <span className="block text-[9px] font-mono font-bold uppercase" style={{color: 'var(--theme-brand-primary)'}}>
                       Respuesta de Carol & Edwin:
                     </span>
-                    <p className="text-[11px] text-zinc-600 dark:text-zinc-300 mt-1 italic">
+                    <p className="text-[11px] mt-1 italic" style={{color: 'var(--theme-text-secondary)'}}>
                       "{review.response}"
                     </p>
                   </div>
@@ -178,7 +179,7 @@ export default function Reviews({ reviews, onRefreshReviews }: ReviewsProps) {
                   <div className="inline-flex p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-full text-emerald-500">
                     <CheckCircle2 className="h-8 w-8 animate-bounce" />
                   </div>
-                  <h3 className="text-lg font-serif font-bold text-zinc-900 dark:text-white">
+                  <h3 className="text-lg font-serif font-bold" style={{color: 'var(--theme-text)'}}>
                     ¡Gracias por tu reseña!
                   </h3>
                   <p className="text-xs text-zinc-500">
@@ -188,7 +189,7 @@ export default function Reviews({ reviews, onRefreshReviews }: ReviewsProps) {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <h3 className="text-lg font-serif font-bold text-zinc-900 dark:text-white mb-2">
+                  <h3 className="text-lg font-serif font-bold mb-2" style={{color: 'var(--theme-text)'}}>
                     Escribe tu Opinión
                   </h3>
 

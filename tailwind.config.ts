@@ -5,12 +5,15 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       fontFamily: {
         serif: ['"Playfair Display"', 'Georgia', 'serif'],
         sans: ['"Inter"', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'monospace'],
+        display: ['"Playfair Display"', 'Georgia', 'serif'],
+        script: ['"Playfair Display"', 'Georgia', 'serif'],
       },
       colors: {
         brand: {
@@ -28,6 +31,14 @@ export default {
           800: '#6D4440',
           900: '#523531',
           950: '#2D1C1A',
+        },
+        dark: {
+          bg: '#0C0A09',
+          surface: '#1C1917',
+          card: '#292524',
+          border: '#3C3835',
+          text: '#F5F5F4',
+          muted: '#A8A29E',
         }
       }
     },

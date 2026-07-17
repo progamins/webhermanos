@@ -111,11 +111,11 @@ export default function Contact({ config }: ContactProps) {
           <span className="text-[10px] tracking-[0.3em] uppercase opacity-90 text-brand-secondary dark:text-brand-300 block font-mono font-bold">
             CONECTA CON NOSOTROS
           </span>
-          <h2 className="text-4xl sm:text-5xl font-serif font-light italic text-zinc-900 dark:text-white mt-3">
+          <h2 className="text-4xl sm:text-5xl font-serif font-light italic mt-3" style={{color: 'var(--theme-text)'}}>
             Estamos Listos para Atenderte
           </h2>
           <div className="w-12 h-[1.5px] bg-brand-secondary/40 mx-auto mt-5" />
-          <p className="text-sm font-light text-zinc-600 dark:text-zinc-400 mt-5 max-w-xl mx-auto leading-relaxed">
+          <p className="text-sm font-light mt-5 max-w-xl mx-auto leading-relaxed" style={{color: 'var(--theme-text-secondary)'}}>
             Coordina con Edwin Raúl Rosas Albines todos los detalles de tu evento. 
             Estaremos encantados de resolver tus requerimientos con nuestra pastelería gourmet de autor.
           </p>
@@ -144,8 +144,8 @@ export default function Contact({ config }: ContactProps) {
                   <MapPin className="h-5 w-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-serif font-semibold text-zinc-900 dark:text-zinc-100">Dirección de Entrega / Recojo</h4>
-                  <p className="text-xs font-light text-zinc-500 dark:text-zinc-400 mt-1 leading-normal">
+                  <h4 className="text-sm font-serif font-semibold" style={{color: 'var(--theme-text)'}}>Dirección de Entrega / Recojo</h4>
+                  <p className="text-xs font-light mt-1 leading-normal" style={{color: 'var(--theme-text-secondary)'}}>
                     {config?.address || 'Av. Ricardo Palma 213, Sánchez Cerro, Sullana, Piura - Perú'}
                   </p>
                 </div>
@@ -161,8 +161,8 @@ export default function Contact({ config }: ContactProps) {
                   <Clock className="h-5 w-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-serif font-semibold text-zinc-900 dark:text-zinc-100">Horario de Atención Familiar</h4>
-                  <p className="text-xs font-light text-zinc-500 dark:text-zinc-400 mt-1 leading-normal">
+                  <h4 className="text-sm font-serif font-semibold" style={{color: 'var(--theme-text)'}}>Horario de Atención Familiar</h4>
+                  <p className="text-xs font-light mt-1 leading-normal" style={{color: 'var(--theme-text-secondary)'}}>
                     {config?.openingHours || 'Lunes a Sábado: 9:00 AM - 7:00 PM | Domingos: 10:00 AM - 2:00 PM'}
                   </p>
                 </div>
@@ -178,8 +178,8 @@ export default function Contact({ config }: ContactProps) {
                   <Phone className="h-5 w-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-serif font-semibold text-zinc-900 dark:text-zinc-100">WhatsApp de Edwin Rosas</h4>
-                  <p className="text-xs font-light text-zinc-500 dark:text-zinc-400 mt-1 leading-normal">
+                  <h4 className="text-sm font-serif font-semibold" style={{color: 'var(--theme-text)'}}>WhatsApp de Edwin Rosas</h4>
+                  <p className="text-xs font-light mt-1 leading-normal" style={{color: 'var(--theme-text-secondary)'}}>
                     +{config?.whatsappNumber || '51902568187'}
                   </p>
                 </div>
@@ -195,8 +195,8 @@ export default function Contact({ config }: ContactProps) {
                   <Mail className="h-5 w-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-serif font-semibold text-zinc-900 dark:text-zinc-100">Correo Electrónico</h4>
-                  <p className="text-xs font-light text-zinc-500 dark:text-zinc-400 mt-1 leading-normal">
+                  <h4 className="text-sm font-serif font-semibold" style={{color: 'var(--theme-text)'}}>Correo Electrónico</h4>
+                  <p className="text-xs font-light mt-1 leading-normal" style={{color: 'var(--theme-text-secondary)'}}>
                     {config?.email || 'edwinraulrosasalbines@gmail.com'}
                   </p>
                 </div>
@@ -223,10 +223,10 @@ export default function Contact({ config }: ContactProps) {
 
                 {/* Address Badge Overlay */}
                 <div className="absolute bottom-3 left-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm py-1.5 px-3 rounded-lg border border-zinc-100 dark:border-zinc-800/80 shadow-md pointer-events-none z-10 max-w-[85%]">
-                  <span className="text-[10px] font-mono font-bold text-zinc-800 dark:text-zinc-200 block">
+                  <span className="text-[10px] font-mono font-bold block" style={{color: 'var(--theme-text)'}}>
                     Maison Rosas
                   </span>
-                  <span className="text-[8px] font-sans text-zinc-500 dark:text-zinc-400">
+                  <span className="text-[8px] font-sans" style={{color: 'var(--theme-text-secondary)'}}>
                     {config?.address || 'Av. Ricardo Palma 213, Sánchez Cerro, Sullana'}
                   </span>
                 </div>
@@ -267,10 +267,10 @@ export default function Contact({ config }: ContactProps) {
               <span className="text-[10px] font-mono uppercase tracking-widest text-brand-secondary dark:text-brand-300 font-bold">
                 ESCRÍBENOS
               </span>
-              <h3 className="text-2xl font-serif font-light italic text-zinc-900 dark:text-white">
+              <h3 className="text-2xl font-serif font-light italic" style={{color: 'var(--theme-text)'}}>
                 Envíanos una Consulta Directa
               </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed font-sans">
+              <p className="text-xs leading-relaxed font-sans" style={{color: 'var(--theme-text-secondary)'}}>
                 ¿Tienes alguna consulta rápida o te gustaría coordinar un pedido corporativo? 
                 Llena el siguiente formulario y Edwin se comunicará contigo vía telefónica o WhatsApp a la brevedad.
               </p>
@@ -286,8 +286,8 @@ export default function Contact({ config }: ContactProps) {
                 <div className="inline-flex p-3 bg-brand-100 dark:bg-brand-900/30 rounded-full text-brand-600 dark:text-brand-300">
                   <CheckCircle className="h-8 w-8 animate-bounce" />
                 </div>
-                <h4 className="text-lg font-serif font-bold text-zinc-900 dark:text-white">¡Mensaje Recibido!</h4>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto leading-relaxed">
+                <h4 className="text-lg font-serif font-bold" style={{color: 'var(--theme-text)'}}>¡Mensaje Recibido!</h4>
+                <p className="text-xs max-w-sm mx-auto leading-relaxed" style={{color: 'var(--theme-text-secondary)'}}>
                   Edwin Raúl Rosas revisará tu mensaje y se pondrá en contacto contigo en las próximas horas. ¡Gracias por confiar en Maison Rosas!
                 </p>
               </motion.div>
@@ -295,40 +295,40 @@ export default function Contact({ config }: ContactProps) {
               <form onSubmit={handleSendMessage} className="space-y-4 pt-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-mono uppercase text-zinc-400 dark:text-zinc-500 mb-1 font-bold">Nombre Completo</label>
+                    <label className="block text-[10px] font-mono uppercase mb-1 font-bold" style={{color: 'var(--theme-text-secondary)'}}>Nombre Completo</label>
                     <input
                       type="text"
                       required
                       placeholder="Ej: Edwin Rosas"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full px-4 py-3 bg-white/50 dark:bg-zinc-900/30 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl text-xs placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 text-zinc-800 dark:text-white backdrop-blur-sm transition-all duration-200"
+                      className="w-full px-4 py-3 bg-white/50 dark:bg-zinc-900/30 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 text-zinc-800 dark:text-white backdrop-blur-sm transition-all duration-200"
                       id="contact-name-input"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-mono uppercase text-zinc-400 dark:text-zinc-500 mb-1 font-bold">Correo Electrónico</label>
+                    <label className="block text-[10px] font-mono uppercase mb-1 font-bold" style={{color: 'var(--theme-text-secondary)'}}>Correo Electrónico</label>
                     <input
                       type="email"
                       placeholder="Ej: edwin@gmail.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-4 py-3 bg-white/50 dark:bg-zinc-900/30 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl text-xs placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 text-zinc-800 dark:text-white backdrop-blur-sm transition-all duration-200"
+                      className="w-full px-4 py-3 bg-white/50 dark:bg-zinc-900/30 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 text-zinc-800 dark:text-white backdrop-blur-sm transition-all duration-200"
                       id="contact-email-input"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-mono uppercase text-zinc-400 dark:text-zinc-500 mb-1 font-bold">Tu Mensaje o Requerimiento</label>
+                  <label className="block text-[10px] font-mono uppercase mb-1 font-bold" style={{color: 'var(--theme-text-secondary)'}}>Tu Mensaje o Requerimiento</label>
                   <textarea
                     required
                     rows={4}
                     placeholder="Escribe aquí los detalles que te gustaría consultar con Edwin..."
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    className="w-full px-4 py-3 bg-white/50 dark:bg-zinc-900/30 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl text-xs placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 text-zinc-800 dark:text-white backdrop-blur-sm resize-none transition-all duration-200"
+                    className="w-full px-4 py-3 bg-white/50 dark:bg-zinc-900/30 border border-zinc-200/50 dark:border-zinc-800/50 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 text-zinc-800 dark:text-white backdrop-blur-sm resize-none transition-all duration-200"
                     id="contact-message-input"
                   />
                 </div>

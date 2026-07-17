@@ -43,7 +43,7 @@ export function showToast(message: string, type: ToastType = 'success', title?: 
         </div>
         <div className="flex-1 min-w-0">
           {title && (
-            <h5 className="text-[10px] font-mono font-bold text-zinc-900 dark:text-white uppercase tracking-wider">
+            <h5 className="text-[10px] font-mono font-bold uppercase tracking-wider" style={{color: 'var(--theme-text)'}}>
               {title}
             </h5>
           )}

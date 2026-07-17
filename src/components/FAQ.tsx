@@ -53,11 +53,11 @@ export default function FAQ() {
           <span className="text-[10px] tracking-[0.3em] uppercase opacity-75 text-brand-secondary dark:text-brand-300 block font-semibold">
             DESPEJA TUS DUDAS
           </span>
-          <h2 className="text-4xl sm:text-5xl font-serif font-light italic text-zinc-900 dark:text-white mt-3">
+          <h2 className="text-4xl sm:text-5xl font-serif font-light italic mt-3" style={{color: 'var(--theme-text)'}}>
             Preguntas Frecuentes
           </h2>
           <div className="w-12 h-[1px] bg-brand-secondary/30 mx-auto mt-5" />
-          <p className="text-sm font-light text-zinc-600 dark:text-zinc-400 mt-5 max-w-xl mx-auto leading-relaxed">
+          <p className="text-sm font-light mt-5 max-w-xl mx-auto leading-relaxed" style={{color: 'var(--theme-text-secondary)'}}>
             Todo lo que necesitas saber sobre el proceso artesanal de Carol y la coordinación comercial de Edwin.
           </p>
         </div>
@@ -70,7 +70,7 @@ export default function FAQ() {
             return (
               <div
                 key={index}
-                className="glass-panel rounded-[20px] bg-white/40 dark:bg-zinc-950/30 border border-white/30 dark:border-white/5 overflow-hidden transition-all duration-300 backdrop-blur-md"
+                className="glass-panel rounded-[20px] overflow-hidden transition-all duration-300 backdrop-blur-md"
                 id={`faq-item-${index}`}
               >
                 {/* Accordion Trigger */}
@@ -80,14 +80,14 @@ export default function FAQ() {
                 >
                   <div className="flex items-center space-x-3.5 pr-4">
                     <HelpCircle className="h-5 w-5 text-brand-secondary shrink-0" />
-                    <span className="font-serif font-light italic text-base text-zinc-900 dark:text-white leading-tight">
+                    <span className="font-serif font-light italic text-base leading-tight" style={{color: 'var(--theme-text)'}}>
                       {faq.question}
                     </span>
                   </div>
                   <motion.div
                     animate={{ rotate: isOpen ? 180 : 0 }}
                     transition={{ duration: 0.3 }}
-                    className="p-1.5 rounded-full bg-white/40 dark:bg-zinc-800 text-zinc-500 shrink-0 border border-white/20"
+                    className="p-1.5 rounded-full shrink-0 border" style={{backgroundColor: 'var(--theme-surface)', borderColor: 'var(--theme-border)', color: 'var(--theme-text-secondary)'}}
                   >
                     <ChevronDown className="h-4 w-4" />
                   </motion.div>
@@ -102,7 +102,7 @@ export default function FAQ() {
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.3, ease: 'easeInOut' }}
                     >
-                      <div className="px-6 pb-6 pt-1 border-t border-zinc-200/20 dark:border-zinc-800/20 text-sm font-light text-zinc-600 dark:text-zinc-400 leading-relaxed font-sans">
+                      <div className="px-6 pb-6 pt-1 border-t text-sm font-light leading-relaxed font-sans" style={{borderColor: 'var(--theme-border)', color: 'var(--theme-text-secondary)'}}>
                         {faq.answer}
                       </div>
                     </motion.div>
@@ -119,10 +119,10 @@ export default function FAQ() {
           <div className="flex items-center space-x-3.5 text-left">
             <HeartHandshake className="h-6 w-6 text-brand-secondary shrink-0" />
             <div>
-              <h4 className="text-base font-serif font-light italic text-zinc-900 dark:text-white">
+              <h4 className="text-base font-serif font-light italic" style={{color: 'var(--theme-text)'}}>
                 ¿Tienes alguna consulta adicional?
               </h4>
-              <p className="text-xs font-light text-zinc-500 mt-0.5">
+              <p className="text-xs font-light mt-0.5" style={{color: 'var(--theme-text-secondary)'}}>
                 Edwin está listo para ayudarte con cualquier requerimiento particular por chat.
               </p>
             </div>

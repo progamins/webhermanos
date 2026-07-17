@@ -31,11 +31,11 @@ export default function Gallery({ galleryItems }: GalleryProps) {
           <span className="text-[10px] tracking-[0.3em] uppercase opacity-75 text-brand-secondary dark:text-brand-300 block font-semibold">
             EXPERIENCIAS COMPARTIDAS
           </span>
-          <h2 className="text-4xl sm:text-5xl font-serif font-light italic text-zinc-900 dark:text-white mt-3">
+          <h2 className="text-4xl sm:text-5xl font-serif font-light italic mt-3" style={{color: 'var(--theme-text)'}}>
             Galería de Creaciones Maison
           </h2>
           <div className="w-12 h-[1px] bg-brand-secondary/30 mx-auto mt-5" />
-          <p className="text-sm font-light text-zinc-600 dark:text-zinc-400 mt-5 max-w-xl mx-auto leading-relaxed">
+          <p className="text-sm font-light mt-5 max-w-xl mx-auto leading-relaxed" style={{color: 'var(--theme-text-secondary)'}}>
             Fotografías reales de pasteles personalizados entregados a nuestros clientes. 
             Déjate inspirar por los acabados de Carol Rosas y elige tu próxima plantilla.
           </p>
@@ -50,7 +50,7 @@ export default function Gallery({ galleryItems }: GalleryProps) {
               className={`px-5 py-2.5 rounded-none text-[10px] font-mono font-bold uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === cat
                   ? 'bg-brand-500 text-white shadow-sm btn-glow'
-                  : 'bg-white/40 dark:bg-zinc-900/40 text-zinc-600 dark:text-zinc-400 border border-zinc-200/50 dark:border-zinc-800/50 hover:bg-white/70'
+                  : 'text-zinc-600 dark:text-zinc-400 border'
               }`}
               id={`gallery-tab-${cat}`}
             >
@@ -170,7 +170,7 @@ function GalleryLightbox({ item, onClose }: GalleryLightboxProps) {
             decoding="async"
           />
           {/* Glass indicator on image */}
-          <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/40 backdrop-blur-md border border-white/10 text-[9px] font-mono tracking-widest text-brand-200 uppercase">
+          <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/40 backdrop-blur-md border border-white/10 text-[9px] font-mono tracking-widest text-white/90 uppercase">
             Galería Maison Rosas
           </div>
         </div>
@@ -179,27 +179,25 @@ function GalleryLightbox({ item, onClose }: GalleryLightboxProps) {
         <div className="md:w-1/3 p-8 flex flex-col justify-between text-white bg-zinc-950/40 backdrop-blur-md border-l border-white/5">
           <div className="space-y-6">
             <div>
-              <span className="text-[10px] font-mono uppercase tracking-widest text-brand-400 font-bold">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-brand-200 font-bold">
                 Categoría de Autor
               </span>
               <h3 className="text-2xl font-serif font-light italic text-white mt-1">
                 {item.title}
               </h3>
               <div className="w-12 h-[1px] bg-brand-secondary/30 mt-3" />
-            </div>
-
-            <p className="text-sm font-light text-zinc-400 leading-relaxed font-sans">
-              {item.description || "Este modelo fue personalizado especialmente para un evento familiar de alta gama. Combina técnicas avanzadas de glaseado con la frescura e higroscopicidad perfecta de nuestro bizcocho."}
-            </p>
+            </div>              <p className="text-sm font-light leading-relaxed font-sans text-zinc-300">
+                {item.description || "Este modelo fue personalizado especialmente para un evento familiar de alta gama. Combina técnicas avanzadas de glaseado con la frescura e higroscopicidad perfecta de nuestro bizcocho."}
+              </p>
           </div>
 
           <div className="space-y-4 pt-6 border-t border-zinc-800/80">
-            <div className="flex items-center space-x-3 text-zinc-400 text-xs font-mono">
+            <div className="flex items-center space-x-3 text-xs font-mono text-zinc-300">
               <Layers className="h-4 w-4 text-brand-secondary" />
               <span>Categoría: {item.category}</span>
             </div>
 
-            <div className="flex items-center space-x-3 text-zinc-400 text-xs font-mono">
+            <div className="flex items-center space-x-3 text-xs font-mono text-zinc-300">
               <Calendar className="h-4 w-4 text-brand-secondary" />
               <span>Entregado: {item.date}</span>
             </div>

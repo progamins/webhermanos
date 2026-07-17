@@ -286,7 +286,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
     : steps;
 
   return (
-    <div className="pt-24 pb-20 min-h-screen bg-[#FFF9F5]" id="tracking">
+    <div className="pt-24 pb-20 min-h-screen" id="tracking" style={{backgroundColor: 'var(--theme-bg)'}}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* HEADER SECTION */}
@@ -294,15 +294,15 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center space-x-2 bg-brand-50 border border-brand-200 px-3 py-1.5 rounded-full text-brand-700 text-xs font-mono font-bold tracking-wider uppercase mb-3"
+            className="inline-flex items-center space-x-2 bg-brand-50 dark:bg-brand-950/30 border border-brand-200 dark:border-brand-900/30 px-3 py-1.5 rounded-full text-brand-700 dark:text-brand-300 text-xs font-mono font-bold tracking-wider uppercase mb-3"
           >
             <Sparkles className="h-3.5 w-3.5" />
             <span>Seguimiento Maison Rosas</span>
           </motion.div>
-          <h1 className="font-serif text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
+          <h1 className="font-serif text-4xl font-bold tracking-tight sm:text-5xl" style={{color: 'var(--theme-text)'}}>
             Consulta tu Pedido
           </h1>
-          <p className="mt-3 text-sm text-zinc-500 max-w-xl mx-auto font-sans leading-relaxed">
+          <p className="mt-3 text-sm max-w-xl mx-auto font-sans leading-relaxed" style={{color: 'var(--theme-text-secondary)'}}>
             Ingresa tu código de seguimiento de 6 dígitos o solicita un acceso OTP seguro a tu correo electrónico para ver el historial completo de tus pedidos de autor.
           </p>
         </div>
@@ -377,7 +377,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
 
         {/* SEARCH AND AUTHENTICATION MODULE */}
         {phase === 'initial' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto bg-white border border-zinc-100 rounded-3xl p-8 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-3xl p-8 shadow-sm">
             
             {/* SEARCH BY 6-CHAR CODE */}
             <div className="space-y-4 md:border-r md:border-zinc-100 md:pr-8">
@@ -385,14 +385,14 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                 <div className="p-2 bg-brand-50 rounded-xl">
                   <Key className="h-5 w-5" />
                 </div>
-                <h3 className="font-serif text-lg font-bold text-zinc-900">Consulta Rápida</h3>
+                <h3 className="font-serif text-lg font-bold text-zinc-900 dark:text-white">Consulta Rápida</h3>
               </div>
-              <p className="text-xs text-zinc-500 leading-relaxed font-sans">
+              <p className="text-xs leading-relaxed font-sans text-zinc-600 dark:text-zinc-300">
                 ¿Tienes el código de seguimiento de 6 caracteres que te enviamos por WhatsApp o correo? Ingrésalo aquí para ver su estado al instante.
               </p>
               
               <div className="space-y-3 pt-2">
-                <label className="text-xs font-mono font-bold text-zinc-400 uppercase tracking-wider block">
+                <label className="text-xs font-mono font-bold uppercase tracking-wider block text-zinc-600 dark:text-zinc-300">
                   Código de Seguimiento
                 </label>
                 <div className="relative">
@@ -402,7 +402,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                     onChange={(e) => setSearchCode(e.target.value)}
                     placeholder="Ej: MR892X"
                     maxLength={6}
-                    className="w-full pl-4 pr-12 py-3 bg-zinc-50 border border-zinc-200 rounded-xl font-mono text-lg uppercase tracking-widest text-zinc-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    className="w-full pl-4 pr-12 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl font-mono text-lg uppercase tracking-widest text-zinc-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                   />
                   <button
                     onClick={() => handleTrackByCode()}
@@ -412,7 +412,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                   </button>
                 </div>
-                <span className="text-[10px] text-zinc-400 block font-sans">
+                <span className="text-[10px] block font-sans text-zinc-500 dark:text-zinc-400">
                   Ejemplos: Busca un código generado en tus compras o presiona "Consultar" con el OTP de abajo.
                 </span>
               </div>
@@ -424,14 +424,14 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                 <div className="p-2 bg-brand-50 rounded-xl">
                   <Mail className="h-5 w-5" />
                 </div>
-                <h3 className="font-serif text-lg font-bold text-zinc-900">Ver mis Pedidos</h3>
+                <h3 className="font-serif text-lg font-bold text-zinc-900 dark:text-white">Ver mis Pedidos</h3>
               </div>
-              <p className="text-xs text-zinc-500 leading-relaxed font-sans">
+              <p className="text-xs leading-relaxed font-sans text-zinc-600 dark:text-zinc-300">
                 Ingresa tu correo electrónico registrado al hacer tu pedido. Te enviaremos un código de verificación para acceder a todos tus pedidos al instante.
               </p>
               
               <div className="space-y-3 pt-2">
-                <label className="text-xs font-mono font-bold text-zinc-400 uppercase tracking-wider block">
+                <label className="text-xs font-mono font-bold uppercase tracking-wider block text-zinc-600 dark:text-zinc-300">
                   Correo Electrónico
                 </label>
                 <div className="relative">
@@ -440,7 +440,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="tucorreo@ejemplo.com"
-                    className="w-full pl-4 pr-12 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    className="w-full pl-4 pr-12 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm text-zinc-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                     onKeyDown={(e) => e.key === 'Enter' && handleRequestOtp()}
                   />
                   <button
@@ -458,7 +458,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                 >
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}                        <span>{loading ? 'Enviando...' : 'Enviar Código'}</span>
                 </button>
-                <span className="text-[10px] text-zinc-400 block font-sans">
+                <span className="text-[10px] block font-sans text-zinc-500 dark:text-zinc-400">
                   Recibirás un código de 6 dígitos en tu correo. Válido por 10 minutos.
                 </span>
               </div>
@@ -472,14 +472,14 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="max-w-md mx-auto bg-white border border-zinc-100 rounded-3xl p-8 shadow-sm text-center space-y-6"
+            className="max-w-md mx-auto bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-3xl p-8 shadow-sm text-center space-y-6"
           >
             <div className="inline-flex p-3.5 bg-brand-50 rounded-full text-brand-600">
               <Key className="h-6 w-6" />
             </div>
             
             <div>
-              <h3 className="font-serif text-xl font-bold text-zinc-900">Ingresa tu Código OTP</h3>
+              <h3 className="font-serif text-xl font-bold" style={{color: 'var(--theme-text)'}}>Ingresa tu Código OTP</h3>
               <p className="text-xs text-zinc-400 mt-1 font-sans">
                 Hemos enviado un código de seguridad de 6 dígitos a: <strong className="text-zinc-600">{email}</strong>
               </p>
@@ -492,13 +492,13 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                 onChange={(e) => setOtp(e.target.value)}
                 placeholder="000000"
                 maxLength={6}
-                className="w-full py-3 bg-zinc-50 border border-zinc-200 rounded-xl font-mono text-2xl uppercase tracking-widest text-center text-zinc-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                className="w-full py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl font-mono text-2xl uppercase tracking-widest text-center text-zinc-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
               />
 
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={() => setPhase('initial')}
-                  className="flex-1 py-3 border border-zinc-200 hover:bg-zinc-50 rounded-xl text-xs font-semibold text-zinc-500 uppercase tracking-wider transition-colors"
+                  className="flex-1 py-3 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-xl text-xs font-semibold text-zinc-500 dark:text-zinc-300 uppercase tracking-wider transition-colors"
                 >
                   Regresar
                 </button>
@@ -519,7 +519,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
           <div className="space-y-8">
             
             {/* ACTION BAR / HEADER */}
-            <div className="flex flex-col sm:flex-row justify-between items-center bg-white border border-zinc-100 rounded-2xl px-6 py-4 shadow-sm gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl px-6 py-4 shadow-sm gap-4">
               <div className="flex items-center space-x-3">
                 <button
                   onClick={() => {
@@ -538,7 +538,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                   <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 block font-bold">
                     {phase === 'single_code' ? 'Búsqueda por Código' : 'Portal de Pedidos'}
                   </span>
-                  <span className="text-sm font-serif font-bold text-zinc-800 block">
+                  <span className="text-sm font-serif font-bold" style={{color: 'var(--theme-text)'}}>
                     {phase === 'single_code' ? `Pedido #${selectedOrder?.id}` : `${email.toLowerCase()}`}
                   </span>
                 </div>
@@ -547,14 +547,14 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
               {/* Multi-Order Selector (only if OTP results) */}
               {phase === 'results' && customerOrders.length > 1 && (
                 <div className="flex items-center space-x-2 w-full sm:w-auto">
-                  <span className="text-xs text-zinc-400 font-sans whitespace-nowrap">Ver otro pedido:</span>
+                  <span className="text-xs font-sans whitespace-nowrap" style={{color: 'var(--theme-text-muted)'}}>Ver otro pedido:</span>
                   <select
                     value={selectedOrder?.id || ''}
                     onChange={(e) => {
                       const found = customerOrders.find(o => o.id === e.target.value);
                       if (found) setSelectedOrder(found);
                     }}
-                    className="w-full sm:w-64 px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-sans text-zinc-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className="w-full sm:w-64 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-sans text-zinc-700 dark:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-brand-500"
                   >
                     {customerOrders.map(o => (
                       <option key={o.id} value={o.id}>
@@ -576,14 +576,14 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
                 {/* 1. VISUAL PROGRESS TIMELINE (COLSPAN 2) */}
-                <div className="lg:col-span-2 bg-white border border-zinc-100 rounded-3xl p-8 shadow-sm space-y-8">
+                <div className="lg:col-span-2 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-3xl p-8 shadow-sm space-y-8">
                   
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-zinc-100 pb-5 gap-3">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-zinc-100 dark:border-zinc-800 pb-5 gap-3">
                     <div>
-                      <h3 className="font-serif text-2xl font-bold text-zinc-900">Estado de Preparación</h3>
-                      <p className="text-xs text-zinc-400 mt-0.5">Seguimiento en vivo del horneado y decoración de Carol Rosas</p>
+                      <h3 className="font-serif text-2xl font-bold" style={{color: 'var(--theme-text)'}}>Estado de Preparación</h3>
+                      <p className="text-xs mt-0.5" style={{color: 'var(--theme-text-secondary)'}}>Seguimiento en vivo del horneado y decoración de Carol Rosas</p>
                     </div>
-                    <span className="text-xs font-mono font-bold bg-brand-50 border border-brand-200 text-brand-700 px-3 py-1.5 rounded-full uppercase tracking-wider">
+                    <span className="text-xs font-mono font-bold bg-brand-50 dark:bg-brand-950/30 border border-brand-200 dark:border-brand-900/30 text-brand-700 dark:text-brand-300 px-3 py-1.5 rounded-full uppercase tracking-wider">
                       Cod: {selectedOrder.trackingCode}
                     </span>
                   </div>
@@ -624,7 +624,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                             <div 
                               key={step.name} 
                               className={`flex sm:flex-col items-start sm:items-center text-left sm:text-center flex-1 relative group ${
-                                isActive ? 'text-zinc-800' : 'text-zinc-300'
+                                isActive ? 'text-zinc-800 dark:text-zinc-100' : 'text-zinc-300 dark:text-zinc-500'
                               }`}
                             >
                               {/* Horizontal connector line on desktop */}
@@ -661,11 +661,11 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                               {/* Content text */}
                               <div className="mt-0 sm:mt-4 space-y-1">
                                 <h4 className={`text-sm font-serif font-bold transition-colors ${
-                                  isCurrent ? 'text-brand-700' : isActive ? 'text-zinc-800' : 'text-zinc-400'
+                                  isCurrent ? 'text-brand-700 dark:text-brand-300' : isActive ? 'text-zinc-800 dark:text-zinc-100' : 'text-zinc-400 dark:text-zinc-500'
                                 }`}>
                                   {step.title}
                                 </h4>
-                                <p className="text-[11px] text-zinc-400 font-sans leading-relaxed max-w-[130px] sm:mx-auto">
+                                <p className="text-[11px] font-sans leading-relaxed max-w-[130px] sm:mx-auto" style={{color: 'var(--theme-text-secondary)'}}>
                                   {step.desc}
                                 </p>
                               </div>
@@ -681,8 +681,8 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                     <div>
                       <div className="flex items-center gap-2 mb-4">
                         <Camera className="h-4 w-4 text-purple-500" />
-                        <h4 className="font-serif text-sm font-bold text-zinc-800">Galería del Progreso</h4>
-                        <span className="text-[10px] font-mono text-purple-500 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
+                        <h4 className="font-serif text-sm font-bold" style={{color: 'var(--theme-text)'}}>Galería del Progreso</h4>
+                        <span className="text-[10px] font-mono text-purple-500 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900/30 px-2 py-0.5 rounded-full">
                           {selectedOrder.progressPhotos.length} foto{selectedOrder.progressPhotos.length !== 1 ? 's' : ''}
                         </span>
                       </div>
@@ -734,9 +734,9 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                   )}
 
                   {/* LIVE ORDER LOG SUMMARY DETAILS */}
-                  <div className="bg-zinc-50 rounded-2xl p-6 border border-zinc-100 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl p-6 border border-zinc-100 dark:border-zinc-700 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <h4 className="font-serif text-sm font-bold text-zinc-800 mb-3 flex items-center space-x-2">
+                      <h4 className="font-serif text-sm font-bold mb-3 flex items-center space-x-2" style={{color: 'var(--theme-text)'}}>
                         <Gift className="h-4 w-4 text-brand-500" />
                         <span>Composición del Pastel</span>
                       </h4>
@@ -750,7 +750,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                     </div>
 
                     <div>
-                      <h4 className="font-serif text-sm font-bold text-zinc-800 mb-3 flex items-center space-x-2">
+                      <h4 className="font-serif text-sm font-bold mb-3 flex items-center space-x-2" style={{color: 'var(--theme-text)'}}>
                         <FileText className="h-4 w-4 text-brand-secondary" />
                         <span>Datos de Dedicatoria</span>
                       </h4>
@@ -771,31 +771,31 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
 
                 {/* 2. ORDER INFORMATION / RECEIPT CARD & PAYMENT STATUS */}
                 <div className="space-y-6 self-start w-full">
-                  <div className="bg-white border border-zinc-100 rounded-3xl p-6 shadow-sm space-y-6">
+                  <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-6">
                     <div className="border-b border-zinc-100 pb-4">
-                      <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 block font-bold">Resumen de Cuenta</span>
-                      <h3 className="font-serif text-xl font-bold text-zinc-950 mt-0.5">{selectedOrder.productName}</h3>
+                      <span className="text-[10px] font-mono uppercase tracking-widest block font-bold" style={{color: 'var(--theme-text-muted)'}}>Resumen de Cuenta</span>
+                      <h3 className="font-serif text-xl font-bold mt-0.5" style={{color: 'var(--theme-text)'}}>{selectedOrder.productName}</h3>
                     </div>
 
                     {/* PRICE SUMMARY */}
                     <div className="space-y-3 font-sans text-xs">
-                      <div className="flex justify-between text-zinc-500">
+                      <div className="flex justify-between" style={{color: 'var(--theme-text-secondary)'}}>
                         <span>Precio Base Pastel:</span>
                         <span className="font-mono font-medium">S/. {(selectedOrder.totalPrice * 0.8).toFixed(2)}</span>
                       </div>
-                      <div className="flex justify-between text-zinc-500">
+                      <div className="flex justify-between" style={{color: 'var(--theme-text-secondary)'}}>
                         <span>Decoraciones & Diseño Carol:</span>
                         <span className="font-mono font-medium">S/. {(selectedOrder.totalPrice * 0.2).toFixed(2)}</span>
                       </div>
-                      <div className="flex justify-between text-zinc-950 font-bold border-t border-zinc-100 pt-3 text-sm">
+                      <div className="flex justify-between font-bold border-t pt-3 text-sm" style={{color: 'var(--theme-text)', borderColor: 'var(--theme-border)'}}>
                         <span>Monto Total Estimado:</span>
-                        <span className="font-mono text-brand-700">S/. {selectedOrder.totalPrice}</span>
+                        <span className="font-mono" style={{color: 'var(--theme-brand-primary)'}}>S/. {selectedOrder.totalPrice}</span>
                       </div>
                     </div>
 
                     {/* DELIVERY DETAILS PANEL */}
                     <div className="border-t border-zinc-100 pt-4 space-y-4">
-                      <h4 className="font-serif text-xs font-bold uppercase tracking-wider text-zinc-400">Logística de Entrega</h4>
+                      <h4 className="font-serif text-xs font-bold uppercase tracking-wider" style={{color: 'var(--theme-text-secondary)'}}>Logística de Entrega</h4>
                       
                       <div className="space-y-3 font-sans text-xs">
                         
@@ -803,8 +803,8 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                         <div className="flex items-start space-x-3">
                           <Calendar className="h-4 w-4 text-brand-500 shrink-0 mt-0.5" />
                           <div>
-                            <strong className="text-zinc-700 block">Fecha Programada</strong>
-                            <span className="text-zinc-500 block mt-0.5">{selectedOrder.deliveryDate}</span>
+                            <strong className="block" style={{color: 'var(--theme-text)'}}>Fecha Programada</strong>
+                            <span className="block mt-0.5" style={{color: 'var(--theme-text-secondary)'}}>{selectedOrder.deliveryDate}</span>
                           </div>
                         </div>
 
@@ -812,8 +812,8 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                         <div className="flex items-start space-x-3">
                           <Clock className="h-4 w-4 text-brand-secondary shrink-0 mt-0.5" />
                           <div>
-                            <strong className="text-zinc-700 block">Hora Estimada</strong>
-                            <span className="text-zinc-500 block mt-0.5">{selectedOrder.deliveryTime} (Sujeto a coordinación)</span>
+                            <strong className="block" style={{color: 'var(--theme-text)'}}>Hora Estimada</strong>
+                            <span className="block mt-0.5" style={{color: 'var(--theme-text-secondary)'}}>{selectedOrder.deliveryTime} (Sujeto a coordinación)</span>
                           </div>
                         </div>
 
@@ -821,7 +821,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                         <div className="flex items-start space-x-3">
                           <MapPin className="h-4 w-4 text-brand-600 shrink-0 mt-0.5" />
                           <div>
-                            <strong className="text-zinc-700 block">Modalidad de Entrega</strong>
+                            <strong className="block" style={{color: 'var(--theme-text)'}}>Modalidad de Entrega</strong>
                             <span className="text-xs font-bold text-brand-700 bg-brand-50 border border-brand-200/50 px-2 py-0.5 rounded uppercase inline-block mt-1">
                               {selectedOrder.deliveryType === 'recojo' ? 'Recojo en Local' : 'Envío a Domicilio'}
                             </span>
@@ -841,9 +841,9 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                         <div className="flex items-start space-x-3 border-t border-zinc-100 pt-3 mt-3">
                           <User className="h-4 w-4 text-zinc-400 shrink-0 mt-0.5" />
                           <div>
-                            <strong className="text-zinc-700 block">Cliente Registrado</strong>
-                            <span className="text-zinc-500 block mt-0.5">{selectedOrder.customerName}</span>
-                            <span className="text-zinc-400 block mt-0.5 font-mono">{selectedOrder.customerPhone}</span>
+                            <strong className="block" style={{color: 'var(--theme-text)'}}>Cliente Registrado</strong>
+                            <span className="block mt-0.5" style={{color: 'var(--theme-text-secondary)'}}>{selectedOrder.customerName}</span>
+                            <span className="block mt-0.5 font-mono" style={{color: 'var(--theme-text-muted)'}}>{selectedOrder.customerPhone}</span>
                           </div>
                         </div>
 
@@ -863,10 +863,10 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                   </div>
 
                   {/* 💰 ESTADO DE PAGO Y COMPROBANTE OFICIAL */}
-                  <div className="bg-white border border-zinc-100 rounded-3xl p-6 shadow-sm space-y-5">
+                  <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-5">
                     <div className="border-b border-zinc-100 pb-3">
-                      <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 block font-bold">Transacción</span>
-                      <h3 className="font-serif text-lg font-bold text-zinc-950 mt-0.5 flex items-center gap-1.5">
+                      <span className="text-[10px] font-mono uppercase tracking-widest block font-bold" style={{color: 'var(--theme-text-muted)'}}>Transacción</span>
+                      <h3 className="font-serif text-lg font-bold mt-0.5 flex items-center gap-1.5" style={{color: 'var(--theme-text)'}}>
                         <ShieldCheck className="h-5 w-5 text-brand-500" />
                         <span>Estado de Pago</span>
                       </h3>
@@ -961,14 +961,14 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                             </div>
                           ) : (
                             <div className="border-t border-zinc-100 pt-4">
-                              <div className="bg-zinc-50/70 border border-dashed border-zinc-200 rounded-2xl p-5 text-center space-y-2">
-                                <div className="inline-flex p-2 bg-zinc-100 rounded-full">
-                                  <FileText className="h-5 w-5 text-zinc-400" />
+                              <div className="bg-zinc-50/70 dark:bg-zinc-800/70 border border-dashed border-zinc-200 dark:border-zinc-700 rounded-2xl p-5 text-center space-y-2">
+                                <div className="inline-flex p-2 bg-zinc-100 dark:bg-zinc-700 rounded-full">
+                                  <FileText className="h-5 w-5 text-zinc-400 dark:text-zinc-300" />
                                 </div>
-                                <p className="text-xs font-serif font-bold text-zinc-700">
+                                <p className="text-xs font-serif font-bold" style={{color: 'var(--theme-text)'}}>
                                   Comprobante de Pago Digital
                                 </p>
-                                <p className="text-[10px] text-zinc-400 leading-relaxed max-w-[200px] mx-auto font-sans">
+                                <p className="text-[10px] leading-relaxed max-w-[200px] mx-auto font-sans" style={{color: 'var(--theme-text-secondary)'}}>
                                   Se generará automáticamente una boleta oficial cuando el administrador verifique tu pago.
                                 </p>
                               </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Cake, Menu, X, LogIn, ShoppingBag, HelpCircle, PhoneCall, Star } from 'lucide-react';
+import { Cake, Menu, X, LogIn, ShoppingBag, HelpCircle, PhoneCall, Star, Sun, Moon } from 'lucide-react';
 import { optimizeImageUrl } from '../utils/images';
 
 interface NavbarProps {
@@ -9,9 +9,11 @@ interface NavbarProps {
   isAdminLoggedIn: boolean;
   onLogout: () => void;
   logoUrl?: string;
+  theme?: 'light' | 'dark' | 'contrast';
+  onToggleTheme?: () => void;
 }
 
-export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, onLogout, logoUrl }: NavbarProps) {
+export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, onLogout, logoUrl, theme = 'dark', onToggleTheme }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -64,9 +66,13 @@ export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, o
       }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 will-change-transform ${
         scrolled 
-          ? 'bg-white/70 dark:bg-zinc-950/75 backdrop-blur-md border-b border-white/20 dark:border-white/5 shadow-sm py-3' 
+          ? 'backdrop-blur-md border-b shadow-sm py-3' 
           : 'bg-transparent py-5'
       }`}
+      style={{
+        backgroundColor: scrolled ? 'var(--theme-surface-glass)' : 'transparent',
+        borderColor: scrolled ? 'var(--theme-border)' : 'transparent',
+      }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
@@ -77,7 +83,7 @@ export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, o
             id="nav-logo"
           >
             {logoUrl ? (
-              <div className="h-10 w-10 rounded-full overflow-hidden shrink-0 group-hover:scale-110 transition-transform duration-300 border border-zinc-200 dark:border-zinc-850 flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+              <div className="h-11 w-11 rounded-full overflow-hidden shrink-0 group-hover:scale-110 transition-transform duration-300 border-2" style={{borderColor: 'var(--theme-border)'}}>
                 <img 
                   src={optimizeImageUrl(logoUrl, 100)} 
                   alt="Maison Rosas Logo" 
@@ -88,15 +94,19 @@ export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, o
                 />
               </div>
             ) : (
-              <div className="p-2.5 bg-brand-500 rounded-full text-white group-hover:scale-110 transition-transform duration-300 flex items-center justify-center">
-                <Cake className="h-5 w-5" />
+              <div className="relative">
+                <div className="p-2.5 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300" style={{backgroundColor: 'var(--theme-brand-primary)', color: '#fff'}}>
+                  <Cake className="h-5 w-5" />
+                </div>
+                {/* Decorative ring */}
+                <div className="absolute -inset-1 rounded-full border" style={{borderColor: 'var(--theme-brand-primary)', opacity: 0.3}} />
               </div>
             )}
             <div>
-              <span className="text-xl font-light tracking-[0.15em] uppercase text-zinc-900 dark:text-white block leading-none">
+              <span className="text-xl font-serif font-bold tracking-tight block leading-none" style={{color: 'var(--theme-text)'}}>
                 Maison Rosas
               </span>
-              <span className="text-[9px] tracking-[0.25em] uppercase opacity-70 text-brand-secondary dark:text-brand-300 block mt-1 font-medium">
+              <span className="text-[9px] tracking-[0.25em] uppercase block mt-1 font-medium font-mono" style={{color: 'var(--theme-brand-primary)', opacity: 0.8}}>
                 Alta Repostería Artesanal
               </span>
             </div>
@@ -113,8 +123,9 @@ export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, o
                   className={`relative px-4 py-2 rounded-full text-sm font-medium tracking-wide transition-colors ${
                     currentView === item.id
                       ? 'text-brand-700 dark:text-brand-300 bg-brand-50/80 dark:bg-brand-950/20'
-                      : 'text-zinc-600 dark:text-zinc-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-zinc-50 dark:hover:bg-zinc-900/50'
+                      : 'hover:text-brand-600 dark:hover:text-brand-400 hover:bg-zinc-50 dark:hover:bg-zinc-900/50'
                   }`}
+                  style={{color: currentView === item.id ? undefined : 'var(--theme-text-secondary)'}}
                   id={`nav-item-${item.id}`}
                 >
                   {item.label}
@@ -129,20 +140,44 @@ export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, o
               );
             })}
 
-            {!isAdminLoggedIn && <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-2" />}
+            {/* Theme Toggle Pill */}
+            {onToggleTheme && (
+              <button
+                onClick={onToggleTheme}
+                className="ml-2 p-2 rounded-full transition-all duration-200 hover:scale-110 active:scale-95 border"
+                style={{
+                  backgroundColor: 'var(--theme-surface)',
+                  borderColor: 'var(--theme-border)',
+                  color: 'var(--theme-text)',
+                }}
+                title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+              >
+                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </button>
+            )}
+
+            {!isAdminLoggedIn && <div className="h-4 w-px" style={{backgroundColor: 'var(--theme-border)'}} />}
 
             {isAdminLoggedIn && (
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setCurrentView('admin')}
-                  className="px-4 py-2 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 transition-all shadow-sm"
+                  className="px-4 py-2 rounded-full text-xs font-mono font-bold uppercase tracking-wider shadow-sm"
+                  style={{
+                    backgroundColor: 'var(--theme-surface)',
+                    color: 'var(--theme-text)',
+                  }}
                   id="nav-admin-dashboard"
                 >
                   Panel
                 </button>
                 <button
                   onClick={onLogout}
-                  className="px-3 py-1.5 rounded-full text-xs font-mono border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-red-500 transition-colors"
+                  className="px-3 py-1.5 rounded-full text-xs font-mono border transition-colors"
+                  style={{
+                    borderColor: 'var(--theme-border)',
+                    color: 'var(--theme-text-muted)',
+                  }}
                   id="nav-logout"
                 >
                   Salir
@@ -170,7 +205,8 @@ export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, o
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
-          className="md:hidden bg-white dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900 px-4 pt-3 pb-6 space-y-2 shadow-xl"
+          className="md:hidden px-4 pt-3 pb-6 space-y-2 shadow-xl"
+          style={{backgroundColor: 'var(--theme-surface)', borderTop: '1px solid var(--theme-border)'}}
         >
           {!isAdminLoggedIn && navItems.map((item) => (
             <button
@@ -188,7 +224,25 @@ export default function Navbar({ currentView, setCurrentView, isAdminLoggedIn, o
             </button>
           ))}
 
-          {!isAdminLoggedIn && <div className="h-px bg-zinc-100 dark:bg-zinc-900 my-3" />}
+          {/* Theme toggle for mobile */}
+          {onToggleTheme && (
+            <button
+              onClick={onToggleTheme}
+              className="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-xl border text-sm font-medium transition-colors"
+              style={{
+                backgroundColor: 'var(--theme-surface)',
+                borderColor: 'var(--theme-border)',
+                color: 'var(--theme-text)',
+              }}
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              <span>{theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}</span>
+            </button>
+          )}
+
+          {!isAdminLoggedIn && (
+            <div className="h-px" style={{backgroundColor: 'var(--theme-border)'}} />
+          )}
 
           {isAdminLoggedIn && (
             <div className="space-y-2 pt-2">

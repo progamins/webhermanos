@@ -24,6 +24,41 @@
   --color-brand-950: #2D1C1A;
 }
 
+/* ============= THEME VARIABLES ============= */
+:root {
+  /* Light mode — fondo cálido sutil, texto de máximo contraste, marca rosada resalta */
+  --theme-bg: #F8F6F4;
+  --theme-bg-alt: #F0EDEA;
+  --theme-surface: #FFFFFF;
+  --theme-surface-glass: rgba(255, 255, 255, 0.7);
+  --theme-border: #E4E0DC;
+  --theme-text: #18181B;
+  --theme-text-secondary: #403C38;
+  --theme-text-muted: #736E68;
+  --theme-brand-primary: #C4847D;
+  --theme-brand-glow: rgba(196, 132, 125, 0.25);
+  --theme-dot: rgba(196, 132, 125, 0.08);
+  --theme-glass-bg: rgba(255, 255, 255, 0.6);
+  --theme-glass-border: rgba(255, 255, 255, 0.5);
+}
+
+.dark {
+  /* Dark mode — fondo oscuro cálido sutil, sin fatiga visual, marca rosada es el acento cálido */
+  --theme-bg: #1A1816;
+  --theme-bg-alt: #221F1D;
+  --theme-surface: #2C2825;
+  --theme-surface-glass: rgba(44, 40, 37, 0.85);
+  --theme-border: #3C3835;
+  --theme-text: #FAFAFA;
+  --theme-text-secondary: #D4D0CC;
+  --theme-text-muted: #A39D96;
+  --theme-brand-primary: #E0A099;
+  --theme-brand-glow: rgba(224, 160, 153, 0.20);
+  --theme-dot: rgba(224, 160, 153, 0.05);
+  --theme-glass-bg: rgba(26, 24, 22, 0.8);
+  --theme-glass-border: rgba(255, 255, 255, 0.08);
+}
+
 /* ============= PERFORMANCE OPTIMIZATIONS ============= */
 html {
   scroll-behavior: smooth;
@@ -52,15 +87,32 @@ section[id], footer {
 /* Set base font configurations to enforce artisanal aesthetic */
 html, body {
   font-family: "Inter", system-ui, sans-serif;
-  background-color: #FFF9F5;
-  color: #27272a; /* zinc-800 */
+  background-color: var(--theme-bg);
+  color: var(--theme-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: "Playfair Display", Georgia, serif;
+}
+
+/* Global placeholder color using theme variable for dark mode visibility */
+::placeholder {
+  color: var(--theme-text-muted) !important;
+  opacity: 0.7;
+}
+
+/* Smooth transitions for themed elements — scoped to avoid perf issues */
+html, body, section, div, header, footer, nav, main, aside, article {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+/* Interactive elements get extra transition properties */
+input, textarea, select, button, a {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
 }
 
 /* Custom scrollbar and glassmorphism styles */
@@ -83,23 +135,23 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .glass-card, .glass-panel {
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--theme-glass-bg);
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--theme-glass-border);
   box-shadow: 
-    0 8px 32px 0 rgba(212, 163, 115, 0.08),
+    0 8px 32px 0 rgba(0, 0, 0, 0.05),
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 .dark .glass-card, .dark .glass-panel {
-  background: rgba(18, 18, 20, 0.6);
+  background: var(--theme-glass-bg);
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--theme-glass-border);
   box-shadow: 
-    0 8px 32px 0 rgba(0, 0, 0, 0.3),
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.1);
+    0 8px 32px 0 rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 /* Reducir backdrop-filter en mobile para mejorar rendimiento */
@@ -376,13 +428,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .glow-btn, .btn-glow {
-  box-shadow: 0 4px 15px rgba(196, 132, 125, 0.4);
+  box-shadow: 0 4px 15px var(--theme-brand-glow);
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   will-change: transform, box-shadow;
 }
 
 .glow-btn:hover, .btn-glow:hover {
-  box-shadow: 0 8px 25px rgba(196, 132, 125, 0.7);
+  box-shadow: 0 8px 25px var(--theme-brand-glow);
   transform: translateY(-1.5px);
 }
 
@@ -391,7 +443,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .dot-pattern {
-  background-image: radial-gradient(rgba(212, 163, 115, 0.15) 1px, transparent 1px);
+  background-image: radial-gradient(var(--theme-dot) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 

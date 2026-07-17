@@ -485,7 +485,7 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                   <div>                      <span className="text-[10px] font-mono font-bold tracking-widest text-brand-secondary dark:text-brand-400 uppercase">
                       Pastelería de Autor
                     </span>
-                    <h3 className="text-xl sm:text-2xl font-serif font-light text-zinc-900 dark:text-white mt-0.5">
+                    <h3 className="text-xl sm:text-2xl font-serif font-light mt-0.5" style={{color: 'var(--theme-text)'}}>
                       Ficha de Personalización
                     </h3>
                   </div>
@@ -729,7 +729,7 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                         exit={{ opacity: 0, x: -10 }}
                         className="space-y-4"
                       >
-                        <h4 className="text-xs font-mono font-bold uppercase text-brand-secondary tracking-wider mb-2">
+                        <h4 className="text-xs font-mono font-bold uppercase tracking-wider mb-2" style={{color: 'var(--theme-brand-primary)'}}>
                           Ficha Logística y Datos Personales
                         </h4>
 

@@ -76,16 +76,16 @@ export default function History({ config }: HistoryProps) {
           <span className="text-[10px] tracking-[0.3em] uppercase opacity-75 text-brand-secondary dark:text-brand-300 block font-semibold">
             TRADICIÓN & EXCLUSIVIDAD
           </span>
-          <h2 className="text-4xl sm:text-5xl font-serif font-light italic text-zinc-900 dark:text-white mt-3">
+          <h2 className="text-4xl sm:text-5xl font-serif font-light italic mt-3" style={{color: 'var(--theme-text)'}}>
             {config?.aboutTitle || 'Nuestra Historia de Sabor Familiar'}
           </h2>
           <div className="w-12 h-[1px] bg-brand-secondary/30 mx-auto mt-5" />
           {config?.aboutDescription ? (
-            <p className="text-sm font-light text-zinc-600 dark:text-zinc-400 mt-5 leading-relaxed">
+            <p            className="text-sm font-light leading-relaxed" style={{color: 'var(--theme-text-secondary)'}}>
               {config.aboutDescription}
             </p>
           ) : (
-            <p className="text-sm font-light text-zinc-600 dark:text-zinc-400 mt-5 leading-relaxed">
+            <p            className="text-sm font-light leading-relaxed" style={{color: 'var(--theme-text-secondary)'}}>
               Maison Rosas nació de la unión de dos pasiones: el arte de la alta repostería artesanal en manos de 
               <strong> Carol Yakeline Rosas Albines</strong>, y la dedicación a la excelencia de servicio, confianza y logística liderada por 
               <strong> Edwin Raúl Rosas Albines</strong>. Cada pastel es una obra maestra exclusiva que combina tradición familiar, amor y elegancia suprema.
@@ -104,13 +104,12 @@ export default function History({ config }: HistoryProps) {
             className="space-y-6"
             id="history-kitchen-desc"
           >
-            <div className="inline-flex p-3.5 bg-white/30 dark:bg-zinc-950/20 rounded-none text-brand-secondary shadow-sm border border-white/40 dark:border-white/5">
+            <div className="inline-flex p-3.5 rounded-none text-brand-secondary shadow-sm border" style={{backgroundColor: 'var(--theme-surface-glass)', borderColor: 'var(--theme-glass-border)'}}>
               <Heart className="h-5 w-5 animate-pulse" />
-            </div>
-            <h3 className="text-3xl font-serif font-light italic text-zinc-900 dark:text-white">
+            </div>                    <h3 className="text-3xl font-serif font-light italic" style={{color: 'var(--theme-text)'}}>
               El Secreto de Nuestra Cocina Artesanal
             </h3>
-            <p className="text-sm font-light text-zinc-600 dark:text-zinc-400 leading-relaxed">
+            <p className="text-sm font-light leading-relaxed" style={{color: 'var(--theme-text-secondary)'}}>
               No creemos en la producción masiva. Carol hornea cada bizcocho a pedido utilizando ingredientes frescos, huevos de corral, 
               mantequilla de verdad y chocolate belga de alta pureza. Nuestro enfoque se centra en la humedad perfecta de las migas y rellenos 
               generosos que deleitan el paladar sin empalagar.
@@ -118,22 +117,22 @@ export default function History({ config }: HistoryProps) {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               <div className="flex items-start space-x-3">
-                <div className="p-1.5 bg-white/30 dark:bg-zinc-950/20 rounded-none border border-white/40 text-emerald-600 dark:text-emerald-400 mt-1">
+                <div className="p-1.5 rounded-none border mt-1" style={{backgroundColor: 'var(--theme-surface-glass)', borderColor: 'var(--theme-glass-border)', color: 'rgb(52,211,153)'}}>
                   <ShieldCheck className="h-4 w-4" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-serif font-light italic text-zinc-900 dark:text-white">Sin Preservantes</h4>
-                  <p className="text-xs font-light text-zinc-500">100% natural y fresco</p>
+                  <h4 className="text-sm font-serif font-light italic" style={{color: 'var(--theme-text)'}}>Sin Preservantes</h4>
+                  <p className="text-xs font-light" style={{color: 'var(--theme-text-muted)'}}>100% natural y fresco</p>
                 </div>
               </div>
 
               <div className="flex items-start space-x-3">
-                <div className="p-1.5 bg-white/30 dark:bg-zinc-950/20 rounded-none border border-white/40 text-emerald-600 dark:text-emerald-400 mt-1">
+                <div className="p-1.5 rounded-none border mt-1" style={{backgroundColor: 'var(--theme-surface-glass)', borderColor: 'var(--theme-glass-border)', color: 'rgb(52,211,153)'}}>
                   <Clock className="h-4 w-4" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-serif font-light italic text-zinc-900 dark:text-white">A Pedido</h4>
-                  <p className="text-xs font-light text-zinc-500">Horneado horas antes de la entrega</p>
+                  <h4 className="text-sm font-serif font-light italic" style={{color: 'var(--theme-text)'}}>A Pedido</h4>
+                  <p className="text-xs font-light" style={{color: 'var(--theme-text-muted)'}}>Horneado horas antes de la entrega</p>
                 </div>
               </div>
             </div>
@@ -156,17 +155,16 @@ export default function History({ config }: HistoryProps) {
               loading="lazy"
               decoding="async"
             />
-            <div className="absolute -bottom-4 -left-4 glass-panel p-4 rounded-none shadow-lg border border-white/30 bg-white/70 backdrop-blur-md">
+            <div className="absolute -bottom-4 -left-4 glass-panel p-4 rounded-none shadow-lg border backdrop-blur-md" style={{borderColor: 'var(--theme-glass-border)', backgroundColor: 'var(--theme-surface-glass)'}}>
               <span className="block text-[9px] font-mono font-bold uppercase tracking-widest text-brand-secondary dark:text-brand-400">Pastelera Principal</span>
-              <span className="block text-sm font-serif font-light italic text-zinc-900 dark:text-white mt-1">Carol Y. Rosas Albines</span>
+              <span className="block text-sm font-serif font-light italic mt-1" style={{color: 'var(--theme-text)'}}>Carol Y. Rosas Albines</span>
             </div>
           </motion.div>
 
         </div>
 
-        {/* Interactive Chronological Timeline */}
-        <div className="border-t border-zinc-200/20 dark:border-zinc-800/10 pt-16">
-          <h3 className="text-2xl font-serif font-light italic text-center text-zinc-900 dark:text-white mb-12">
+        {/* Interactive Chronological Timeline */}            <div className="border-t pt-16" style={{borderColor: 'var(--theme-border)'}}>
+          <h3 className="text-2xl font-serif font-light italic text-center mb-12" style={{color: 'var(--theme-text)'}}>
             Nuestro Camino Juntos
           </h3>
           
@@ -212,10 +210,10 @@ export default function History({ config }: HistoryProps) {
                       <span className="inline-block text-[10px] font-mono font-bold text-brand-secondary dark:text-brand-400 mb-1">
                         {milestone.year}
                       </span>
-                      <h4 className="text-lg font-serif font-light italic text-zinc-900 dark:text-white">
+                      <h4 className="text-lg font-serif font-light italic" style={{color: 'var(--theme-text)'}}>
                         {milestone.title}
                       </h4>
-                      <p className="text-sm font-light text-zinc-600 dark:text-zinc-400 mt-2 leading-relaxed">
+                      <p className="text-sm font-light mt-2 leading-relaxed" style={{color: 'var(--theme-text-secondary)'}}>
                         {milestone.description}
                       </p>
                     </div>

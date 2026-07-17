@@ -76,11 +76,11 @@ export default function Catalog({ products, onSelectCustomize }: CatalogProps) {
           <span className="text-[10px] tracking-[0.3em] uppercase opacity-75 text-brand-secondary dark:text-brand-300 block font-semibold">
             MODELOS DE AUTOR EXCLUSIVOS
           </span>
-          <h2 className="text-4xl sm:text-5xl font-serif font-light italic text-zinc-900 dark:text-white mt-3">
+          <h2 className="text-4xl sm:text-5xl font-serif font-light italic mt-3" style={{color: 'var(--theme-text)'}}>
             Catálogo de Diseños
           </h2>
           <div className="w-12 h-[1px] bg-brand-secondary/30 mx-auto mt-5" />
-          <p className="text-sm font-light text-zinc-600 dark:text-zinc-400 mt-5 max-w-xl mx-auto leading-relaxed">
+          <p className="text-sm font-light mt-5 max-w-xl mx-auto leading-relaxed" style={{color: 'var(--theme-text-secondary)'}}>
             Cada opción es una plantilla cuidadosamente diseñada por Carol. Podrás personalizar sabores, 
             cobertura de color, mensajes escritos a mano en azúcar y decoraciones secundarias.
           </p>
@@ -97,7 +97,11 @@ export default function Catalog({ products, onSelectCustomize }: CatalogProps) {
               placeholder="Buscar pastel, ingrediente o etiqueta..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-white/40 dark:bg-zinc-950/30 border border-white/30 dark:border-white/5 rounded-none text-zinc-800 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-brand-secondary/50 transition-all text-xs tracking-wider shadow-sm backdrop-blur-sm"
+              className="w-full pl-11 pr-4 py-3 border rounded-none text-zinc-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-secondary/50 transition-all text-xs tracking-wider shadow-sm backdrop-blur-sm"
+              style={{
+                backgroundColor: 'var(--theme-surface)',
+                borderColor: 'var(--theme-border)',
+              }}
               id="catalog-search-input"
             />
           </div>
@@ -113,8 +117,9 @@ export default function Catalog({ products, onSelectCustomize }: CatalogProps) {
                   className={`px-5 py-2.5 rounded-none text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all ${
                     selectedCategory === category
                       ? 'bg-brand-500 text-white btn-glow shadow-sm'
-                      : 'bg-white/40 dark:bg-zinc-950/30 border border-zinc-200/50 dark:border-zinc-800/50 text-zinc-600 dark:text-zinc-400 hover:border-brand-500/50 hover:bg-white/70'
+                      : 'border text-zinc-600 dark:text-zinc-400 hover:border-brand-500/50'
                   }`}
+                  style={selectedCategory !== category ? {borderColor: 'var(--theme-border)'} : undefined}
                   id={`filter-category-${category}`}
                 >
                   {category}
@@ -127,12 +132,12 @@ export default function Catalog({ products, onSelectCustomize }: CatalogProps) {
 
         {/* Catalog Grid */}
         {filteredProducts.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-zinc-950 rounded-3xl shadow-sm border border-zinc-100 dark:border-zinc-900">
+          <div className="text-center py-16 rounded-3xl shadow-sm border" style={{backgroundColor: 'var(--theme-surface)', borderColor: 'var(--theme-border)'}}>
             <span className="text-4xl">🧁</span>
-            <h3 className="text-lg font-serif font-bold text-zinc-800 dark:text-white mt-4">
+            <h3 className="text-lg font-serif font-bold mt-4" style={{color: 'var(--theme-text)'}}>
               No encontramos pasteles para tu búsqueda
             </h3>
-            <p className="text-sm text-zinc-500 mt-2">
+            <p className="text-sm mt-2" style={{color: 'var(--theme-text-secondary)'}}>
               Prueba buscando por "chocolate", "rosado" o seleccionando otra categoría.
             </p>
             <button
@@ -156,7 +161,7 @@ export default function Catalog({ products, onSelectCustomize }: CatalogProps) {
                 key={product.id}
                 layout
                 variants={itemVariants}
-                className="group glass-panel rounded-[24px] overflow-hidden hover:shadow-md transition-all flex flex-col h-full border border-white/30 dark:border-white/5 bg-white/40 dark:bg-zinc-950/30 backdrop-blur-md"
+                className="group glass-panel rounded-[24px] overflow-hidden hover:shadow-md transition-all flex flex-col h-full backdrop-blur-md"
                 id={`catalog-card-${product.id}`}
               >
                                 {/* Cake Image Box with labels */}
@@ -230,7 +235,7 @@ export default function Catalog({ products, onSelectCustomize }: CatalogProps) {
                   )}
 
                   {/* Category label */}
-                  <span className="absolute top-4 left-4 bg-white/90 dark:bg-zinc-900/95 text-zinc-800 dark:text-white px-3 py-1 rounded-none text-[9px] font-mono font-bold uppercase tracking-widest border border-zinc-100/30 dark:border-zinc-800/30 shadow-sm">
+                  <span className="absolute top-4 left-4 px-3 py-1 rounded-none text-[9px] font-mono font-bold uppercase tracking-widest shadow-sm" style={{backgroundColor: 'var(--theme-surface)', color: 'var(--theme-text)', borderColor: 'var(--theme-border)'}}>
                     {product.category}
                   </span>
 
@@ -246,15 +251,15 @@ export default function Catalog({ products, onSelectCustomize }: CatalogProps) {
                 <div className="p-6 flex-1 flex flex-col justify-between">
                   <div className="space-y-3">
                     <div className="flex justify-between items-start gap-2">
-                      <h3 className="text-base font-serif font-light text-zinc-900 dark:text-white group-hover:text-brand-secondary transition-colors leading-snug">
+                      <h3 className="text-base font-serif font-light group-hover:text-brand-secondary transition-colors leading-snug" style={{color: 'var(--theme-text)'}}>
                         {product.name}
                       </h3>
-                      <span className="font-serif italic font-light text-base text-zinc-950 dark:text-zinc-100 shrink-0">
+                      <span className="font-serif italic font-light text-base shrink-0" style={{color: 'var(--theme-text)'}}>
                         S/. {product.basePrice}
                       </span>
                     </div>
 
-                    <p className="text-xs font-light text-zinc-500 dark:text-zinc-400 line-clamp-3 leading-relaxed">
+                    <p className="text-xs font-light line-clamp-3 leading-relaxed" style={{color: 'var(--theme-text-secondary)'}}>
                       {product.description}
                     </p>
 
@@ -275,7 +280,7 @@ export default function Catalog({ products, onSelectCustomize }: CatalogProps) {
                       {product.tags && product.tags.slice(0, 3).map((tag, idx) => (
                         <span 
                           key={idx} 
-                          className="bg-white/30 dark:bg-zinc-900/30 border border-white/40 dark:border-white/5 text-[9px] uppercase tracking-wider font-mono px-2 py-0.5 text-zinc-500 dark:text-zinc-400"
+                          className="text-[9px] uppercase tracking-wider font-mono px-2 py-0.5 border" style={{backgroundColor: 'var(--theme-surface)', borderColor: 'var(--theme-border)', color: 'var(--theme-text-secondary)'}}
                         >
                           #{tag}
                         </span>

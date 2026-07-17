@@ -71,7 +71,10 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
   return (
     <section 
       id="inicio" 
-      className="relative min-h-[92vh] flex items-center justify-center pt-24 overflow-hidden bg-gradient-to-b from-brand-50/50 via-white to-white dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900"
+      className="relative min-h-[92vh] flex items-center justify-center pt-24 overflow-hidden"
+      style={{
+        background: 'linear-gradient(to bottom, var(--theme-bg-alt), var(--theme-bg))',
+      }}
     >
       {/* ─── LAYER 1: Gradient Mesh / Ambient Orbs ─── */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -185,20 +188,21 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
 
             <motion.h1
               variants={heroItemVariants}
-              className="text-5xl sm:text-6xl lg:text-7xl font-serif font-light italic text-zinc-900 dark:text-white leading-tight"
+              className="text-5xl sm:text-6xl lg:text-7xl font-serif font-light italic leading-tight"
               id="hero-title"
+              style={{color: 'var(--theme-text)'}}
             >
               {config?.heroTitle ? (
                 <>
                   {config.heroTitle.split(' ').slice(0, -1).join(' ')}{' '}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary via-brand-500 to-brand-400 dark:from-brand-300 dark:via-brand-200 dark:to-brand-400 bg-[length:200%_100%] animate-gradient-shift block sm:inline">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 dark:from-brand-300 dark:via-brand-200 dark:to-brand-400 bg-[length:200%_100%] animate-gradient-shift block sm:inline">
                     {config.heroTitle.split(' ').slice(-1)[0]}
                   </span>
                 </>
               ) : (
                 <>
                   El Arte de <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary via-brand-500 to-brand-400 dark:from-brand-300 dark:via-brand-200 dark:to-brand-400 bg-[length:200%_100%] animate-gradient-shift">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 dark:from-brand-300 dark:via-brand-200 dark:to-brand-400 bg-[length:200%_100%] animate-gradient-shift">
                     Compartir
                   </span>
                 </>
@@ -207,8 +211,9 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
 
             <motion.p
               variants={heroItemVariants}
-              className="text-lg text-zinc-600 dark:text-zinc-300 max-w-sm mx-auto lg:mx-0 leading-relaxed font-light"
+              className="text-lg max-w-sm mx-auto lg:mx-0 leading-relaxed font-light"
               id="hero-desc"
+              style={{color: 'var(--theme-text-secondary)'}}
             >
               {config?.heroDescription || 'Diseños exclusivos creados por Carol Rosas para transformar tus momentos especiales en legados de sabor.'}
             </motion.p>
@@ -246,18 +251,18 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
               id="hero-stats"
             >
               <div className="flex flex-col text-left">
-                <span className="text-2xl font-light text-zinc-900 dark:text-white">100%</span>
-                <span className="text-[9px] uppercase tracking-tighter text-zinc-500 dark:text-zinc-400">Natural</span>
+                <span className="text-2xl font-light" style={{color: 'var(--theme-text)'}}>100%</span>
+                <span className="text-[9px] uppercase tracking-tighter" style={{color: 'var(--theme-text-secondary)'}}>Natural</span>
               </div>
               <div className="w-px h-8 bg-zinc-200 dark:bg-zinc-800"></div>
               <div className="flex flex-col text-left">
-                <span className="text-2xl font-light text-zinc-900 dark:text-white">Hecho a Mano</span>
-                <span className="text-[9px] uppercase tracking-tighter text-zinc-500 dark:text-zinc-400">Con Amor</span>
+                <span className="text-2xl font-light" style={{color: 'var(--theme-text)'}}>Hecho a Mano</span>
+                <span className="text-[9px] uppercase tracking-tighter" style={{color: 'var(--theme-text-secondary)'}}>Con Amor</span>
               </div>
               <div className="w-px h-8 bg-zinc-200 dark:bg-zinc-800"></div>
               <div className="flex flex-col text-left">
-                <span className="text-2xl font-light text-zinc-900 dark:text-white">Familia</span>
-                <span className="text-[9px] uppercase tracking-tighter text-zinc-500 dark:text-zinc-400">Rosas</span>
+                <span className="text-2xl font-light" style={{color: 'var(--theme-text)'}}>Familia</span>
+                <span className="text-[9px] uppercase tracking-tighter" style={{color: 'var(--theme-text-secondary)'}}>Rosas</span>
               </div>
             </motion.div>
           </motion.div>
@@ -353,7 +358,11 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
                   delay: 0.6,
                 }}
                 whileHover={{ scale: 1.02, x: 2 }}
-                className="absolute top-8 -right-4 glass-panel p-4 rounded-2xl shadow-xl max-w-[200px] border border-white/40 text-left z-20 transition-shadow hover:shadow-2xl cursor-default"
+                className="absolute top-8 -right-4 p-4 rounded-2xl shadow-xl max-w-[200px] text-left z-20 transition-shadow hover:shadow-2xl cursor-default border"
+                style={{
+                  backgroundColor: 'var(--theme-surface)',
+                  borderColor: 'var(--theme-border)',
+                }}
                 id="hero-review-floater"
               >
                 <div className="flex items-center space-x-1 mb-1">
@@ -363,16 +372,17 @@ export default function Hero({ onViewCatalog, onViewHistory, config }: HeroProps
                       initial={{ opacity: 0, scale: 0 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 1 + i * 0.12, type: 'spring', stiffness: 300 }}
-                      className="text-amber-400 text-xs"
+                      className="text-[16px]"
+                      style={{color: '#F59E0B', textShadow: '0 0 4px rgba(245,158,11,0.4)'}}
                     >
                       ★
                     </motion.span>
                   ))}
                 </div>
-                <p className="text-[11px] text-zinc-700 dark:text-zinc-300 font-sans italic leading-tight">
+                <p className="text-[11px] font-sans italic leading-tight" style={{color: 'var(--theme-text)'}}>
                   &ldquo;El sabor es increíblemente suave y la presentación fue perfecta para mi boda civil.&rdquo;
                 </p>
-                <span className="block text-[9px] font-mono font-bold mt-2 text-brand-700 dark:text-brand-400">
+                <span className="block text-[9px] font-mono font-bold mt-2" style={{color: 'var(--theme-brand-primary)'}}>
                   — María José, Novia
                 </span>
               </motion.div>
