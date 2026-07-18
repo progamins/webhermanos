@@ -7,9 +7,10 @@
   RewriteEngine On
   RewriteBase /
 
-  # Force HTTPS (uncomment on production after SSL is installed)
-  # RewriteCond %{HTTPS} off
-  # RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+  # Force HTTPS (activar en producción con SSL instalado)
+  RewriteCond %{HTTPS} off
+  RewriteCond %{REQUEST_URI} !^/\.well-known/
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
 
   # SPA: Don't rewrite files or directories that physically exist
   RewriteCond %{REQUEST_FILENAME} -f [OR]
@@ -44,11 +45,14 @@
   # Referrer policy
   Header always set Referrer-Policy "no-referrer-when-downgrade"
 
-  # HSTS (uncomment after SSL is active)
-  # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+  # HSTS (HTTP Strict Transport Security) - fuerza HTTPS en el navegador por 1 año
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 
   # Permissions policy (restrict APIs)
   Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+
+  # Content Security Policy (CSP) - protección contra XSS
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.firebaseio.com https://*.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://www.google-analytics.com wss:; frame-src 'self' https://*.firebaseapp.com; media-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'"
 </IfModule>
 
 # =============================================================================

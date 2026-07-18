@@ -1,0 +1,26 @@
+# ────────────────────────────────────────
+# robots.txt — Maison Rosas
+# Pastelería de Autor & Repostería Fina
+# Sullana, Piura — Perú
+# ────────────────────────────────────────
+
+User-agent: *
+Allow: /
+Allow: /tracking$
+
+# ─── ÁREAS RESTRINGIDAS ───
+Disallow: /admin
+Disallow: /api/
+Disallow: /uploads/
+Disallow: /*?code=*
+Disallow: /*?email=*
+Disallow: /manifest.json
+
+# ─── SITEMAP ───
+Sitemap: https://maisonrosas.com/sitemap.xml
+
+# ─── CRAWL DELAY (respetar servidor) ───
+Crawl-delay: 10
+
+# ─── HOST ───
+Host: https://maisonrosas.com

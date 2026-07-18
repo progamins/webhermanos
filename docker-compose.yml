@@ -1,0 +1,109 @@
+# ═══════════════════════════════════════════════════════════════════════
+# Maison Rosas — docker-compose
+# Levanta la app completa con un solo comando:
+#   cp .env.example .env   (edita tus secretos)
+#   docker compose up -d --build
+#
+# URLs tras levantar:
+#   App:     http://localhost:3000
+#   Admin:   http://localhost:3000/admin
+#   Health:  http://localhost:3000/api/health
+#   Adminer: http://localhost:8080  (descomenta el servicio más abajo)
+# ═══════════════════════════════════════════════════════════════════════
+
+services:
+  # ─────────────────────────────────────────────────────────────────────
+  # Base de datos MySQL 8
+  # El esquema se aplica automáticamente la PRIMERA vez que se crea el
+  # volumen, gracias a /docker-entrypoint-initdb.d/001_init.sql.
+  # (El SQL usa CREATE TABLE IF NOT EXISTS, así que es idempotente.)
+  # ─────────────────────────────────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: maison-rosas-db
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rosas_root_2026}
+      MYSQL_DATABASE: ${DB_NAME:-maison_rosas}
+    ports:
+      - "${DB_PORT_PUBLISHED:-3306}:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      # Inicialización automática del esquema + tablas en el primer arranque.
+      - ./server/src/migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-rosas_root_2026}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Aplicación (cliente + servidor ya construidos en la imagen)
+  # ─────────────────────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GOOGLE_MAPS_PLATFORM_KEY: ${GOOGLE_MAPS_PLATFORM_KEY:-}
+    container_name: maison-rosas-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${APP_PORT_PUBLISHED:-3000}:3000"
+    environment:
+      # Apunta al contenedor db (NO a localhost).
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-${MYSQL_ROOT_PASSWORD:-rosas_root_2026}}
+      DB_NAME: ${DB_NAME:-maison_rosas}
+      # El resto de variables se inyecta desde .env automáticamente.
+      NODE_ENV: production
+      PORT: "3000"
+      HOST: "0.0.0.0"
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GOOGLE_MAPS_PLATFORM_KEY: ${GOOGLE_MAPS_PLATFORM_KEY:-}
+      VITE_GA_MEASUREMENT_ID: ${VITE_GA_MEASUREMENT_ID:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_SECURE: ${SMTP_SECURE:-true}
+      EMAIL_SENDER_NAME: ${EMAIL_SENDER_NAME:-Maison Rosas}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_SENDER_EMAIL: ${RESEND_SENDER_EMAIL:-}
+      ADMIN_DEFAULT_PASSWORD: ${ADMIN_DEFAULT_PASSWORD:-ADMIN_PASSWORD_PLACEHOLDER}
+      ANALYST_DEFAULT_PASSWORD: ${ANALYST_DEFAULT_PASSWORD:-ANALYST_PASSWORD_PLACEHOLDER}
+      STOCK_MANAGER_DEFAULT_PASSWORD: ${STOCK_MANAGER_DEFAULT_PASSWORD:-STOCK_PASSWORD_PLACEHOLDER}
+    volumes:
+      # Persistencia de imágenes subidas (uploads).
+      - ./uploads:/app/server/uploads
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Adminer (opcional) — gestor visual de MySQL en el navegador.
+  # Para activarlo: docker compose up adminer -d
+  # ─────────────────────────────────────────────────────────────────────
+  adminer:
+    image: adminer:latest
+    container_name: maison-rosas-adminer
+    restart: unless-stopped
+    profiles: ["tools"]
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+
+volumes:
+  db_data:
+    name: maison-rosas-db-data

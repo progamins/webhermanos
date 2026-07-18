@@ -1,0 +1,18 @@
+# ─────────────────────────────────────────────────────────────
+# MAISON ROSAS — Redirects para Render (Static Site)
+# ─────────────────────────────────────────────────────────────
+# Render Static Sites soporta el formato estándar de Netlify _redirects
+# Docs: https://render.com/docs/static-site-redirects
+#
+# 🚀 DESPLIEGUE CON BACKEND LOCAL (ngrok/Cloudflare Tunnel):
+#   1. Expón tu backend local:  ngrok http 3000
+#   2. Copia la URL generada (ej: https://abc123.ngrok.io)
+#   3. Reemplaza TU_URL_DE_NGROK abajo
+#   4. Haz build y redeploy
+#
+# /api/*  https://TU_URL_DE_NGROK/api/:splat  200
+#
+# ─────────────────────────────────────────────────────────────
+
+# SPA: todas las rutas no-API sirven index.html
+/*    /index.html    200

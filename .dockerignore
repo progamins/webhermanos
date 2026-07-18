@@ -1,0 +1,55 @@
+# ─── Control de versiones y metadata ───
+.git
+.gitignore
+.gitattributes
+.zcode/
+.github/
+
+# ─── Dependencias y artefactos (se regeneran dentro del build) ───
+**/node_modules/
+**/dist/
+**/build/
+**/.cache/
+**/*.tsbuildinfo
+
+# ─── Secretos (NUNCA deben entrar a la imagen) ───
+.env
+.env.*
+!.env.example
+
+# ─── Datos en tiempo de ejecución (se montan como volúmenes) ───
+uploads/
+server/uploads/
+
+# ─── Logs y temporales ───
+*.log
+**/*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+server.log
+
+# ─── Archivos de prueba / reportes pesados ───
+lighthouse-*.json
+coverage/
+.nyc_output/
+
+# ─── Docker (no queremos construir dentro de construir) ───
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# ─── Documentación y config de despliegue ajena a Docker ───
+README*.md
+docker/
+*.md
+
+# ─── Basura de Windows / editor ───
+nul
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.swp
+.idea/
+.vscode/
+*.tmp

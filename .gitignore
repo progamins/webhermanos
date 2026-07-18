@@ -1,8 +1,32 @@
+# Dependencias y artefactos de build
 node_modules/
 build/
 dist/
+**/*.tsbuildinfo
+
+# Cobertura y reportes pesados
 coverage/
-.DS_Store
-*.log
+lighthouse-*.json
+.nyc_output/
+
+# Secretos — NUNCA commitear .env real
 .env*
 !.env.example
+
+# Datos de ejecución (se montan como volumen / se regeneran)
+uploads/
+server/uploads/
+
+# Sistema operativo / editor
+.DS_Store
+Thumbs.db
+Desktop.ini
+nul
+*.log
+*.swp
+.idea/
+.vscode/
+*.tmp
+
+# ZCode local
+.zcode/
