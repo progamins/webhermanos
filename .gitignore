@@ -30,3 +30,17 @@ nul
 
 # ZCode local
 .zcode/
+
+# DuckDNS (contiene token real)
+duckdns/duck.sh
+duckdns/duckdns.service
+duckdns/duckdns.timer
+duckdns/auth.sh
+duckdns/cleanup.sh
+
+# Archivos locales de producción
+informe-produccion.txt
+List
+
+# Scripts de despliegue local (contienen rutas del servidor)
+deploy-produccion.sh

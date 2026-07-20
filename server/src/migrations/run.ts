@@ -39,13 +39,52 @@ async function runMigrations() {
     multipleStatements: true,
   });
 
-  // Read and execute the schema file
-  const schemaPath = path.join(__dirname, '001_init.sql');
-  const schema = fs.readFileSync(schemaPath, 'utf-8');
+  // Execute all migration files in order
+  const migrationFiles = ['001_init.sql', '002_optimize.sql'];
 
-  console.log('  📄 Running 001_init.sql...');
-  await conn.query(schema);
-  console.log('  ✅ Schema applied successfully');
+  for (const file of migrationFiles) {
+    const filePath = path.join(__dirname, file);
+    if (!fs.existsSync(filePath)) {
+      console.log(`  ⏭️  ${file} not found, skipping`);
+      continue;
+    }
+    const sql = fs.readFileSync(filePath, 'utf-8');
+    console.log(`  📄 Running ${file}...`);
+
+    // Split by semicolons to run statements one by one
+    // This way, if one fails (e.g. duplicate index), others still apply
+    const statements = sql
+      .split(';')
+      .map(s => s.trim())
+      .filter(s => {
+        if (s.length === 0) return false;
+        // Only filter out chunks that are PURELY comments (no SQL content)
+        const nonCommentLines = s.split('\n')
+          .map(l => l.trim())
+          .filter(l => l.length > 0 && !l.startsWith('--'));
+        return nonCommentLines.length > 0;
+      });
+
+    let successCount = 0;
+    let skippedCount = 0;
+
+    for (const stmt of statements) {
+      try {
+        await conn.query(stmt);
+        successCount++;
+      } catch (err: any) {
+        // ER_DUP_KEYNAME (1061) = index already exists — safe to skip
+        if (err?.errno === 1061) {
+          console.log(`  ⚠️  Index already exists, skipping: ${stmt.slice(0, 60)}...`);
+          skippedCount++;
+        } else {
+          throw err;
+        }
+      }
+    }
+
+    console.log(`  ✅ ${file} applied (${successCount} ok, ${skippedCount} skipped)`);
+  }
 
   await conn.end();
 

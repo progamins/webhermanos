@@ -1,58 +1,74 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Calendar, Layers, Eye } from 'lucide-react';
-import { GalleryItem } from '../types';
-import { optimizeImageUrl } from '../utils/images';
+import type { GalleryItem } from '../types';
+import { useReducedMotion, useKeyboard } from '../hooks';
 import CachedImage from './CachedImage';
+import EmptyState from './ui/EmptyState';
+import Skeleton from './ui/Skeleton';
 
 interface GalleryProps {
   galleryItems: GalleryItem[];
+  loading?: boolean;
 }
 
-export default function Gallery({ galleryItems }: GalleryProps) {
+const CATEGORIES = ['Todos', 'Bodas', 'Cumpleaños', 'Infantiles', 'Aniversarios', 'Especiales'] as const;
+
+export default function Gallery({ galleryItems, loading = false }: GalleryProps) {
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
-  const [activeTab, setActiveTab] = useState('Todos');
+  const [activeTab, setActiveTab] = useState<string>('Todos');
+  const reducedMotion = useReducedMotion();
 
-  const categories = ['Todos', 'Bodas', 'Cumpleaños', 'Infantiles', 'Aniversarios', 'Especiales'];
+  useKeyboard('Escape', () => setSelectedItem(null), !!selectedItem);
 
-  const filteredItems = galleryItems.filter((item) => {
-    return activeTab === 'Todos' || item.category === activeTab;
-  });
+  const filteredItems = galleryItems.filter((item) =>
+    activeTab === 'Todos' || item.category === activeTab
+  );
+
+  const containerVariants = reducedMotion
+    ? { hidden: { opacity: 1 }, show: { opacity: 1 } }
+    : {
+        hidden: { opacity: 0 },
+        show: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+      };
+
+  const itemVariants = reducedMotion
+    ? { hidden: { opacity: 1, scale: 1 }, show: { opacity: 1, scale: 1 } }
+    : {
+        hidden: { opacity: 0, scale: 0.9, filter: 'blur(2px)' },
+        show: { opacity: 1, scale: 1, filter: 'blur(0px)', transition: { type: 'spring' as const, stiffness: 80, damping: 14 } },
+      };
 
   return (
-    <section 
-      id="galeria" 
-      className="py-24 bg-transparent relative overflow-hidden"
-    >
+    <section id="galeria" className="py-24 bg-transparent relative overflow-hidden" aria-label="Galería de creaciones">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
-        {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
           <span className="text-[10px] tracking-[0.3em] uppercase opacity-75 text-brand-secondary dark:text-brand-300 block font-semibold">
             EXPERIENCIAS COMPARTIDAS
           </span>
-          <h2 className="text-4xl sm:text-5xl font-serif font-light italic mt-3" style={{color: 'var(--theme-text)'}}>
+          <h2 className="text-4xl sm:text-5xl font-serif font-light italic mt-3" style={{ color: 'var(--theme-text)' }}>
             Galería de Creaciones Maison
           </h2>
-          <div className="w-12 h-[1px] bg-brand-secondary/30 mx-auto mt-5" />
-          <p className="text-sm font-light mt-5 max-w-xl mx-auto leading-relaxed" style={{color: 'var(--theme-text-secondary)'}}>
-            Fotografías reales de pasteles personalizados entregados a nuestros clientes. 
-            Déjate inspirar por los acabados de Carol Rosas y elige tu próxima plantilla.
+          <div className="w-12 h-[1px] bg-brand-secondary/30 mx-auto mt-5" aria-hidden="true" />
+          <p className="text-sm font-light mt-5 max-w-xl mx-auto leading-relaxed" style={{ color: 'var(--theme-text-secondary)' }}>
+            Fotografías reales de pasteles personalizados entregados a nuestros clientes.
           </p>
         </div>
 
-        {/* Tab Filters */}
-        <div className="flex justify-center space-x-3 overflow-x-auto pb-4 mb-12 scrollbar-none" id="gallery-tabs">
-          {categories.map((cat) => (
+        <div className="flex justify-center space-x-3 overflow-x-auto pb-4 mb-12 scrollbar-none" id="gallery-tabs" role="tablist" aria-label="Filtrar galería por categoría">
+          {CATEGORIES.map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveTab(cat)}
-              className={`px-5 py-2.5 rounded-none text-[10px] font-mono font-bold uppercase tracking-widest transition-all whitespace-nowrap cursor-pointer ${
+              className={`px-5 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
                 activeTab === cat
-                  ? 'bg-brand-500 text-white shadow-sm btn-glow'
-                  : 'text-zinc-600 dark:text-zinc-400 border'
+                  ? 'bg-brand-500 text-white shadow-md'
+                  : 'border hover:border-brand-500/50'
               }`}
+              style={activeTab !== cat ? { borderColor: 'var(--theme-border)', color: 'var(--theme-text-secondary)' } : undefined}
+              role="tab"
+              aria-selected={activeTab === cat}
               id={`gallery-tab-${cat}`}
             >
               {cat}
@@ -60,152 +76,117 @@ export default function Gallery({ galleryItems }: GalleryProps) {
           ))}
         </div>
 
-        {/* Masonry Bento Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="gallery-grid">
-          <AnimatePresence>
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }, (_, i) => (
+              <Skeleton key={i} variant="image" className="aspect-square rounded-2xl" />
+            ))}
+          </div>
+        ) : filteredItems.length === 0 ? (
+          <EmptyState
+            icon={<Layers className="h-5 w-5 text-zinc-400" />}
+            title="Aún no hay fotos en esta categoría"
+            description="Pronto compartiremos más creaciones de Carol."
+          />
+        ) : (
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"
+            role="list"
+            aria-label="Galería de imágenes"
+          >
             {filteredItems.map((item) => (
-              <motion.div
+              <motion.button
                 key={item.id}
-                layout
-                initial={{ opacity: 0, scale: 0.9, filter: 'blur(4px)' }}
-                animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                exit={{ opacity: 0, scale: 0.9, filter: 'blur(4px)' }}
-                transition={{ type: 'spring', stiffness: 80, damping: 14, mass: 0.8 }}
+                variants={itemVariants}
                 onClick={() => setSelectedItem(item)}
-                className="group relative aspect-[4/5] rounded-[24px] overflow-hidden shadow-sm hover:shadow-xl border border-white/30 dark:border-white/5 cursor-pointer bg-zinc-100 dark:bg-zinc-900"
-                id={`gallery-card-${item.id}`}
+                className="group relative aspect-square rounded-2xl overflow-hidden border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 cursor-pointer"
+                style={{ borderColor: 'var(--theme-border)' }}
+                role="listitem"
+                aria-label={`Ver ${item.title || 'imagen'}`}
               >
                 <CachedImage
                   src={item.imageUrl}
-                  width={800}
-                  alt={item.title}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  width={400}
+                  alt={item.title || 'Galería Maison Rosas'}
                   wrapperClassName="w-full h-full"
-                  id={`gallery-img-${item.id}`}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                
-                {/* Dark Hover Overlay */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-6 text-white">
-                  
-                  {/* Eye Indicator */}
-                  <div className="self-end p-2 bg-white/20 backdrop-blur-md rounded-full">
-                    <Eye className="h-4 w-4 text-white" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                  <div className="text-white text-left">
+                    <span className="text-xs font-serif font-semibold block truncate">{item.title}</span>
+                    <span className="text-[9px] font-mono uppercase tracking-wider text-brand-200">{item.category}</span>
                   </div>
-
-                  {/* Title and date */}
-                  <div>
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-brand-300 font-bold">
-                      {item.category}
-                    </span>
-                    <h4 className="text-lg font-serif font-light italic mt-1">
-                      {item.title}
-                    </h4>
-                    <span className="text-[10px] text-zinc-300 block mt-1">
-                      {item.date}
-                    </span>
-                  </div>
-
                 </div>
-
-              </motion.div>
+                <div className="absolute top-3 right-3 p-1.5 bg-black/30 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Eye className="h-3.5 w-3.5 text-white" aria-hidden="true" />
+                </div>
+              </motion.button>
             ))}
-          </AnimatePresence>
-        </div>
-
-        {/* Lightbox Modal */}
-        <AnimatePresence>
-          {selectedItem && (
-            <GalleryLightbox
-              item={selectedItem}
-              onClose={() => setSelectedItem(null)}
-            />
-          )}
-        </AnimatePresence>
-
+          </motion.div>
+        )}
       </div>
+
+      {selectedItem && createPortal(
+        <AnimatePresence>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={selectedItem.title}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setSelectedItem(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className="relative max-w-3xl w-full rounded-2xl overflow-hidden shadow-2xl"
+              style={{ backgroundColor: 'var(--theme-surface)' }}
+            >
+              <button
+                onClick={() => setSelectedItem(null)}
+                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                aria-label="Cerrar"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+              <CachedImage
+                src={selectedItem.imageUrl}
+                width={1200}
+                alt={selectedItem.title || 'Galería'}
+                wrapperClassName="w-full aspect-video"
+                className="w-full h-full object-cover"
+                priority
+              />
+              {(selectedItem.title || selectedItem.description) && (
+                <div className="p-5 space-y-1">
+                  {selectedItem.title && (
+                    <h3 className="text-lg font-serif font-bold" style={{ color: 'var(--theme-text)' }}>{selectedItem.title}</h3>
+                  )}
+                  {selectedItem.description && (
+                    <p className="text-sm" style={{ color: 'var(--theme-text-secondary)' }}>{selectedItem.description}</p>
+                  )}
+                  <div className="flex items-center gap-4 pt-2 text-[10px] font-mono" style={{ color: 'var(--theme-text-muted)' }}>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" aria-hidden="true" />
+                      {new Date(selectedItem.date).toLocaleDateString('es-PE')}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Layers className="h-3 w-3" aria-hidden="true" />
+                      {selectedItem.category}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        </AnimatePresence>,
+        document.body
+      )}
     </section>
-  );
-}
-
-interface GalleryLightboxProps {
-  item: GalleryItem;
-  onClose: () => void;
-}
-
-function GalleryLightbox({ item, onClose }: GalleryLightboxProps) {
-  return createPortal(
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      onClick={onClose}
-      className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-lg flex items-center justify-center p-4"
-      id="gallery-lightbox"
-    >
-      {/* Close Button */}
-      <button
-        onClick={onClose}
-        className="absolute top-6 right-6 p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/10 transition-all cursor-pointer z-55"
-        id="lightbox-close"
-      >
-        <X className="h-5 w-5" />
-      </button>
-
-      <motion.div
-        initial={{ scale: 0.9, y: 15, filter: 'blur(4px)' }}
-        animate={{ scale: 1, y: 0, filter: 'blur(0px)' }}
-        exit={{ scale: 0.9, y: 15, filter: 'blur(4px)' }}
-        transition={{ type: 'spring', stiffness: 100, damping: 18 }}
-        onClick={(e) => e.stopPropagation()}
-        className="relative max-w-4xl w-full bg-zinc-950/80 dark:bg-black/80 rounded-[32px] overflow-hidden border border-white/10 flex flex-col md:flex-row shadow-2xl backdrop-blur-xl"
-      >
-        {/* Image side */}
-        <div className="md:w-2/3 aspect-square md:aspect-auto md:h-[70vh] bg-zinc-900/50 relative">
-          <CachedImage
-            src={item.imageUrl}
-            width={1200}
-            alt={item.title}
-            className="w-full h-full object-cover"
-            wrapperClassName="w-full h-full"
-            id="lightbox-main-img"
-          />
-          {/* Glass indicator on image */}
-          <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/40 backdrop-blur-md border border-white/10 text-[9px] font-mono tracking-widest text-white/90 uppercase">
-            Galería Maison Rosas
-          </div>
-        </div>
-
-        {/* Details side */}
-        <div className="md:w-1/3 p-8 flex flex-col justify-between text-white bg-zinc-950/40 backdrop-blur-md border-l border-white/5">
-          <div className="space-y-6">
-            <div>
-              <span className="text-[10px] font-mono uppercase tracking-widest text-brand-200 font-bold">
-                Categoría de Autor
-              </span>
-              <h3 className="text-2xl font-serif font-light italic text-white mt-1">
-                {item.title}
-              </h3>
-              <div className="w-12 h-[1px] bg-brand-secondary/30 mt-3" />
-            </div>              <p className="text-sm font-light leading-relaxed font-sans text-zinc-300">
-                {item.description || "Este modelo fue personalizado especialmente para un evento familiar de alta gama. Combina técnicas avanzadas de glaseado con la frescura e higroscopicidad perfecta de nuestro bizcocho."}
-              </p>
-          </div>
-
-          <div className="space-y-4 pt-6 border-t border-zinc-800/80">
-            <div className="flex items-center space-x-3 text-xs font-mono text-zinc-300">
-              <Layers className="h-4 w-4 text-brand-secondary" />
-              <span>Categoría: {item.category}</span>
-            </div>
-
-            <div className="flex items-center space-x-3 text-xs font-mono text-zinc-300">
-              <Calendar className="h-4 w-4 text-brand-secondary" />
-              <span>Entregado: {item.date}</span>
-            </div>
-          </div>
-        </div>
-
-      </motion.div>
-    </motion.div>,
-    document.body
   );
 }

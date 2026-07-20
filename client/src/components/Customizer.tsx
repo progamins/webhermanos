@@ -96,10 +96,10 @@ export default function Customizer({ product, onClose, whatsappNumber }: Customi
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successOrder, setSuccessOrder] = useState<any | null>(null);
-  const [totalPrice, setTotalPrice] = useState(product.basePrice);
+  const [totalPrice, setTotalPrice] = useState(Number(product.basePrice));
 
   useEffect(() => {
-    setTotalPrice(product.basePrice + size.modifier + selectedFilling.price);
+    setTotalPrice(Number(product.basePrice) + size.modifier + selectedFilling.price);
   }, [product.basePrice, size, selectedFilling]);
 
   // Validates a step before moving forward
@@ -266,8 +266,7 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
               </span>
               <h3 className="font-serif text-3xl font-bold text-zinc-900 dark:text-white">
                 ¡Maison Rosas lo tiene Agendado!
-              </h3>
-              <p className="text-xs text-zinc-500 font-sans leading-relaxed">
+              </h3>                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-sans leading-relaxed">
                 Hemos recibido tu diseño técnico de pastel personalizado. Edwin y Carol han guardado tu orden con el estatus <strong className="text-amber-600 font-mono">Pendiente</strong> en su panel administrativo. 
                 <br />Se ha enviado un correo de confirmación automatizado a <strong className="text-zinc-700 dark:text-zinc-300 font-medium">{successOrder.customerEmail}</strong>.
               </p>
@@ -347,7 +346,7 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                 <div className="text-right">
                   <span className="text-[9px] text-zinc-400 dark:text-zinc-500 block uppercase font-mono tracking-widest">Monto Estimado</span>
                   <span className="text-base sm:text-lg font-mono font-bold text-brand-primary dark:text-brand-300">
-                    S/. {totalPrice}
+                    S/. {Math.round(totalPrice)}
                   </span>
                 </div>
               </div>
@@ -500,8 +499,7 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                           isSelected 
                             ? 'border-brand-primary text-brand-primary dark:text-brand-300' 
                             : isDone
-                              ? 'border-transparent text-emerald-600 dark:text-emerald-400'
-                              : 'border-transparent text-zinc-400 hover:text-zinc-600'
+                              ? 'border-transparent text-emerald-600 dark:text-emerald-400'                                  : 'border-transparent text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'
                         }`}
                       >
                         <Icon className="h-3.5 w-3.5" />
@@ -537,10 +535,10 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                         className="space-y-4"
                       >
                         <div>
-                          <h4 className="text-xs font-mono font-bold uppercase text-zinc-400 tracking-wider mb-1">
+                          <h4 className="text-xs font-mono font-bold uppercase text-zinc-400 dark:text-zinc-500 tracking-wider mb-1">
                             Dimensiones de Molde & Rendimiento Real
                           </h4>
-                          <p className="text-[11px] text-zinc-500 dark:text-zinc-500 mb-3">
+                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mb-3">
                             Selecciona la escala perfecta para tu lista de invitados. Todos nuestros moldes son altos para lucir una silueta estilizada de gala.
                           </p>
                           
@@ -561,13 +559,13 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                                   <span className="text-xs font-serif font-bold text-zinc-900 dark:text-white">
                                     {sz.name}
                                   </span>
-                                  <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 dark:bg-zinc-900 px-2 py-0.5 rounded">
+                                  <span className="text-[10px] font-mono font-bold text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-900 px-2 py-0.5 rounded">
                                     {sz.diameter}
                                   </span>
                                 </div>
                                 
                                 <div className="mt-3 flex justify-between items-end w-full">
-                                  <div className="text-[10px] text-zinc-500">
+                                  <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
                                     <p className="leading-tight">Estructura: {sz.height}</p>
                                   </div>
                                   <span className="text-[11px] font-mono font-bold text-brand-secondary dark:text-brand-400">
@@ -745,7 +743,7 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                             onChange={(e) => setCustomerEmail(e.target.value)}
                             className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs focus:ring-1 focus:ring-brand-primary focus:outline-none text-zinc-800 dark:text-white"
                           />
-                          <span className="text-[10px] text-zinc-400 mt-1 block">Utilizado para enviarte notificaciones automáticas y para que consultes tu seguimiento.</span>
+                          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1 block">Utilizado para enviarte notificaciones automáticas y para que consultes tu seguimiento.</span>
                         </div>
 
                         {/* Date and Time Logistics */}
@@ -817,7 +815,7 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
 
                         {/* Celebrated info (Homenajeado, edad, mensaje) */}
                         <div className="pt-3 border-t border-zinc-100 dark:border-zinc-900 space-y-3">
-                          <span className="text-[10px] font-mono font-bold uppercase text-zinc-400 block">Personalización de Placa (Azúcar)</span>
+                          <span className="text-[10px] font-mono font-bold uppercase text-zinc-400 dark:text-zinc-500 block">Personalización de Placa (Azúcar)</span>
                           
                           <div className="grid grid-cols-2 gap-3">
                             <div>
@@ -898,7 +896,7 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                             </div>
                             <div className="col-span-2 mt-1">
                               <strong className="text-zinc-400 block text-[9px] font-mono uppercase">Lugar de entrega</strong>
-                              <span className="text-brand-700 font-serif font-bold">
+                              <span className="text-brand-700 dark:text-brand-300 font-serif font-bold">
                                 {deliveryType === 'recojo' ? 'Recojo en Local (Av. Ricardo Palma 213, Sullana)' : `Delivery a Domicilio: ${deliveryAddress}`}
                               </span>
                             </div>
@@ -909,7 +907,7 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                             <p className="text-zinc-800 dark:text-zinc-100 font-serif">
                               <strong>{product.name}</strong> • Sabor {selectedFlavor} • Relleno de {selectedFilling.name}
                             </p>
-                            <p className="text-[10px] text-zinc-500">
+                            <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
                               Cobertura base {customColor.name} decorada con estilo {selectedDecoration}. {theme.trim() && `Temática: ${theme}`}
                             </p>
                           </div>

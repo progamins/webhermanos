@@ -128,11 +128,11 @@ export default function AdminPayments({ orders, setOrders, onRefreshData, showTo
                   </span>
                 </div>
 
-                <div className="bg-zinc-50/50 dark:bg-zinc-950/50 rounded-2xl p-3 mb-4 space-y-1.5 text-[11px] font-sans text-zinc-600">
-                  <div className="flex justify-between"><span className="text-zinc-400">Pedido:</span><span className="font-semibold text-zinc-800 dark:text-zinc-200">S/. {ord.totalPrice}</span></div>
-                  <div className="flex justify-between"><span className="text-zinc-400">Método:</span><span className="font-semibold">{ord.paymentMethod || '—'}</span></div>
-                  {ord.montoPagado ? <div className="flex justify-between"><span className="text-zinc-400">Pagado:</span><span className="font-semibold text-emerald-600">S/. {ord.montoPagado}</span></div> : null}
-                  {ord.fechaPago ? <div className="flex justify-between"><span className="text-zinc-400">Fecha:</span><span className="font-semibold text-zinc-800 dark:text-zinc-200">{ord.fechaPago}</span></div> : null}
+                <div className="bg-zinc-50/50 dark:bg-zinc-950/50 rounded-2xl p-3 mb-4 space-y-1.5 text-[11px] font-sans text-zinc-600 dark:text-zinc-400">
+                  <div className="flex justify-between"><span className="text-zinc-400 dark:text-zinc-500">Pedido:</span><span className="font-semibold text-zinc-800 dark:text-zinc-200">S/. {ord.totalPrice}</span></div>
+                  <div className="flex justify-between"><span className="text-zinc-400 dark:text-zinc-500">Método:</span><span className="font-semibold dark:text-zinc-300">{ord.paymentMethod || '—'}</span></div>
+                  {ord.montoPagado ? <div className="flex justify-between"><span className="text-zinc-400 dark:text-zinc-500">Pagado:</span><span className="font-semibold text-emerald-600">S/. {ord.montoPagado}</span></div> : null}
+                  {ord.fechaPago ? <div className="flex justify-between"><span className="text-zinc-400 dark:text-zinc-500">Fecha:</span><span className="font-semibold text-zinc-800 dark:text-zinc-200">{ord.fechaPago}</span></div> : null}
                 </div>
               </div>
 
@@ -160,7 +160,7 @@ export default function AdminPayments({ orders, setOrders, onRefreshData, showTo
                     </button>
                   </div>
                 ) : (
-                  <label className={`flex items-center justify-center space-x-2 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider cursor-pointer border-2 border-dashed transition-colors ${uploadingReceiptOrderId === ord.id ? 'bg-zinc-100 border-zinc-300 text-zinc-400' : 'bg-brand-50 border-brand-300 text-brand-700 hover:bg-brand-100'}`}>
+                  <label className={`flex items-center justify-center space-x-2 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider cursor-pointer border-2 border-dashed transition-colors ${uploadingReceiptOrderId === ord.id ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-zinc-400' : 'bg-brand-50 dark:bg-brand-950/30 border-brand-300 dark:border-brand-700 text-brand-700 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-brand-950/50'}`}>
                     <Upload className="h-3.5 w-3.5" />                      <span>{uploadingReceiptOrderId === ord.id ? 'Subiendo...' : 'Subir Comprobante'}</span>
                     <input type="file" accept="image/*" className="hidden" disabled={uploadingReceiptOrderId === ord.id}
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadReceiptForOrder(ord.id, f); e.target.value = ''; }} />

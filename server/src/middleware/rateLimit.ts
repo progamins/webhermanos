@@ -6,9 +6,6 @@ export const loginLimiter = rateLimit({
   message: { success: false, error: 'Demasiados intentos de inicio de sesión. Intenta de nuevo en 15 minutos.' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.ip || req.headers['x-forwarded-for'] as string || 'unknown';
-  },
 });
 
 export const apiLimiter = rateLimit({

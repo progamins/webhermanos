@@ -1,0 +1,115 @@
+╔══════════════════════════════════════════════════════════════════╗
+║       🚀 MAISON ROSAS — GUÍA DE INICIO DEL SERVIDOR            ║
+║       https://maisonrosas.duckdns.org/#main-content             ║
+╚══════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 1. VERIFICAR COMPONENTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   ─── 1.1  MySQL ───
+   Verifica que MySQL esté corriendo:
+   sudo systemctl status mysql
+
+   Si no está activo, inícialo:
+   sudo systemctl start mysql
+
+   ─── 1.2  API (Node.js) ───
+   Verifica PM2:
+   pm2 list
+
+   Si no aparece "maison-api" online, inícialo:
+   cd ~/Documentos/maison/webhermanos
+   pm2 start npm --name maison-api -- run start --workspace=server
+   pm2 save
+
+   ─── 1.3  Nginx ───
+   Verifica nginx:
+   sudo systemctl status nginx
+
+   Si no está activo:
+   sudo systemctl start nginx
+
+   ─── 1.4  DuckDNS (actualización de IP) ───
+   Verifica que el timer esté activo:
+   systemctl status duckdns.timer
+
+   Si no está activo:
+   sudo systemctl start duckdns.timer
+
+   Verifica última actualización:
+   cat /var/log/duckdns.log | tail -3
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 2. TEST RÁPIDO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   Una vez todo corriendo, verifica:
+
+   # Frontend
+   curl -s -o /dev/null -w "Frontend: %{http_code}\n" https://maisonrosas.duckdns.org/
+
+   # API
+   curl -s https://maisonrosas.duckdns.org/api/health
+
+   # Imágenes
+   curl -s -o /dev/null -w "Imágenes: %{http_code}\n" https://maisonrosas.duckdns.org/uploads/image-1784319999509-51152148.webp
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 3. DESPLEGAR CAMBIOS NUEVOS (frontend)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   Si modificaste el frontend y quieres actualizar producción:
+
+   cd ~/Documentos/maison/webhermanos/client
+   npm run build
+   sudo cp -r dist/* /var/www/maisonrosas/
+   sudo cp dist/admin.html /var/www/maisonrosas/admin.html
+
+   # Limpiar caché del navegador (opcional: agregar ?v=timestamp en URLs)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 4. REINICIO COMPLETO (si apagaste el PC)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   Al encender el PC, ejecuta en orden:
+
+   # Paso 1 ─ Iniciar MySQL
+   sudo systemctl start mysql
+
+   # Paso 2 ─ Verificar que PM2 revive automáticamente
+   pm2 list
+   # (Si no revive, haz: pm2 resurrect)
+
+   # Paso 3 ─ Verificar nginx
+   sudo systemctl start nginx
+
+   # Paso 4 ─ Verificar DuckDNS
+   systemctl status duckdns.timer
+
+   # Paso 5 ─ Probar
+   curl -s https://maisonrosas.duckdns.org/api/health
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 5. DATOS IMPORTANTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   🌐 Dominio:     https://maisonrosas.duckdns.org
+   🔐 Admin:       https://maisonrosas.duckdns.org/admin
+   ⚙️  API:        http://localhost:3000 (local) | /api (público)
+   🖼️  Imágenes:   /var/www/maisonrosas/uploads
+   📁 Frontend:    /var/www/maisonrosas/
+   📝 Logs nginx:  /var/log/nginx/error.log  /var/log/nginx/access.log
+   🦆 DuckDNS:     /var/log/duckdns.log
+   🔑 Token DDNS:  2f201ad4-74e8-4636-a6e9-2529a31dcb59
+
+   Certificado SSL expira: 2026-10-18 (renovación automática)
+   Certbot renovar manual: sudo certbot renew
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 6. COMANDO TODO-EN-UNO (inicio rápido)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   sudo systemctl start mysql && sudo systemctl start nginx && systemctl start duckdns.timer && pm2 resurrect && echo "✅ Todo listo" && curl -s https://maisonrosas.duckdns.org/api/health
+
+══════════════════════════════════════════════════════════════════

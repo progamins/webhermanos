@@ -7,7 +7,7 @@ function parseProduct(row: ProductRow) {
     id: row.id,
     name: row.name,
     description: row.description,
-    basePrice: row.base_price,
+    basePrice: Number(row.base_price),
     category: row.category,
     preparationTime: row.preparation_time,
     active: !!row.active,

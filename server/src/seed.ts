@@ -50,6 +50,10 @@ const DEFAULT_CONFIG = {
   aboutImage: '',
   faviconUrl: '',
   logoUrl: '',
+  heroReviewText: 'El sabor es increíblemente suave y la presentación fue perfecta para mi boda civil.',
+  heroReviewAuthor: 'María José',
+  heroReviewRole: 'Novia',
+  heroReviewRating: 5,
 };
 
 async function seed() {

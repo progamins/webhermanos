@@ -18,53 +18,83 @@ router.get('/health', (req, res) => {
 
 // ─── Products ───
 router.get('/products', async (req, res) => {
-  const products = await productService.getAll();
-  res.json(products);
+  try {
+    const products = await productService.getAll();
+    res.json(products);
+  } catch (err: any) {
+    console.error('[Products Error]', err);
+    res.status(500).json({ error: 'Error al obtener productos.' });
+  }
 });
 
 // ─── Reviews ───
 router.get('/reviews', async (req, res) => {
-  const reviews = await reviewService.getApproved();
-  res.json(reviews);
+  try {
+    const reviews = await reviewService.getApproved();
+    res.json(reviews);
+  } catch (err: any) {
+    console.error('[Reviews Error]', err);
+    res.status(500).json({ error: 'Error al obtener reseñas.' });
+  }
 });
 
 // ─── Gallery ───
 router.get('/gallery', async (req, res) => {
-  const gallery = await galleryService.getAll();
-  res.json(gallery);
+  try {
+    const gallery = await galleryService.getAll();
+    res.json(gallery);
+  } catch (err: any) {
+    console.error('[Gallery Error]', err);
+    res.status(500).json({ error: 'Error al obtener galería.' });
+  }
 });
 
 // ─── Config ───
 router.get('/config', async (req, res) => {
-  const config = await configService.getAppConfig();
-  res.json(config);
+  try {
+    const config = await configService.getAppConfig();
+    res.json(config);
+  } catch (err: any) {
+    console.error('[Config Error]', err);
+    res.status(500).json({ error: 'Error al obtener configuración.' });
+  }
 });
 
 router.get('/config/critical-urls', async (req, res) => {
-  const config = await configService.getAppConfig();
-  res.json({
-    heroImage: config.heroImage,
-    logoUrl: config.logoUrl,
-    faviconUrl: config.faviconUrl,
-  });
+  try {
+    const config = await configService.getAppConfig();
+    res.json({
+      heroImage: config.heroImage,
+      logoUrl: config.logoUrl,
+      faviconUrl: config.faviconUrl,
+    });
+  } catch (err: any) {
+    console.error('[Config Critical URLs Error]', err);
+    res.status(500).json({ error: 'Error al obtener URLs críticas.' });
+  }
 });
 
 // ─── Orders ───
 router.get('/orders', async (req, res) => {
-  const { trackingCode, email } = req.query;
-  if (trackingCode) {
-    const order = await orderService.getByTrackingCode(trackingCode as string);
-    if (order) {
-      const timeline = await orderService.getTimeline(order.id);
-      return res.json({ ...order, timeline });
+  try {
+    const { trackingCode, email } = req.query;
+    if (trackingCode) {
+      const order = await orderService.getByTrackingCode(trackingCode as string);
+      if (order) {
+        const timeline = await orderService.getTimeline(order.id);
+        return res.json({ ...order, timeline });
+      }
+      return res.status(404).json({ error: 'Pedido no encontrado.' });
     }
-    return res.status(404).json({ error: 'Pedido no encontrado.' });
+    if (email) {
+      const orders = await orderService.getByEmail(email as string);
+      return res.json(orders);
+    }
+    res.status(400).json({ error: 'Se requiere trackingCode o email.' });
+  } catch (err: any) {
+    console.error('[Orders Error]', err);
+    res.status(500).json({ error: 'Error al obtener pedidos.' });
   }
-  if (email) {
-    const orders = await orderService.getByEmail(email as string);
-    return res.json(orders);
-  }
-  res.status(400).json({ error: 'Se requiere trackingCode o email.' });
 });
 
 router.post('/orders', async (req, res) => {
@@ -95,35 +125,50 @@ router.post('/orders', async (req, res) => {
 
 // ─── OTP ───
 router.post('/otp/send', async (req, res) => {
-  const { email, customerName } = req.body;
-  if (!email || !customerName) {
-    return res.status(400).json({ error: 'Email y nombre requeridos.' });
+  try {
+    const { email, customerName } = req.body;
+    if (!email || !customerName) {
+      return res.status(400).json({ error: 'Email y nombre requeridos.' });
+    }
+    const orders = await orderService.getByEmail(email);
+    const result = await otpService.generateAndSend(email, customerName, orders);
+    res.json(result);
+  } catch (err: any) {
+    console.error('[OTP Send Error]', err);
+    res.status(500).json({ error: 'Error al enviar código de verificación.' });
   }
-  const orders = await orderService.getByEmail(email);
-  const result = await otpService.generateAndSend(email, customerName, orders);
-  res.json(result);
 });
 
 router.post('/otp/verify', async (req, res) => {
-  const { email, code } = req.body;
-  if (!email || !code) {
-    return res.status(400).json({ error: 'Email y código requeridos.' });
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) {
+      return res.status(400).json({ error: 'Email y código requeridos.' });
+    }
+    const result = await otpService.verify(email, code);
+    res.json(result);
+  } catch (err: any) {
+    console.error('[OTP Verify Error]', err);
+    res.status(500).json({ error: 'Error al verificar código.' });
   }
-  const result = await otpService.verify(email, code);
-  res.json(result);
 });
 
 // ─── Contact ───
 router.post('/contact', contactLimiter, async (req, res) => {
-  const { name, email, message } = req.body;
-  if (!name || !message) {
-    return res.status(400).json({ error: 'Nombre y mensaje requeridos.' });
+  try {
+    const { name, email, message } = req.body;
+    if (!name || !message) {
+      return res.status(400).json({ error: 'Nombre y mensaje requeridos.' });
+    }
+
+    // Send notification email
+    await emailService.sendContactNotification(name, email, message).catch(() => {});
+
+    res.json({ success: true, message: 'Mensaje enviado correctamente.' });
+  } catch (err: any) {
+    console.error('[Contact Error]', err);
+    res.status(500).json({ error: 'Error al procesar mensaje de contacto.' });
   }
-
-  // Send notification email
-  await emailService.sendContactNotification(name, email, message).catch(() => {});
-
-  res.json({ success: true, message: 'Mensaje enviado correctamente.' });
 });
 
 // ─── Image Proxy ───

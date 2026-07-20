@@ -130,10 +130,14 @@ export const dbService = {
     try {
       const result = await api.admin.verify();
       if (result.success && result.valid) return true;
+      // Token inválido (expirado o revocado) — limpiar
       localStorage.removeItem('maison_admin_token');
       localStorage.removeItem('maison_admin_logged');
       return false;
     } catch {
+      // Error de conexión o 401 — limpiar token vencido para evitar errores en cascada
+      localStorage.removeItem('maison_admin_token');
+      localStorage.removeItem('maison_admin_logged');
       return false;
     }
   },

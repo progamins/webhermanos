@@ -2,8 +2,23 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import fs from 'fs';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
+// Check multiple possible paths for .env (development, production, root, workspace)
+const envPaths = [
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(__dirname, '../../../.env'),
+  path.resolve(__dirname, '../../.env'),
+];
+
+for (const envPath of envPaths) {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+    break;
+  }
+}
 
 export interface EnvConfig {
   PORT: number;

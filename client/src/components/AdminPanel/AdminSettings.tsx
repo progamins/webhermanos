@@ -30,6 +30,10 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
   const [logoUrl, setLogoUrl] = useState(config.logoUrl || '');
   const [faviconUrl, setFaviconUrl] = useState(config.faviconUrl || '');
   const [imageQuality, setImageQuality] = useState(config.imageQuality ?? 0.8);
+  const [heroReviewText, setHeroReviewText] = useState(config.heroReviewText || '');
+  const [heroReviewAuthor, setHeroReviewAuthor] = useState(config.heroReviewAuthor || '');
+  const [heroReviewRole, setHeroReviewRole] = useState(config.heroReviewRole || '');
+  const [heroReviewRating, setHeroReviewRating] = useState(config.heroReviewRating ?? 5);
   const [showPreview, setShowPreview] = useState(false);
   // Role password management
   const [analystPassword, setAnalystPassword] = useState('');
@@ -73,6 +77,10 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
       setLogoUrl(config.logoUrl || '');
       setFaviconUrl(config.faviconUrl || '');
       setImageQuality(config.imageQuality ?? 0.8);
+      setHeroReviewText(config.heroReviewText || '');
+      setHeroReviewAuthor(config.heroReviewAuthor || '');
+      setHeroReviewRole(config.heroReviewRole || '');
+      setHeroReviewRating(config.heroReviewRating ?? 5);
     }
   }, [config]);
 
@@ -94,6 +102,10 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
       maintenanceDescription,
       maintenanceBadge,
       imageQuality,
+      heroReviewText,
+      heroReviewAuthor,
+      heroReviewRole,
+      heroReviewRating,
       logoUrl,
       faviconUrl
     };
@@ -205,6 +217,77 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
             <label className="block text-[10px] font-mono uppercase text-zinc-400 mb-1">SEO Descripción</label>
             <input type="text" value={setSeoDesc} onChange={(e) => setSetSeoDesc(e.target.value)}
               className="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-800 dark:text-white" />
+          </div>
+        </div>
+
+        {/* Hero Testimonial Editor */}
+        <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 mt-6">
+          <div className="bg-brand-50/30 dark:bg-brand-950/10 border border-brand-200/60 dark:border-brand-900/30 rounded-2xl p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-1.5 bg-brand-100 dark:bg-brand-950/30 rounded-lg">
+                <Edit3 className="h-4 w-4 text-brand-600 dark:text-brand-400" />
+              </div>
+              <div>
+                <h4 className="text-sm font-serif font-bold text-zinc-900 dark:text-white">Testimonio Destacado del Hero</h4>
+                <p className="text-[10px] text-zinc-500 font-sans">Personaliza la tarjeta de reseña flotante que aparece sobre la imagen del pastel en la página principal.</p>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-3">
+              <div>
+                <label className="block text-[9px] font-mono uppercase text-zinc-400 mb-1">Texto del testimonio</label>
+                <textarea
+                  value={heroReviewText}
+                  onChange={(e) => setHeroReviewText(e.target.value)}
+                  placeholder="El sabor es increíblemente suave y la presentación fue perfecta para mi boda civil."
+                  rows={3}
+                  className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-800 dark:text-white resize-none"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-mono uppercase text-zinc-400 mb-1">Autor</label>
+                  <input
+                    type="text"
+                    value={heroReviewAuthor}
+                    onChange={(e) => setHeroReviewAuthor(e.target.value)}
+                    placeholder="María José"
+                    className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-800 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-mono uppercase text-zinc-400 mb-1">Rol</label>
+                  <input
+                    type="text"
+                    value={heroReviewRole}
+                    onChange={(e) => setHeroReviewRole(e.target.value)}
+                    placeholder="Novia"
+                    className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-800 dark:text-white"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[9px] font-mono uppercase text-zinc-400 mb-1">Calificación (Estrellas)</label>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center space-x-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setHeroReviewRating(star)}
+                        className={`text-lg transition-all cursor-pointer hover:scale-110 ${
+                          star <= heroReviewRating ? 'text-amber-400' : 'text-zinc-300 dark:text-zinc-600'
+                        }`}
+                        style={star <= heroReviewRating ? {filter: 'drop-shadow(0 0 3px rgba(251,191,36,0.3))'} : {}}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                  <span className="text-[10px] font-mono text-zinc-400">{heroReviewRating} de 5 estrellas</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

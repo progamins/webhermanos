@@ -87,8 +87,7 @@ export default function App() {
       preloadImages(urls);
       setTimeout(() => {
         for (const url of urls) {
-          const origin = imageMemoryCache.has(url) ? 'memory_cache' : 'network';
-          console.log(`[PERF] Imagen cargada desde: ${origin} | ${url.substring(0, 60)}...`);
+          imageMemoryCache.has(url);
         }
       }, 100);
     }
@@ -384,6 +383,9 @@ export default function App() {
   return (
     <div className="min-h-screen relative dot-pattern" style={{backgroundColor: 'var(--theme-bg)', color: 'var(--theme-text)'}}>
       <GoogleAnalytics />
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-brand-500 focus:text-white focus:rounded-full focus:text-xs focus:font-bold focus:uppercase focus:tracking-wider">
+        Saltar al contenido principal
+      </a>
 
       {/* Entrada animada */}
       <AnimatePresence>
@@ -437,13 +439,13 @@ export default function App() {
       {/* Contenido principal */}
       <AnimatePresence mode="wait">
         {currentView === 'tracking' ? (
-          <motion.main key="tracking-page" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+          <motion.main key="tracking-page" id="main-content" role="main" variants={pageVariants} initial="initial" animate="animate" exit="exit">
             <Suspense fallback={<SectionFallback />}>
               <OrderTracking onBackToHome={() => handleViewChange('inicio')} />
             </Suspense>
           </motion.main>
         ) : (
-          <motion.div key="home-pages" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+          <motion.div key="home-pages" id="main-content" role="main" variants={pageVariants} initial="initial" animate="animate" exit="exit">
             <Hero onViewCatalog={() => scrollToSection('catalogo')} onViewHistory={() => scrollToSection('historia')} config={config} />
             <Suspense fallback={<SectionFallback />}>
               <Catalog products={products} onSelectCustomize={(prod) => setSelectedProductForCustomize(prod)} />
@@ -479,7 +481,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Footer */}
-      <footer className="py-16" style={{backgroundColor: 'var(--theme-bg-alt)', color: 'var(--theme-text)', borderTop: '1px solid var(--theme-border)'}}>
+      <footer className="py-16" style={{backgroundColor: 'var(--theme-bg-alt)', color: 'var(--theme-text)', borderTop: '1px solid var(--theme-border)'}} role="contentinfo">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <span className="font-serif text-2xl font-bold tracking-tight">Maison Rosas</span>
@@ -492,17 +494,17 @@ export default function App() {
             <ul className="space-y-2 text-xs" style={{color: 'var(--theme-text-secondary)'}}>
               <li>{config?.address || 'Av. Ricardo Palma 213, Sánchez Cerro'}</li>
               <li>Sullana, Piura, Perú</li>
-              <li><a href={`mailto:${config?.email || 'edwinraulrosasalbines@gmail.com'}`} className="hover:opacity-80 transition-opacity" style={{color: 'var(--theme-text-secondary)'}}>{config?.email || 'edwinraulrosasalbines@gmail.com'}</a></li>
-              <li><a href={`https://wa.me/${config?.whatsappNumber || '51902568187'}`} target="_blank" rel="noreferrer" className="hover:opacity-80 transition-opacity" style={{color: 'var(--theme-text-secondary)'}}>+{config?.whatsappNumber || '51902568187'}</a></li>
+              <li><a href={`mailto:${config?.email || 'edwinraulrosasalbines@gmail.com'}`} className="hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded" style={{color: 'var(--theme-text-secondary)'}}>{config?.email || 'edwinraulrosasalbines@gmail.com'}</a></li>
+              <li><a href={`https://wa.me/${config?.whatsappNumber || '51902568187'}`} target="_blank" rel="noreferrer" className="hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded" style={{color: 'var(--theme-text-secondary)'}}>+{config?.whatsappNumber || '51902568187'}</a></li>
             </ul>
           </div>
           <div>
             <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-brand-400 mb-4">Enlaces</h4>
             <ul className="space-y-2 text-xs" style={{color: 'var(--theme-text-secondary)'}}>
-              <li><button onClick={() => scrollToSection('inicio')} className="transition-opacity hover:opacity-80 cursor-pointer">Inicio</button></li>
-              <li><button onClick={() => scrollToSection('historia')} className="transition-opacity hover:opacity-80 cursor-pointer">Nuestra Historia</button></li>
-              <li><button onClick={() => scrollToSection('catalogo')} className="transition-opacity hover:opacity-80 cursor-pointer">Catálogo de Modelos</button></li>
-              <li><button onClick={() => scrollToSection('opiniones')} className="transition-opacity hover:opacity-80 cursor-pointer">Opiniones de Clientes</button></li>
+              <li><button onClick={() => scrollToSection('inicio')} className="transition-opacity hover:opacity-80 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded">Inicio</button></li>
+              <li><button onClick={() => scrollToSection('historia')} className="transition-opacity hover:opacity-80 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded">Nuestra Historia</button></li>
+              <li><button onClick={() => scrollToSection('catalogo')} className="transition-opacity hover:opacity-80 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded">Catálogo de Modelos</button></li>
+              <li><button onClick={() => scrollToSection('opiniones')} className="transition-opacity hover:opacity-80 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded">Opiniones de Clientes</button></li>
             </ul>
           </div>
           <div>

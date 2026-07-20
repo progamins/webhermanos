@@ -385,7 +385,7 @@ export default function AdminOrders({ orders, setOrders, onRefreshData, showToas
                     <td className="px-3 py-3 border-r border-zinc-100 dark:border-zinc-800/50">
                       {isEditing ? (
                         <input value={editData.customerName ?? ord.customerName} onChange={e => setEditData(p => ({ ...p, customerName: e.target.value }))}
-                          className="w-full px-2 py-1.5 bg-white border-2 border-brand-400 rounded-lg text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-brand-500/30 shadow-sm" autoFocus />
+                          className="w-full px-2 py-1.5 bg-white dark:bg-zinc-800 border-2 border-brand-400 dark:border-brand-600 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-brand-500/30 shadow-sm" autoFocus />
                       ) : (
                         <div>
                           <span className="font-semibold text-zinc-800 dark:text-zinc-200 text-xs">{ord.customerName}</span>
@@ -398,7 +398,7 @@ export default function AdminOrders({ orders, setOrders, onRefreshData, showToas
                     <td className="px-3 py-3 border-r border-zinc-100 dark:border-zinc-800/50">
                       {isEditing ? (
                         <input value={editData.productName ?? ord.productName} onChange={e => setEditData(p => ({ ...p, productName: e.target.value }))}
-                          className="w-full px-2 py-1.5 bg-white border-2 border-brand-400 rounded-lg text-xs text-zinc-800 focus:outline-none" />
+                          className="w-full px-2 py-1.5 bg-white dark:bg-zinc-800 border-2 border-brand-400 dark:border-brand-600 rounded-lg text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none" />
                       ) : (
                         <div>
                           <span className="text-brand-700 dark:text-brand-300 font-medium text-xs">{ord.productName}</span>
@@ -427,9 +427,9 @@ export default function AdminOrders({ orders, setOrders, onRefreshData, showToas
                       {isEditing ? (
                         <div className="space-y-1.5">
                           <input value={editData.flavor ?? ord.flavor} onChange={e => setEditData(p => ({ ...p, flavor: e.target.value }))}
-                            placeholder="Sabor" className="w-full px-2 py-1 bg-white border border-zinc-300 rounded text-[10px] focus:outline-none focus:border-brand-400" />
+                            placeholder="Sabor" className="w-full px-2 py-1 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded text-[10px] focus:outline-none focus:border-brand-400 dark:text-white" />
                           <input value={editData.size ?? ord.size} onChange={e => setEditData(p => ({ ...p, size: e.target.value }))}
-                            placeholder="Tamaño" className="w-full px-2 py-1 bg-white border border-zinc-300 rounded text-[10px] focus:outline-none focus:border-brand-400" />
+                            placeholder="Tamaño" className="w-full px-2 py-1 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded text-[10px] focus:outline-none focus:border-brand-400 dark:text-white" />
                         </div>
                       ) : (
                         <div className="text-[10px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
@@ -448,7 +448,7 @@ export default function AdminOrders({ orders, setOrders, onRefreshData, showToas
                     <td className="px-3 py-3 border-r border-zinc-100 dark:border-zinc-800/50 text-right">
                       {isEditing ? (
                         <input type="number" value={editData.totalPrice ?? ord.totalPrice} onChange={e => setEditData(p => ({ ...p, totalPrice: Number(e.target.value) }))}
-                          className="w-full px-2 py-1.5 bg-white border-2 border-brand-400 rounded-lg text-xs font-mono text-right focus:outline-none" />
+                          className="w-full px-2 py-1.5 bg-white dark:bg-zinc-800 border-2 border-brand-400 dark:border-brand-600 rounded-lg text-xs font-mono text-right dark:text-zinc-200 focus:outline-none" />
                       ) : (
                         <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100 text-xs">S/.{ord.totalPrice}</span>
                       )}
@@ -458,7 +458,7 @@ export default function AdminOrders({ orders, setOrders, onRefreshData, showToas
                     <td className="px-3 py-3 border-r border-zinc-100 dark:border-zinc-800/50">
                       {isEditing ? (
                         <select value={(editData.status as string) || ord.status} onChange={e => setEditData(p => ({ ...p, status: e.target.value as any }))}
-                          className="w-full px-2 py-1.5 bg-white border-2 border-brand-400 rounded-lg text-[10px] focus:outline-none cursor-pointer">
+                          className="w-full px-2 py-1.5 bg-white dark:bg-zinc-800 border-2 border-brand-400 dark:border-brand-600 rounded-lg text-[10px] dark:text-zinc-200 focus:outline-none cursor-pointer">
                           {ALL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
                       ) : (
@@ -544,7 +544,7 @@ export default function AdminOrders({ orders, setOrders, onRefreshData, showToas
                         <div className="mt-3 pt-3 border-t border-dashed border-purple-200 dark:border-purple-900/30">
                           <div className="flex items-center gap-1.5 mb-2">
                             <Camera className="h-3 w-3 text-purple-500" />
-                            <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-purple-600">Fotos del Progreso</span>
+                            <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">Fotos del Progreso</span>
                           </div>
 
                           {/* Existing photos */}
@@ -563,7 +563,7 @@ export default function AdminOrders({ orders, setOrders, onRefreshData, showToas
                                       <X className="h-2.5 w-2.5" />
                                     </button>
                                   </div>
-                                  <span className="block text-[6px] font-mono text-zinc-400 text-center mt-0.5 truncate max-w-14">{photo.stage}</span>
+                                  <span className="block text-[6px] font-mono text-zinc-400 dark:text-zinc-500 text-center mt-0.5 truncate max-w-14">{photo.stage}</span>
                                 </div>
                               ))}
                             </div>
@@ -588,12 +588,12 @@ export default function AdminOrders({ orders, setOrders, onRefreshData, showToas
                               placeholder="¿Qué se muestra?"
                               value={photoCaption}
                               onChange={(e) => setPhotoCaption(e.target.value)}
-                              className="flex-1 px-2 py-1 bg-purple-50/50 border border-purple-200 rounded-md text-[9px] placeholder-zinc-400 focus:outline-none focus:border-purple-400"
+                              className="flex-1 px-2 py-1 bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-md text-[9px] placeholder-zinc-400 dark:text-zinc-300 focus:outline-none focus:border-purple-400"
                             />
                             <select
                               value={photoStage}
                               onChange={(e) => setPhotoStage(e.target.value as any)}
-                              className="px-1.5 py-1 bg-purple-50/50 border border-purple-200 rounded-md text-[8px] font-mono text-zinc-600 focus:outline-none cursor-pointer">
+                              className="px-1.5 py-1 bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-md text-[8px] font-mono text-zinc-600 dark:text-zinc-300 focus:outline-none cursor-pointer">
                               <option value="bizcocho">Bizcocho</option>
                               <option value="decoracion">Decoración</option>
                               <option value="final">Final</option>

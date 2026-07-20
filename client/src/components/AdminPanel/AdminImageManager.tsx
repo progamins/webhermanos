@@ -4,7 +4,7 @@ import {
   HardDrive, Trash2, Search, RefreshCw, ExternalLink, Image,
   FileImage, FileText, Loader2, ChevronDown, ChevronUp,
   AlertTriangle, Check, X, Globe, FolderOpen, UploadCloud,
-  ShieldAlert, ShieldCheck
+  ShieldAlert, ShieldCheck, Database, Brush, Copy
 } from 'lucide-react';
 import { showToast } from '../../utils/toast';
 
@@ -106,6 +106,19 @@ export default function AdminImageManager() {
   const [auditData, setAuditData] = useState<AuditResponse | null>(null);
   const [auditLoading, setAuditLoading] = useState(false);
   const [showAudit, setShowAudit] = useState(false);
+
+  // Diagnostics & orphan cleanup state
+  const [backfilling, setBackfilling] = useState(false);
+  const [cleaningOrphans, setCleaningOrphans] = useState(false);
+  const [showOrphansPanel, setShowOrphansPanel] = useState(false);
+  const [orphanFiles, setOrphanFiles] = useState<string[]>([]);
+
+  // Duplicate detection state
+  const [duplicatesLoading, setDuplicatesLoading] = useState(false);
+  const [duplicateGroups, setDuplicateGroups] = useState<any[]>([]);
+  const [showDuplicates, setShowDuplicates] = useState(false);
+  const [dupSummary, setDupSummary] = useState({ removable: 0, bytes: 0, formatted: '' });
+  const [deletingUnused, setDeletingUnused] = useState(false);
 
   const token = localStorage.getItem('maison_admin_token') || '';
 
@@ -238,6 +251,150 @@ export default function AdminImageManager() {
     }
   };
 
+  const fetchDiagnostics = async () => {
+    try {
+      const res = await fetch('/api/admin/diagnostics', {
+        headers: { 'x-admin-token': token }
+      });
+      const json = await res.json();
+      if (json.success && json.integrity) {
+        setOrphanFiles(json.integrity.orphanedFiles || []);
+        setShowOrphansPanel(true);
+        if (json.integrity.orphanedCount > 0) {
+          showToast(`Se encontraron ${json.integrity.orphanedCount} archivo(s) huérfano(s).`, 'info', '🔍 Diagnóstico');
+        } else {
+          showToast('No hay archivos huérfanos. Todo en orden.', 'success', '✅ Diagnóstico');
+        }
+      } else {
+        showToast(json.error || 'Error en diagnóstico.', 'error', 'Diagnóstico');
+      }
+    } catch {
+      showToast('Error de conexión al ejecutar diagnóstico.', 'error', 'Diagnóstico');
+    }
+  };
+
+  const handleBackfill = async () => {
+    setBackfilling(true);
+    try {
+      const res = await fetch('/api/admin/storage/backfill', {
+        method: 'POST',
+        headers: { 'x-admin-token': token }
+      });
+      const json = await res.json();
+      if (json.success) {
+        showToast(`${json.registeredCount} archivo(s) registrado(s). ${json.skippedCount} omitido(s).`, 'success', '📦 Backfill completo');
+        fetchFiles();
+        fetchDiagnostics();
+      } else {
+        showToast(json.error || 'Error en backfill.', 'error', 'Backfill');
+      }
+    } catch {
+      showToast('Error de conexión en backfill.', 'error', 'Backfill');
+    } finally {
+      setBackfilling(false);
+    }
+  };
+
+  const handleCleanupOrphans = async () => {
+    if (!confirm(`¿Eliminar ${orphanFiles.length} archivo(s) huérfano(s) permanentemente?\n\nEstos archivos no están referenciados en ninguna tabla de la base de datos.`)) return;
+    setCleaningOrphans(true);
+    try {
+      const res = await fetch('/api/admin/storage/cleanup-orphans', {
+        method: 'POST',
+        headers: { 'x-admin-token': token }
+      });
+      const json = await res.json();
+      if (json.success) {
+        showToast(`${json.deletedCount} archivo(s) huérfano(s) eliminado(s).`, 'success', '🧹 Limpieza completa');
+        setOrphanFiles([]);
+        setShowOrphansPanel(false);
+        fetchFiles();
+      } else {
+        showToast(json.error || 'Error en limpieza.', 'error', 'Limpieza');
+      }
+    } catch {
+      showToast('Error de conexión en limpieza.', 'error', 'Limpieza');
+    } finally {
+      setCleaningOrphans(false);
+    }
+  };
+
+  const fetchDuplicates = async () => {
+    setDuplicatesLoading(true);
+    setShowDuplicates(true);
+    try {
+      const res = await fetch('/api/admin/storage/find-duplicates', {
+        method: 'POST',
+        headers: { 'x-admin-token': token }
+      });
+      const json = await res.json();
+      if (json.success) {
+        setDuplicateGroups(json.duplicateGroups || []);
+        setDupSummary({
+          removable: json.totalRemovable,
+          bytes: json.totalBytesRemovable,
+          formatted: json.totalSizeRemovableFormatted,
+        });
+        if (json.groupsCount === 0) {
+          showToast('No se encontraron imágenes duplicadas.', 'success', '🔍 Sin duplicados');
+        } else {
+          showToast(`Se encontraron ${json.groupsCount} grupo(s) de duplicados (${json.totalRemovable} archivos removibles, ${json.totalSizeRemovableFormatted}).`, 'info', '📋 Duplicados');
+        }
+      } else {
+        showToast(json.error || 'Error al buscar duplicados.', 'error', 'Duplicados');
+      }
+    } catch {
+      showToast('Error de conexión al buscar duplicados.', 'error', 'Duplicados');
+    } finally {
+      setDuplicatesLoading(false);
+    }
+  };
+
+  const handleDeleteUnusedDuplicates = async () => {
+    if (dupSummary.removable === 0) return;
+    if (!confirm(`¿Eliminar permanentemente ${dupSummary.removable} archivo(s) duplicado(s) no usado(s)?\n\nSe liberarán ${dupSummary.formatted} de espacio en disco.`)) return;
+
+    setDeletingUnused(true);
+    // Collect all unused filenames from duplicate groups
+    const unusedFiles = duplicateGroups.flatMap((group: any) =>
+      group.files.filter((f: any) => !f.used).map((f: any) => ({
+        fullPath: `/uploads/${f.filename}`,
+        url: `/uploads/${f.filename}`,
+        name: f.filename,
+        folder: 'uploads',
+        size: f.size,
+        contentType: 'image/webp',
+        timeCreated: null,
+        updated: null,
+        downloadUrl: `/uploads/${f.filename}`,
+      }))
+    );
+
+    try {
+      const res = await fetch('/api/admin/storage/delete-bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': token
+        },
+        body: JSON.stringify({ files: unusedFiles })
+      });
+      const json = await res.json();
+      if (json.success) {
+        showToast(`${json.deleted} duplicado(s) no usado(s) eliminado(s)${json.errors > 0 ? ` (${json.errors} error(es))` : ''}. ${dupSummary.formatted} liberados.`, 'success', '🗑️ Limpieza de duplicados');
+        // Refresh files and re-run duplicate detection
+        await fetchFiles();
+        await fetchDuplicates();
+      } else {
+        showToast(json.error || 'Error al eliminar duplicados.', 'error', 'Error');
+      }
+    } catch {
+      showToast('Error de conexión al eliminar duplicados.', 'error', 'Error');
+    } finally {
+      setDeletingUnused(false);
+    }
+  };
+
   const fetchAudit = async () => {
     setAuditLoading(true);
     try {
@@ -357,6 +514,27 @@ export default function AdminImageManager() {
           </div>
 
           <div className="flex items-center space-x-2">
+            {/* Diagnostics button */}
+            <button onClick={fetchDiagnostics}
+              className="px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-500 hover:text-brand-500 transition-all cursor-pointer flex items-center space-x-1.5 text-[10px] font-mono font-bold uppercase tracking-wider"
+              title="Diagnosticar archivos huérfanos">
+              <Database className="h-3.5 w-3.5" />
+              <span>Diagnóstico</span>
+            </button>
+            {/* Backfill button */}
+            <button onClick={handleBackfill} disabled={backfilling}
+              className="px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-500 hover:text-brand-500 transition-all cursor-pointer flex items-center space-x-1.5 disabled:opacity-50 text-[10px] font-mono font-bold uppercase tracking-wider"
+              title="Registrar archivos existentes en la BD">
+              {backfilling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UploadCloud className="h-3.5 w-3.5" />}
+              <span>Backfill</span>
+            </button>
+            {/* Find Duplicates button */}
+            <button onClick={fetchDuplicates} disabled={duplicatesLoading}
+              className="px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-500 hover:text-brand-500 transition-all cursor-pointer flex items-center space-x-1.5 disabled:opacity-50 text-[10px] font-mono font-bold uppercase tracking-wider"
+              title="Encontrar imágenes duplicadas por contenido">
+              {duplicatesLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Copy className="h-3.5 w-3.5" />}
+              <span>Duplicados</span>
+            </button>
             {/* URL Audit button */}
             <button onClick={fetchAudit} disabled={auditLoading}
               className="px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-500 hover:text-brand-500 transition-all cursor-pointer flex items-center space-x-1.5 disabled:opacity-50 text-[10px] font-mono font-bold uppercase tracking-wider"
@@ -740,6 +918,219 @@ export default function AdminImageManager() {
                 No hay URLs locales ni de Unsplash en la base de datos.
               </p>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* ── DUPLICATE FILES PANEL ── */}
+      {showDuplicates && (
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Copy className={`h-5 w-5 ${duplicateGroups.length > 0 ? 'text-amber-500' : 'text-emerald-500'}`} />
+              <h4 className="text-sm font-mono font-bold uppercase tracking-wider text-zinc-800 dark:text-white">
+                Imágenes Duplicadas
+              </h4>
+            </div>
+            <button onClick={() => { setShowDuplicates(false); setDuplicateGroups([]); }}
+              className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg cursor-pointer">
+              <X className="h-4 w-4 text-zinc-400" />
+            </button>
+          </div>
+
+          {duplicatesLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 text-brand-500 animate-spin" />
+              <span className="ml-2 text-xs font-mono text-zinc-400">Calculando hashes SHA256...</span>
+            </div>
+          ) : duplicateGroups.length === 0 ? (
+            <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/30 rounded-2xl p-4">
+              <p className="text-[10px] font-mono text-emerald-700 dark:text-emerald-300 leading-relaxed">
+                <strong>✅ No hay imágenes duplicadas.</strong> Todos los archivos tienen contenido único.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Summary banner */}
+              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded-2xl p-4">
+                <p className="text-[10px] font-mono text-amber-700 dark:text-amber-300 leading-relaxed">
+                  <strong>📋 {duplicateGroups.length} grupo(s) de duplicados encontrados.</strong><br />
+                  <strong>{dupSummary.removable}</strong> archivo(s) no están siendo usados por la web y pueden eliminarse para liberar <strong>{dupSummary.formatted}</strong>.
+                  Los archivos marcados como <span className="text-emerald-600 font-bold">✓ En uso</span> están referenciados en la base de datos.
+                </p>
+              </div>
+
+              {/* Groups */}
+              <div className="space-y-4">
+                {duplicateGroups.map((group: any, gi: number) => {
+                  const usedFiles = group.files.filter((f: any) => f.used);
+                  const unusedFiles = group.files.filter((f: any) => !f.used);
+
+                  return (
+                    <div key={gi} className="border border-zinc-100 dark:border-zinc-800 rounded-2xl overflow-hidden">
+                      {/* Group header */}
+                      <div className="bg-zinc-50 dark:bg-zinc-950 px-4 py-2.5 flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800">
+                        <div className="flex items-center space-x-3">
+                          <span className="text-[9px] font-mono font-bold text-zinc-400 uppercase">Grupo #{gi + 1}</span>
+                          <span className="text-[10px] font-mono text-zinc-500">Hash: {group.hash}</span>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <span className="text-[9px] font-mono text-zinc-500">
+                            {group.files.length} archivos · {formatBytes(group.savedSpace)} ahorrables
+                          </span>
+                          {unusedFiles.length > 0 && (
+                            <span className="px-2 py-0.5 bg-red-100 dark:bg-red-950/30 text-red-600 dark:text-red-400 rounded text-[8px] font-mono font-bold">
+                              {unusedFiles.length} no usado(s) 🗑️
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Files table */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse text-[10px]">
+                          <thead>
+                            <tr className="bg-zinc-50/50 dark:bg-zinc-950/50">
+                              <th className="px-3 py-2 text-left font-mono font-bold text-zinc-400 uppercase">Archivo</th>
+                              <th className="px-3 py-2 text-right font-mono font-bold text-zinc-400 uppercase">Tamaño</th>
+                              <th className="px-3 py-2 text-center font-mono font-bold text-zinc-400 uppercase w-24">Estado</th>
+                              <th className="px-3 py-2 text-left font-mono font-bold text-zinc-400 uppercase">Uso</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {group.files.map((file: any, fi: number) => (
+                              <tr key={fi} className={`border-b border-zinc-50 dark:border-zinc-800/30 ${file.used ? '' : 'bg-red-50/30 dark:bg-red-950/10'}`}>
+                                <td className="px-3 py-2 font-mono">
+                                  <span className={file.used ? 'text-zinc-700 dark:text-zinc-300' : 'text-red-600 dark:text-red-400 font-medium'}>
+                                    {file.filename}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 text-right font-mono text-zinc-500">{formatBytes(file.size)}</td>
+                                <td className="px-3 py-2 text-center">
+                                  {file.used ? (
+                                    <span className="inline-flex items-center px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded text-[8px] font-mono font-bold">
+                                      ✓ En uso
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center px-2 py-0.5 bg-red-100 dark:bg-red-950/30 text-red-600 dark:text-red-400 rounded text-[8px] font-mono font-bold">
+                                      ✗ No usado
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 font-mono text-zinc-500">
+                                  {file.usage.length > 0 ? (
+                                    <span className="text-[9px]">{file.usage.join(', ')}</span>
+                                  ) : (
+                                    <span className="text-[9px] text-zinc-400 italic">Sin referencia</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Bottom recommendation + delete button */}
+              {dupSummary.removable > 0 && (
+                <div className="space-y-3">
+                  <div className="bg-brand-50 dark:bg-brand-950/20 border border-brand-200 dark:border-brand-900/30 rounded-2xl p-4">
+                    <p className="text-[10px] font-mono text-brand-700 dark:text-brand-300 leading-relaxed">
+                      <strong>💡 Recomendación:</strong> Los {dupSummary.removable} archivo(s) marcados como <strong>"No usado"</strong> no están
+                      referenciados en ninguna tabla de la base de datos y pueden eliminarse de forma segura
+                      para liberar <strong>{dupSummary.formatted}</strong> de espacio en disco.
+                    </p>
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleDeleteUnusedDuplicates}
+                      disabled={deletingUnused}
+                      className="px-6 py-3 bg-red-500 hover:bg-red-600 disabled:bg-red-400 text-white rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider flex items-center space-x-2 transition-all cursor-pointer shadow-md hover:shadow-lg active:scale-[0.97]"
+                    >
+                      {deletingUnused ? (
+                        <><Loader2 className="h-4 w-4 animate-spin" /><span>Eliminando...</span></>
+                      ) : (
+                        <><Trash2 className="h-4 w-4" /><span>Eliminar {dupSummary.removable} duplicado(s) no usado(s) ({dupSummary.formatted})</span></>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── ORPHANED FILES PANEL ── */}
+      {showOrphansPanel && (
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-3xl p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className={`h-5 w-5 ${orphanFiles.length > 0 ? 'text-amber-500' : 'text-emerald-500'}`} />
+              <h4 className="text-sm font-mono font-bold uppercase tracking-wider text-zinc-800 dark:text-white">
+                Archivos Huérfanos
+              </h4>
+            </div>
+            <button onClick={() => { setShowOrphansPanel(false); setOrphanFiles([]); }}
+              className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg cursor-pointer">
+              <X className="h-4 w-4 text-zinc-400" />
+            </button>
+          </div>
+
+          {orphanFiles.length === 0 ? (
+            <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/30 rounded-2xl p-4">
+              <p className="text-[10px] font-mono text-emerald-700 dark:text-emerald-300 leading-relaxed">
+                <strong>✅ No hay archivos huérfanos.</strong> Todos los archivos en el directorio de uploads están referenciados en la base de datos.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded-2xl p-4">
+                <p className="text-[10px] font-mono text-amber-700 dark:text-amber-300 leading-relaxed">
+                  <strong>⚠️ {orphanFiles.length} archivo(s) huérfano(s) encontrado(s):</strong> Estos archivos existen en el servidor pero no están
+                  referenciados en ninguna tabla de la base de datos. Puedes eliminarlos de forma segura.
+                </p>
+              </div>
+
+              <div className="border border-zinc-100 dark:border-zinc-800 rounded-2xl overflow-hidden max-h-60 overflow-y-auto">
+                <table className="w-full border-collapse text-[10px]">
+                  <thead className="sticky top-0 z-10">
+                    <tr className="bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-100 dark:border-zinc-800">
+                      <th className="px-3 py-2 text-left font-mono font-bold text-zinc-400 uppercase tracking-wider">Archivo</th>
+                      <th className="px-3 py-2 text-right font-mono font-bold text-zinc-400 uppercase tracking-wider">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orphanFiles.map((file, i) => (
+                      <tr key={i} className="border-b border-zinc-50 dark:border-zinc-800/30">
+                        <td className="px-3 py-2 font-mono text-zinc-600 dark:text-zinc-400">{file}</td>
+                        <td className="px-3 py-2 text-right">
+                          <span className="text-[8px] font-mono text-red-400 bg-red-50 dark:bg-red-950/20 px-2 py-0.5 rounded">Huérfano</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <button onClick={() => { setShowOrphansPanel(false); setOrphanFiles([]); }}
+                  className="px-4 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-500 hover:bg-zinc-50 cursor-pointer">
+                  Cancelar
+                </button>
+                <button onClick={handleCleanupOrphans} disabled={cleaningOrphans}
+                  className="px-4 py-2 bg-red-500 hover:bg-red-600 disabled:bg-red-400 text-white rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider flex items-center space-x-1.5 transition-all cursor-pointer shadow-sm">
+                  {cleaningOrphans ? (
+                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /><span>Eliminando...</span></>
+                  ) : (
+                    <><Brush className="h-3.5 w-3.5" /><span>Eliminar {orphanFiles.length} huérfano(s)</span></>
+                  )}
+                </button>
+              </div>
+            </>
           )}
         </div>
       )}

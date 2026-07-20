@@ -124,6 +124,10 @@ export interface AppConfig {
   logoUrl?: string;
   faviconUrl?: string;
   imageQuality?: number; // Calidad de compresión de imágenes 0.1-1.0 (default 0.8)
+  heroReviewText?: string; // Testimonio destacado en el Hero
+  heroReviewAuthor?: string; // Autor del testimonio
+  heroReviewRole?: string; // Rol del autor (ej: "Novia")
+  heroReviewRating?: number; // Calificación en estrellas 1-5
 }
 
 export type AdminRole = 'admin' | 'analyst' | 'stock_manager';

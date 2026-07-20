@@ -118,7 +118,7 @@ export default function VoucherModal({ order, isOpen, onClose }: VoucherModalPro
           {/* Printable Ticket */}
           <div 
             id="maison-print-ticket" 
-            className="w-full bg-[#FCFBF7] text-zinc-800 p-6 sm:p-8 rounded-2xl border border-dashed border-zinc-300 shadow-inner font-sans relative flex flex-col space-y-5"
+            className="w-full bg-[#FCFBF7] dark:bg-[#1C1A18] text-zinc-800 dark:text-zinc-200 p-6 sm:p-8 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 shadow-inner font-sans relative flex flex-col space-y-5"
           >
             {/* Watermark Logo Backing */}
             <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
@@ -126,31 +126,31 @@ export default function VoucherModal({ order, isOpen, onClose }: VoucherModalPro
             </div>
 
             {/* Shop branding */}
-            <div className="text-center space-y-1.5 border-b border-zinc-200 pb-4">
+            <div className="text-center space-y-1.5 border-b border-zinc-200 dark:border-zinc-700 pb-4">
               <span className="inline-block px-2.5 py-0.5 bg-brand-50 border border-brand-200/50 text-brand-700 rounded-full text-[9px] font-mono font-bold tracking-widest uppercase">
                 ★ BOLETA DE VENTA ★
               </span>
-              <h2 className="font-serif font-extrabold text-2xl text-zinc-900 tracking-tight">
+              <h2 className="font-serif font-extrabold text-2xl text-zinc-900 dark:text-white tracking-tight">
                 Maison Rosas
               </h2>
-              <p className="text-[10px] text-zinc-500 italic font-serif">
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 italic font-serif">
                 Pastelería de Autor & Repostería Fina
               </p>
-              <p className="text-[9px] font-mono text-zinc-400 leading-snug">
+              <p className="text-[9px] font-mono text-zinc-400 dark:text-zinc-500 leading-snug">
                 Av. Ricardo Palma 213, Urb. Sánchez Cerro, Sullana, Perú<br/>
                 Contacto: +51 902 568 187 • RUC: 10457489251
               </p>
             </div>
 
             {/* Meta info block */}
-            <div className="grid grid-cols-2 gap-y-2 text-[10px] font-mono border-b border-zinc-150 pb-3">
+            <div className="grid grid-cols-2 gap-y-2 text-[10px] font-mono border-b border-zinc-150 dark:border-zinc-700 pb-3">
               <div>
                 <span className="text-zinc-400 block uppercase">Comprobante N°</span>
-                <span className="font-bold text-zinc-800">MR-{order.trackingCode}</span>
+                <span className="font-bold text-zinc-800 dark:text-zinc-200">MR-{order.trackingCode}</span>
               </div>
               <div className="text-right">
                 <span className="text-zinc-400 block uppercase">Fecha de Emisión</span>
-                <span className="font-bold text-zinc-800">{order.fechaPago || order.date}</span>
+                <span className="font-bold text-zinc-800 dark:text-zinc-200">{order.fechaPago || order.date}</span>
               </div>
               <div>
                 <span className="text-zinc-400 block uppercase">Operación</span>
@@ -161,26 +161,26 @@ export default function VoucherModal({ order, isOpen, onClose }: VoucherModalPro
               </div>
               <div className="text-right">
                 <span className="text-zinc-400 block uppercase">Forma de Pago</span>
-                <span className="font-bold text-zinc-800">{order.paymentMethod || 'Verificado'}</span>
+                <span className="font-bold text-zinc-800 dark:text-zinc-200">{order.paymentMethod || 'Verificado'}</span>
               </div>
             </div>
 
             {/* Customer info block */}
-            <div className="space-y-1 text-xs border-b border-zinc-150 pb-3">
+            <div className="space-y-1 text-xs border-b border-zinc-150 dark:border-zinc-700 pb-3">
               <h4 className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider mb-1.5">
                 Datos del Cliente
               </h4>
-              <div className="flex items-center gap-1.5 text-zinc-700">
-                <span className="font-bold text-zinc-900">{order.customerName}</span>
+              <div className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
+                <span className="font-bold text-zinc-900 dark:text-white">{order.customerName}</span>
               </div>
-              <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-mono">
+              <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">
                 <span>📞 {order.customerPhone}</span>
                 {order.customerEmail && <span>• ✉ {order.customerEmail}</span>}
               </div>
             </div>
 
             {/* Purchase Item Table */}
-            <div className="space-y-3.5 border-b border-zinc-150 pb-4">
+            <div className="space-y-3.5 border-b border-zinc-150 dark:border-zinc-700 pb-4">
               <h4 className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider">
                 Detalle del Pedido
               </h4>
@@ -188,7 +188,7 @@ export default function VoucherModal({ order, isOpen, onClose }: VoucherModalPro
               <div className="space-y-2.5">
                 <div className="flex justify-between items-start text-xs">
                   <div className="space-y-0.5">
-                    <span className="font-bold text-zinc-900 block">{order.productName}</span>
+                    <span className="font-bold text-zinc-900 dark:text-white block">{order.productName}</span>
                     <span className="text-[10px] text-zinc-500 block">
                       Porción: {order.size}
                     </span>
@@ -223,20 +223,20 @@ export default function VoucherModal({ order, isOpen, onClose }: VoucherModalPro
                 <span>I.G.V. (18% incluido)</span>
                 <span>S/. {(order.totalPrice * 0.18).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-sm font-bold text-zinc-900 border-t border-zinc-200 pt-2 font-mono">
+              <div className="flex justify-between text-sm font-bold text-zinc-900 dark:text-white border-t border-zinc-200 dark:border-zinc-700 pt-2 font-mono">
                 <span>MONTO TOTAL PAGADO</span>
                 <span className="text-brand-600 text-base">S/. {order.totalPrice.toFixed(2)}</span>
               </div>
             </div>
 
             {/* Footer seal */}
-            <div className="pt-4 border-t border-zinc-200/60 text-center space-y-2">
+            <div className="pt-4 border-t border-zinc-200/60 dark:border-zinc-700/60 text-center space-y-2">
               <div className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full text-[10px] font-bold font-mono">
                 <span>🟢</span>
                 <span>PAGO VERIFICADO POR EL ADMINISTRADOR</span>
               </div>
               
-              <div className="text-[9px] text-zinc-400 font-sans leading-normal">
+              <div className="text-[9px] text-zinc-400 dark:text-zinc-500 font-sans leading-normal">
                 Pastelería Familiar Maison Rosas de Carol & Edwin Rosas Albines.<br/>
                 ¡Gracias por permitirnos endulzar tu mesa familiar! Sullana, Piura.
               </div>

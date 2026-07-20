@@ -16,7 +16,36 @@ export function getPool(): mysql.Pool {
       queueLimit: 0,
       charset: 'utf8mb4',
       timezone: '+00:00',
+      // Connection robustness
+      connectTimeout: 10000,          // 10s timeout for initial connection
+      maxIdle: 5,                     // Keep up to 5 idle connections
+      idleTimeout: 60000,             // Close idle connections after 60s
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 10000,   // Ping every 10s to keep connection alive
     });
+
+    // Handle pool errors gracefully
+    pool.on('connection', (conn) => {
+      conn.on('error', (err) => {
+        console.error('[DB] Connection error:', (err as Error).message);
+      });
+    });
+
+    // Periodic connection health check (every 5 minutes)
+    const interval = setInterval(async () => {
+      const p = pool;
+      if (!p) {
+        clearInterval(interval);
+        return;
+      }
+      try {
+        const conn = await p.getConnection();
+        await conn.ping();
+        conn.release();
+      } catch {
+        console.warn('[DB] Health check failed — pool may need recovery');
+      }
+    }, 5 * 60 * 1000);
 
     console.log(`[DB] Connection pool created for ${env.DB_HOST}:${env.DB_PORT}/${env.DB_NAME}`);
   }
