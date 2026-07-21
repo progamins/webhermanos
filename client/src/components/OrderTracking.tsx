@@ -66,7 +66,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
         if (data.type === 'order_update' || data.type === 'new_order') {
           // Poll for our specific order update
           fetch(`/api/orders?trackingCode=${selectedOrder.trackingCode}`)
-            .then(r => r.json())
+            .then(r => { if (!r.ok) throw new Error('Order not found'); return r.json(); })
             .then(updatedOrder => {
               if (updatedOrder && !updatedOrder.error) {
                 // Status changed?

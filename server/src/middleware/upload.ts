@@ -19,18 +19,30 @@ const diskStorage = multer.diskStorage({
   },
 });
 
+const fileFilter = (req: any, file: Express.Multer.File, cb: any) => {
+  const allowedTypes = [
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+    'image/x-icon', 'image/svg+xml', 'image/vnd.microsoft.icon',
+    'application/pdf',
+  ];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error(`Formato "${file.mimetype}" no soportado. Sube JPEG, PNG, WEBP, GIF, SVG, ICO o PDF.`));
+  }
+};
+
+// Disk storage for general image uploads (products, gallery, etc.)
 export const upload = multer({
   storage: diskStorage,
   limits: { fileSize: env.MAX_FILE_SIZE },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/webp', 'image/gif',
-      'image/x-icon', 'image/svg+xml', 'image/vnd.microsoft.icon',
-    ];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error(`Formato "${file.mimetype}" no soportado. Sube JPEG, PNG, WEBP, GIF, SVG o ICO.`));
-    }
-  },
+  fileFilter,
+});
+
+// Memory storage for voucher uploads — avoids EACCES permission errors
+// caused by diskStorage + saveFromPath (read/write cycle on the same file).
+export const uploadVoucher = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: env.MAX_FILE_SIZE },
+  fileFilter,
 });

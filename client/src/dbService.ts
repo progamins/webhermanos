@@ -58,8 +58,8 @@ export const dbService = {
     return result.success ? result.orders : [];
   },
 
-  async addOrder(order: Order): Promise<void> {
-    await api.createOrder(order);
+  async addOrder(order: Omit<Order, 'id' | 'trackingCode'>): Promise<{ success: boolean; id: string; trackingCode: string }> {
+    return api.createOrder(order);
   },
 
   async updateOrderStatus(id: string, status: Order['status']): Promise<void> {

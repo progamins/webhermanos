@@ -1,7 +1,13 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { verifyAdminSession, requireRole } from '../middleware/auth.js';
+
+// Wraps async route handlers to catch rejected promises.
+// Express 4 does NOT catch async errors automatically — unhandled rejections
+// crash the server and cause Apache to return 502 Bad Gateway.
+const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) =>
+  (req: Request, res: Response, next: NextFunction) => fn(req, res, next).catch(next);
 import { loginLimiter } from '../middleware/rateLimit.js';
-import { upload } from '../middleware/upload.js';
+import { upload, uploadVoucher } from '../middleware/upload.js';
 import { authService } from '../services/AuthService.js';
 import { productService } from '../services/ProductService.js';
 import { orderService } from '../services/OrderService.js';
@@ -16,51 +22,51 @@ import { emailService } from '../services/EmailService.js';
 const router = Router();
 
 // ─── AUTH ───
-router.post('/login', loginLimiter, async (req, res) => {
+router.post('/login', loginLimiter, asyncHandler(async (req, res) => {
   const { password, role } = req.body;
   if (!password || typeof password !== 'string') {
     return res.status(400).json({ success: false, error: 'Se requiere contraseña.' });
   }
   const result = await authService.login(password, role || 'admin');
   return res.json(result);
-});
+}));
 
 router.post('/verify', verifyAdminSession, (req, res) => {
   res.json({ success: true, valid: true, role: (req as any).adminRole });
 });
 
-router.post('/logout', async (req, res) => {
+router.post('/logout', asyncHandler(async (req, res) => {
   const token = req.headers['x-admin-token'] as string;
   if (token) await authService.logout(token);
   res.json({ success: true });
-});
+}));
 
-router.post('/change-admin-password', verifyAdminSession, async (req, res) => {
+router.post('/change-admin-password', verifyAdminSession, asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   const role = (req as any).adminRole || 'admin';
   const result = await authService.changePassword(role, currentPassword, newPassword);
   res.json(result);
-});
+}));
 
-router.get('/role-passwords', verifyAdminSession, async (req, res) => {
+router.get('/role-passwords', verifyAdminSession, asyncHandler(async (req, res) => {
   const result = await authService.getRolePasswordsStatus();
   res.json(result);
-});
+}));
 
-router.post('/role-passwords', verifyAdminSession, async (req, res) => {
+router.post('/role-passwords', verifyAdminSession, asyncHandler(async (req, res) => {
   const { analystPassword, stockManagerPassword } = req.body;
   const result = await authService.saveRolePasswords(analystPassword, stockManagerPassword);
   res.json(result);
-});
+}));
 
-router.post('/send-credentials', verifyAdminSession, async (req, res) => {
+router.post('/send-credentials', verifyAdminSession, asyncHandler(async (req, res) => {
   const config = await configService.getAppConfig();
   const result = await emailService.sendCredentials(
     { admin: '****', analyst: '****', stock_manager: '****' },
     config
   );
   res.json(result);
-});
+}));
 
 // ─── ACTIVITY LOG ───
 router.get('/activity-log', verifyAdminSession, async (req, res) => {
@@ -73,10 +79,10 @@ router.get('/activity-log', verifyAdminSession, async (req, res) => {
 });
 
 // ─── PRODUCTS ───
-router.get('/products', verifyAdminSession, async (req, res) => {
+router.get('/products', verifyAdminSession, asyncHandler(async (req, res) => {
   const products = await productService.getActive();
   res.json({ success: true, products });
-});
+}));
 
 router.post('/products', verifyAdminSession, async (req, res) => {
   try {
@@ -97,18 +103,18 @@ router.post('/products', verifyAdminSession, async (req, res) => {
   }
 });
 
-router.delete('/products/:id', verifyAdminSession, async (req, res) => {
+router.delete('/products/:id', verifyAdminSession, asyncHandler(async (req, res) => {
   await productService.delete(req.params.id);
   res.json({ success: true });
-});
+}));
 
 // ─── ORDERS ───
-router.get('/orders', verifyAdminSession, async (req, res) => {
+router.get('/orders', verifyAdminSession, asyncHandler(async (req, res) => {
   const orders = await orderService.getAll();
   res.json({ success: true, orders });
-});
+}));
 
-router.post('/orders/status', verifyAdminSession, async (req, res) => {
+router.post('/orders/status', verifyAdminSession, asyncHandler(async (req, res) => {
   const { orderId, status, cancelReason } = req.body;
   const success = await orderService.updateStatus(orderId, status, (req as any).adminRole, cancelReason);
   if (success) {
@@ -117,27 +123,29 @@ router.post('/orders/status', verifyAdminSession, async (req, res) => {
   } else {
     res.status(404).json({ success: false, error: 'Pedido no encontrado.' });
   }
-});
+}));
 
-router.delete('/orders/:id', verifyAdminSession, async (req, res) => {
+router.delete('/orders/:id', verifyAdminSession, asyncHandler(async (req, res) => {
   await orderService.delete(req.params.id);
   res.json({ success: true });
-});
+}));
 
-router.post('/orders/update-full', verifyAdminSession, async (req, res) => {
+router.post('/orders/update-full', verifyAdminSession, asyncHandler(async (req, res) => {
   const { order } = req.body;
   await orderService.update(order.id, order);
   res.json({ success: true });
-});
+}));
 
-router.post('/orders/upload-voucher', verifyAdminSession, upload.single('voucher'), async (req, res) => {
+router.post('/orders/upload-voucher', verifyAdminSession, uploadVoucher.single('voucher'), async (req, res) => {
   try {
     const { orderId } = req.body;
     if (!req.file) {
       return res.status(400).json({ success: false, error: 'No se recibió el archivo.' });
     }
-    const result = await storageService.saveFromPath(
-      req.file.path, req.file.originalname, req.file.mimetype, (req as any).adminRole
+    // Use memory-stored buffer directly — avoids EACCES permission errors
+    // that occur with diskStorage + saveFromPath (read-after-write cycle).
+    const result = await storageService.saveFile(
+      req.file.buffer, req.file.originalname, req.file.mimetype, (req as any).adminRole
     );
     await orderService.update(orderId, { voucherUrl: result.url, voucherName: req.file.originalname });
     res.json({ success: true, voucherUrl: result.url });
@@ -146,23 +154,28 @@ router.post('/orders/upload-voucher', verifyAdminSession, upload.single('voucher
   }
 });
 
-router.post('/orders/delete-voucher', verifyAdminSession, async (req, res) => {
+router.post('/orders/delete-voucher', verifyAdminSession, asyncHandler(async (req, res) => {
   const { orderId, voucherPath } = req.body;
   if (voucherPath) await storageService.deleteFile(voucherPath);
   await orderService.update(orderId, { voucherUrl: '', voucherName: '' });
   res.json({ success: true });
-});
+}));
 
 router.post('/orders/update-payment', verifyAdminSession, async (req, res) => {
-  const { orderId, paymentStatus, paymentMethod, montoPagado, fechaPago, confirmedByAdmin } = req.body;
-  await orderService.update(orderId, {
-    paymentStatus, paymentMethod, montoPagado, fechaPago,
-    confirmedByAdmin: confirmedByAdmin || (req as any).adminRole,
-  });
-  res.json({ success: true });
+  try {
+    const { orderId, paymentStatus, paymentMethod, montoPagado, fechaPago, confirmedByAdmin } = req.body;
+    await orderService.update(orderId, {
+      paymentStatus, paymentMethod, montoPagado, fechaPago,
+      confirmedByAdmin: confirmedByAdmin || (req as any).adminRole,
+    });
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error('[Admin] Error al actualizar pago:', err);
+    res.status(500).json({ success: false, error: err.message || 'Error al actualizar el pago.' });
+  }
 });
 
-router.post('/orders/assign-stock', verifyAdminSession, async (req, res) => {
+router.post('/orders/assign-stock', verifyAdminSession, asyncHandler(async (req, res) => {
   const { orderId, stockId } = req.body;
   const assigned = await stockService.assignToOrder(stockId, orderId);
   if (assigned) {
@@ -171,9 +184,9 @@ router.post('/orders/assign-stock', verifyAdminSession, async (req, res) => {
   } else {
     res.status(400).json({ success: false, error: 'No hay suficiente stock disponible.' });
   }
-});
+}));
 
-router.post('/orders/progress-photo', verifyAdminSession, async (req, res) => {
+router.post('/orders/progress-photo', verifyAdminSession, asyncHandler(async (req, res) => {
   const { orderId, imageUrl, caption, stage } = req.body;
   const order = await orderService.getById(orderId);
   if (!order) return res.status(404).json({ success: false, error: 'Pedido no encontrado.' });
@@ -189,9 +202,9 @@ router.post('/orders/progress-photo', verifyAdminSession, async (req, res) => {
 
   await orderService.update(orderId, { progressPhotos: photos });
   res.json({ success: true });
-});
+}));
 
-router.post('/orders/delete-progress-photo', verifyAdminSession, async (req, res) => {
+router.post('/orders/delete-progress-photo', verifyAdminSession, asyncHandler(async (req, res) => {
   const { orderId, photoId } = req.body;
   const order = await orderService.getById(orderId);
   if (!order) return res.status(404).json({ success: false, error: 'Pedido no encontrado.' });
@@ -199,58 +212,67 @@ router.post('/orders/delete-progress-photo', verifyAdminSession, async (req, res
   const photos = (order.progressPhotos || []).filter((p: any) => p.id !== photoId);
   await orderService.update(orderId, { progressPhotos: photos });
   res.json({ success: true });
-});
+}));
 
 // ─── GALLERY ───
-router.post('/gallery', verifyAdminSession, async (req, res) => {
-  const item = await galleryService.create(req.body.item);
+router.post('/gallery', verifyAdminSession, asyncHandler(async (req, res) => {
+  const data = req.body.item;
+  // Upsert: if gallery item already exists, update it; otherwise create new
+  const existing = await galleryService.getById(data.id);
+  let item;
+  if (existing) {
+    await galleryService.update(data.id, data);
+    item = await galleryService.getById(data.id);
+  } else {
+    item = await galleryService.create(data);
+  }
   res.json({ success: true, item });
-});
+}));
 
-router.delete('/gallery/:id', verifyAdminSession, async (req, res) => {
+router.delete('/gallery/:id', verifyAdminSession, asyncHandler(async (req, res) => {
   await galleryService.delete(req.params.id);
   res.json({ success: true });
-});
+}));
 
 // ─── REVIEWS ───
-router.post('/reviews/approve', verifyAdminSession, async (req, res) => {
+router.post('/reviews/approve', verifyAdminSession, asyncHandler(async (req, res) => {
   const { reviewId } = req.body;
   await reviewService.update(reviewId, { approved: true });
   res.json({ success: true });
-});
+}));
 
-router.post('/reviews/reply', verifyAdminSession, async (req, res) => {
+router.post('/reviews/reply', verifyAdminSession, asyncHandler(async (req, res) => {
   const { reviewId, replyText } = req.body;
   await reviewService.update(reviewId, { response: replyText, approved: true });
   res.json({ success: true });
-});
+}));
 
-router.delete('/reviews/:id', verifyAdminSession, async (req, res) => {
+router.delete('/reviews/:id', verifyAdminSession, asyncHandler(async (req, res) => {
   await reviewService.delete(req.params.id);
   res.json({ success: true });
-});
+}));
 
 // ─── CONFIG ───
-router.post('/config', verifyAdminSession, async (req, res) => {
+router.post('/config', verifyAdminSession, asyncHandler(async (req, res) => {
   const updated = await configService.updateAppConfig(req.body.config);
   res.json({ success: true, config: updated });
-});
+}));
 
 // ─── STOCK ───
-router.get('/stock', verifyAdminSession, async (req, res) => {
+router.get('/stock', verifyAdminSession, asyncHandler(async (req, res) => {
   const stock = await stockService.getAll();
   res.json({ success: true, stock });
-});
+}));
 
-router.post('/stock', verifyAdminSession, async (req, res) => {
+router.post('/stock', verifyAdminSession, asyncHandler(async (req, res) => {
   const item = await stockService.create(req.body.item);
   res.json({ success: true, stock: [item] });
-});
+}));
 
-router.delete('/stock/:id', verifyAdminSession, async (req, res) => {
+router.delete('/stock/:id', verifyAdminSession, asyncHandler(async (req, res) => {
   await stockService.delete(req.params.id);
   res.json({ success: true });
-});
+}));
 
 // ─── STORAGE (Gestión de Archivos) ───
 router.get('/storage/list', verifyAdminSession, async (req, res) => {

@@ -2,6 +2,11 @@ import { GalleryRepository, GalleryRow } from '../repositories/index.js';
 
 const galleryRepo = new GalleryRepository();
 
+function formatDate(val: any): string | null {
+  if (!val) return null;
+  return new Date(val).toISOString().substring(0, 10);
+}
+
 function parseGallery(row: GalleryRow) {
   return {
     id: row.id,
@@ -9,7 +14,7 @@ function parseGallery(row: GalleryRow) {
     title: row.title,
     category: row.category,
     description: row.description,
-    date: row.date,
+    date: formatDate(row.date),
   };
 }
 
@@ -36,7 +41,7 @@ export class GalleryService {
       title: data.title,
       category: data.category || null,
       description: data.description || null,
-      date: data.date || new Date().toISOString().slice(0, 10),
+      date: formatDate(data.date) || new Date().toISOString().slice(0, 10),
     } as any);
     return parseGallery(row);
   }
@@ -47,7 +52,7 @@ export class GalleryService {
     if (data.title !== undefined) updateData.title = data.title;
     if (data.category !== undefined) updateData.category = data.category;
     if (data.description !== undefined) updateData.description = data.description;
-    if (data.date !== undefined) updateData.date = data.date;
+    if (data.date !== undefined) updateData.date = formatDate(data.date);
     return galleryRepo.update(id, updateData as any);
   }
 

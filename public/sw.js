@@ -3,7 +3,9 @@
 // Caching strategy for faster repeat visits
 // ─────────────────────────────────────────────
 
-const CACHE_NAME = 'maison-rosas-v1';
+// Bumped to v2 to force clients to discard old cached JS/CSS/assets
+// after the client rebuild (Customizer date fix, order API fixes, etc.)
+const CACHE_NAME = 'maison-rosas-v2';
 const META_KEY = '__maison_cache_meta__';
 const MAX_CACHE_SIZE = 50 * 1024 * 1024; // 50 MB limit
 

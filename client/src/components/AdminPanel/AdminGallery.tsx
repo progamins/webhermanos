@@ -17,7 +17,7 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
   // Gallery Management
   const [newGalleryTitle, setNewGalleryTitle] = useState('');
   const [newGalleryCategory, setNewGalleryCategory] = useState('Bodas');
-  const [newGalleryDate, setNewGalleryDate] = useState(new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long' }));
+  const [newGalleryDate, setNewGalleryDate] = useState(new Date().toISOString().split('T')[0]);
   const [newGalleryImageUrl, setNewGalleryImageUrl] = useState('');
   const [newGalleryDescription, setNewGalleryDescription] = useState('');
   const [isSavingGallery, setIsSavingGallery] = useState(false);
@@ -48,7 +48,7 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
     const withDefaults = {
       title: '',
       category: 'Bodas',
-      date: new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long' }),
+      date: new Date().toISOString().split('T')[0],
       imageUrl: '',
       description: '',
     };
@@ -75,8 +75,10 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
       return;
     }
     setIsSavingGallery(true);
+    // Generate a real unique ID for new items instead of using the 'new' placeholder
+    const rawId = editingGalleryItem?.id;
     const itemData: GalleryItem = {
-      id: editingGalleryItem ? editingGalleryItem.id : 'gallery_' + Date.now(),
+      id: (rawId && rawId !== 'new') ? rawId : 'gallery_' + Date.now(),
       title: newGalleryTitle, category: newGalleryCategory, date: newGalleryDate,
       imageUrl: newGalleryImageUrl, description: newGalleryDescription,
     };
@@ -216,7 +218,7 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
             <Sparkles className="h-4 w-4 mr-2 text-brand-500" />
             2. Creaciones Carol ({galleryItems.length} fotos)
           </h4>          {!editingGalleryItem && (
-            <button onClick={() => resetGalleryForm({ id: 'new', imageUrl: '', title: '', category: 'Bodas', date: new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long' }), description: '' } as GalleryItem)}
+            <button onClick={() => resetGalleryForm({ id: 'new', imageUrl: '', title: '', category: 'Bodas', date: new Date().toISOString().split('T')[0], description: '' } as GalleryItem)}
               className="inline-flex items-center space-x-1.5 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-mono font-bold uppercase tracking-wider shadow-sm cursor-pointer">
               <Plus className="h-4 w-4" />
               <span>Agregar Foto</span>
@@ -261,7 +263,7 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
               </div>
               <div>
                 <label className="block text-[9px] font-mono uppercase text-zinc-400 mb-1">Fecha / Mes de entrega</label>
-                <input type="text" required value={newGalleryDate} onChange={(e) => setNewGalleryDate(e.target.value)}
+                <input type="date" required value={newGalleryDate} onChange={(e) => setNewGalleryDate(e.target.value)}
                   className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-800 dark:text-white" />
               </div>
             </div>

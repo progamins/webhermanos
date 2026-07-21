@@ -10,7 +10,7 @@ function parseReview(row: ReviewRow) {
     rating: row.rating,
     comment: row.comment,
     cakeModel: row.cake_model,
-    date: row.date,
+    date: row.date ? new Date(row.date).toISOString().substring(0, 10) : null,
     approved: !!row.approved,
     response: row.response,
   };
@@ -40,7 +40,7 @@ export class ReviewService {
       rating: data.rating,
       comment: data.comment,
       cake_model: data.cakeModel || null,
-      date: data.date || new Date().toISOString().slice(0, 10),
+      date: data.date ? new Date(data.date).toISOString().substring(0, 10) : new Date().toISOString().slice(0, 10),
       approved: data.approved ? 1 : 0,
       response: data.response || null,
     } as any);
@@ -54,6 +54,7 @@ export class ReviewService {
     if (data.author !== undefined) updateData.author = data.author;
     if (data.rating !== undefined) updateData.rating = data.rating;
     if (data.comment !== undefined) updateData.comment = data.comment;
+    if (data.date !== undefined) updateData.date = new Date(data.date).toISOString().substring(0, 10);
     return reviewRepo.update(id, updateData as any);
   }
 

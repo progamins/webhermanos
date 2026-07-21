@@ -147,10 +147,39 @@ export default function Customizer({ product, onClose, whatsappNumber }: Customi
     setValidationError(null);
 
     try {
-      // Generate unique 6-character tracking code
-      const trackingCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      // Formulate Order object (server will assign the real trackingCode and id)
+      const newOrder: Omit<Order, 'id' | 'trackingCode'> = {
+        productId: product.id,
+        productName: product.name,
+        size: `${size.name} (${size.diameter})`,
+        flavor: `${selectedFlavor} con relleno de ${selectedFilling.name}`,
+        customerName: customerName.trim(),
+        customerEmail: customerEmail.trim().toLowerCase(),
+        customerPhone: customerPhone.trim(),
+        deliveryDate: deliveryDate,
+        deliveryTime: deliveryTime,
+        deliveryType: deliveryType,
+        deliveryAddress: deliveryType === 'domicilio' ? deliveryAddress.trim() : undefined,
+        theme: theme.trim() || 'No especificada',
+        specialNotes: specialNotes.trim() || 'Ninguna',
+        celebratedName: celebratedName.trim() || undefined,
+        customerAge: customerAge ? customerAge : undefined,
+        message: message.trim() || undefined,
+        selectedDecoration: selectedDecoration,
+        customColor: customColor.name,
+        totalPrice: totalPrice,
+        status: 'Pendiente',
+        date: new Date().toISOString().split('T')[0],
+      };
 
-      // Assemble WhatsApp message body
+      // Register order via server API — the server returns the real id and trackingCode
+      const serverResult = await dbService.addOrder(newOrder);
+
+      // Use the server-assigned id and trackingCode (they supersede any local values)
+      const finalId = serverResult.id;
+      const finalTrackingCode = serverResult.trackingCode;
+
+      // Now assemble the WhatsApp message with the REAL tracking code from server
       const formattedMessage = `✨ *NUEVA SOLICITUD DE PASTEL DE AUTOR - MAISON ROSAS* ✨
 --------------------------------------------------
 Hola Carol & Edwin, acabo de registrar mi pedido personalizado:
@@ -181,43 +210,18 @@ ${deliveryType === 'domicilio' ? `• *Dirección de Envío:* ${deliveryAddress.
 
 --------------------------------------------------
 💰 *PRESUPUESTO TOTAL ESTIMADO:* S/. ${totalPrice}
-🎫 *CÓDIGO DE SEGUIMIENTO WEB:* ${trackingCode}
+🎫 *CÓDIGO DE SEGUIMIENTO WEB:* ${finalTrackingCode}
 --------------------------------------------------
 Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario o Yape. ¡Gracias!`;
 
-      // Formulate Order object
-      const newOrder: Order = {
-        id: `ord-${Date.now()}`,
-        productId: product.id,
-        productName: product.name,
-        size: `${size.name} (${size.diameter})`,
-        flavor: `${selectedFlavor} con relleno de ${selectedFilling.name}`,
-        customerName: customerName.trim(),
-        customerEmail: customerEmail.trim().toLowerCase(),
-        customerPhone: customerPhone.trim(),
-        deliveryDate: deliveryDate,
-        deliveryTime: deliveryTime,
-        deliveryType: deliveryType,
-        deliveryAddress: deliveryType === 'domicilio' ? deliveryAddress.trim() : undefined,
-        theme: theme.trim() || 'No especificada',
-        specialNotes: specialNotes.trim() || 'Ninguna',
-        trackingCode: trackingCode,
-        celebratedName: celebratedName.trim() || undefined,
-        customerAge: customerAge ? customerAge : undefined,
-        message: message.trim() || undefined,
-        selectedDecoration: selectedDecoration,
-        customColor: customColor.name,
-        totalPrice: totalPrice,
-        status: 'Pendiente',
-        date: new Date().toISOString().split('T')[0],
-        whatsappMessage: formattedMessage
-      };
-
-      // Register order via Firestore / server API
-      await dbService.addOrder(newOrder);
-
-      // Save order info locally to display the success wizard tab
-      setSuccessOrder(newOrder);
+      // Save order info locally with the REAL data from the server
+      const confirmedOrder: Order = {
+        ...newOrder,
+        id: finalId,
+        trackingCode: finalTrackingCode,
+        whatsappMessage: formattedMessage,
+      } as Order;
+      setSuccessOrder(confirmedOrder);
 
       // Trigger Confetti
       confetti({

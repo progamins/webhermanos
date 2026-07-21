@@ -101,7 +101,17 @@ export class StorageService {
     const filename = `${uuidv4()}${ext}`;
     const filePath = path.join(this.uploadDir, filename);
 
+    // Attempt to make the directory group-writable before writing.
+    // In production the dir may be owned by www-data while PM2 runs as edwin.
+    // This is best-effort — if chmod fails, writeFile will also fail with EACCES.
+    try { await fs.promises.chmod(this.uploadDir, 0o775); } catch { /* best-effort */ }
+
     await fs.promises.writeFile(filePath, buffer);
+
+    // Ensure the file is world-readable so Express static middleware can serve it
+    // regardless of the process umask.
+    try { await fs.promises.chmod(filePath, 0o644); } catch { /* best-effort */ }
+
     const url = `/uploads/${filename}`;
 
     const upload = await uploadRepo.create({

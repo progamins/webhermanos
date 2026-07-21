@@ -15,6 +15,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export function createApp() {
   const app = express();
 
+  // Trust proxy — the app runs behind Apache (reverse proxy) which forwards
+  // X-Forwarded-For headers. Without this, express-rate-limit gets a single
+  // IP (the proxy's) for all clients and warns about unexpected headers.
+  app.set('trust proxy', 1);
+
   // Body parsing
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));

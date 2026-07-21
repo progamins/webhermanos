@@ -32,7 +32,11 @@ export default function AdminPaymentModal({
       setPaymentStatusInput(order.paymentStatus || 'pendiente');
       setPaymentMethodInput(order.paymentMethod || 'Ninguno');
       setMontoPagadoInput(order.montoPagado ?? order.totalPrice);
-      setFechaPagoInput(order.fechaPago || new Date().toISOString().split('T')[0]);
+      // Normalize to yyyy-MM-dd: MySQL may return ISO strings (e.g. "2026-07-20T00:00:00.000Z")
+      // which are invalid for <input type="date"> that expects "2026-07-20".
+      const rawFecha = order.fechaPago || new Date().toISOString().split('T')[0];
+      setFechaPagoInput(rawFecha.substring(0, 10));
+
       setConfirmedByAdminInput(order.confirmedByAdmin || 'Carol Rosas');
       setVoucherFileInput(null);
       setVoucherPreviewUrl(null);

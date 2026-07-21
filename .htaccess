@@ -12,6 +12,12 @@
   RewriteCond %{REQUEST_URI} !^/\.well-known/
   RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
 
+  # ─── API: Never rewrite /api/ or /uploads/ routes ───
+  # These must reach the Node.js backend, not the SPA entry point
+  RewriteCond %{REQUEST_URI} ^/api/ [OR]
+  RewriteCond %{REQUEST_URI} ^/uploads/
+  RewriteRule ^ - [L]
+
   # SPA: Don't rewrite files or directories that physically exist
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
