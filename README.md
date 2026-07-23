@@ -1,7 +1,21 @@
-# 🍰 Maison Rosas
+<div align="center">
+  <img src="https://raw.githubusercontent.com/progamins/webhermanos/main/public/favicon.svg" width="80" height="80" alt="Maison Rosas"/>
+  <h1 style="margin-top: 12px; font-size: 2.5em;">🍰 Maison Rosas</h1>
+  <p style="font-size: 1.1em; color: #666;">Pastelería de autor &amp; repostería fina</p>
+  <br/>
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white" alt="React 19"/>
+  <img src="https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white" alt="Vite 6"/>
+  <img src="https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white" alt="Express 4"/>
+  <img src="https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white" alt="MySQL 8"/>
+  <img src="https://img.shields.io/badge/Docker-✔-2496ED?logo=docker&logoColor=white" alt="Docker"/>
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5"/>
+</div>
 
-Pastelería de autor y repostería fina — aplicación web (tienda + panel admin)
-con React + Vite (cliente) y Express + MySQL (servidor).
+<br/>
+
+**Aplicación web full-stack** (tienda online + panel administrativo) para la pastelería de autor **Maison Rosas**, creada por la familia Rosas Albines.
+
+Cliente en React + Vite · Servidor Express + MySQL · Docker listo para producción.
 
 > 📦 **Nueva: instalación con Docker.** Levanta todo con un solo comando.
 > Ver la guía completa en **[docker/README.md](docker/README.md)**.
