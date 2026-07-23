@@ -1,0 +1,200 @@
+/* ============= ADMIN MAIN STYLESHEET ============= */
+/* Completamente separado de los estilos web — sin conflictos posibles */
+
+/* Tailwind imports — usamos el mismo Tailwind pero con @theme personalizado */
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* ═══ ADMIN THEME — Colors para que bg-brand-500, text-brand-500, etc. funcionen en admin ═══ */
+@theme {
+  --color-brand-bg: #FFF9F5;
+  --color-brand-primary: #C4847D;
+  --color-brand-secondary: #D4A373;
+  --color-brand-50: #FDF2F0;
+  --color-brand-100: #F8E3DE;
+  --color-brand-200: #F0C9C2;
+  --color-brand-300: #E4AAA0;
+  --color-brand-400: #D48D82;
+  --color-brand-500: #C4847D;
+  --color-brand-600: #B0756E;
+  --color-brand-700: #9A635C;
+  --color-brand-800: #7D504A;
+  --color-brand-900: #5E3C38;
+  --color-brand-950: #33211E;
+
+}
+
+@theme inline {
+  --font-sans: 'Geist Variable', sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+@custom-variant dark (&:is(.dark *));
+
+/* Admin Design System */
+@import "./variables.css";
+@import "./dashboard.css";
+@import "./forms.css";
+@import "./tables.css";
+@import "./animations.css";
+
+/* ============= ADMIN BASE RESET ============= */
+
+html, body, #admin-root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--admin-bg);
+  color: var(--admin-text);
+  font-family: var(--admin-font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Override any potential Tailwind base styles leaking */
+.admin-layout *,
+.admin-main *,
+.admin-sidenav * {
+  /* Reset font family inheritance for admin-specific elements */
+}
+
+/* ============= ADMIN SCROLLBAR ============= */
+.admin-layout ::-webkit-scrollbar,
+.admin-main ::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.admin-layout ::-webkit-scrollbar-track,
+.admin-main ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-layout ::-webkit-scrollbar-thumb,
+.admin-main ::-webkit-scrollbar-thumb {
+  background: var(--admin-border);
+  border-radius: 9999px;
+}
+
+.admin-layout ::-webkit-scrollbar-thumb:hover,
+.admin-main ::-webkit-scrollbar-thumb:hover {
+  background: var(--admin-text-muted);
+}
+
+/* ============= ADMIN LOADING STATE ============= */
+.admin-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--admin-bg);
+}
+
+.admin-loading-inner {
+  text-align: center;
+}
+
+.admin-loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 2.5px solid var(--admin-border);
+  border-top-color: var(--admin-primary);
+  border-radius: 50%;
+  animation: admin-spin 0.7s linear infinite;
+  margin: 0 auto 16px;
+}
+
+.admin-loading-text {
+  font-size: 12px;
+  font-family: var(--admin-font-mono);
+  color: var(--admin-text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ============= ADMIN LOGIN ============= */
+/* (Estilos mínimos — el login usa mayormente Tailwind inline) */
+.admin-login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--admin-bg);
+}
+
+/* ============= ADMIN UTILITY CLASSES ============= */
+.admin-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-text-mono {
+  font-family: var(--admin-font-mono);
+}
+
+.admin-divider {
+  height: 1px;
+  background: var(--admin-border-light);
+  margin: 16px 0;
+}
+
+.admin-flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-gap-xs { gap: 4px; }
+.admin-gap-sm { gap: 8px; }
+.admin-gap-md { gap: 12px; }
+.admin-gap-lg { gap: 16px; }
+.admin-gap-xl { gap: 24px; }
+
+/* Responsive helpers */
+@media (max-width: 768px) {
+  .admin-sidenav {
+    display: none;
+  }
+  
+  .admin-main {
+    margin-left: 0;
+  }
+
+  .admin-header {
+    padding: 0 16px;
+    height: 56px;
+  }
+
+  .admin-content {
+    padding: 16px;
+  }
+
+  .admin-stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-table-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-header-title {
+    font-size: 13px;
+  }
+}

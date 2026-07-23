@@ -38,6 +38,18 @@ duckdns/duckdns.timer
 duckdns/auth.sh
 duckdns/cleanup.sh
 
+# ngrok — config local + tokens, NO commitear
+.ngrok/
+ngrok.yml
+
+# Túneles locales (contienen ngrok auth token y admin path real)
+tunnel.ps1
+tunnel.sh
+
+# Skills de IA (dev tooling - solo local)
+.agents/
+skills-lock.json
+
 # Archivos locales de producción
 informe-produccion.txt
 List

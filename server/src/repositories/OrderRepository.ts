@@ -73,9 +73,9 @@ export class OrderRepository extends BaseRepository<OrderRow> {
 
   async updateStatus(id: string, status: string, cancelReason?: string): Promise<boolean> {
     if (cancelReason) {
-      return this.update(id, { status: status as any, cancel_reason: cancelReason } as any);
+      return this.update(id, { status, cancel_reason: cancelReason } as Partial<OrderRow>);
     }
-    return this.update(id, { status: status as any } as any);
+    return this.update(id, { status } as Partial<OrderRow>);
   }
 
   async getMonthlyStats(): Promise<any[]> {

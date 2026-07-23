@@ -1,8 +1,11 @@
-import { CakeStockRepository } from '../repositories/index.js';
+import logger from '../lib/logger.js';
+import { stockCreateToRow, stockUpdateToRow } from '../lib/rowMapper.js';
+import type { CakeStock, CakeStockCreateInput, CakeStockUpdateInput } from '../lib/types.js';
+import { CakeStockRepository, CakeStockRow } from '../repositories/index.js';
 
 const stockRepo = new CakeStockRepository();
 
-function parseStock(row: any) {
+function parseStock(row: CakeStockRow) {
   return {
     id: row.id,
     name: row.name,
@@ -18,47 +21,28 @@ function parseStock(row: any) {
 }
 
 export class StockService {
-  async getAll(): Promise<any[]> {
+  async getAll(): Promise<CakeStock[]> {
     const rows = await stockRepo.findAll('created_at DESC');
     return rows.map(parseStock);
   }
 
-  async getAvailable(): Promise<any[]> {
+  async getAvailable(): Promise<CakeStock[]> {
     const rows = await stockRepo.findAvailable();
     return rows.map(parseStock);
   }
 
-  async getById(id: string): Promise<any | null> {
+  async getById(id: string): Promise<CakeStock | null> {
     const row = await stockRepo.findById(id);
     return row ? parseStock(row) : null;
   }
 
-  async create(data: any): Promise<any> {
-    const row = await stockRepo.create({
-      id: data.id,
-      name: data.name,
-      product_id: data.productId || null,
-      flavor: data.flavor,
-      size: data.size,
-      decoration: data.decoration || null,
-      quantity: data.quantity || 1,
-      notes: data.notes || null,
-      image_url: data.imageUrl || null,
-    } as any);
+  async create(data: CakeStockCreateInput): Promise<CakeStock> {
+    const row = await stockRepo.create(stockCreateToRow(data));
     return parseStock(row);
   }
 
-  async update(id: string, data: any): Promise<boolean> {
-    const updateData: any = {};
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.flavor !== undefined) updateData.flavor = data.flavor;
-    if (data.size !== undefined) updateData.size = data.size;
-    if (data.decoration !== undefined) updateData.decoration = data.decoration;
-    if (data.quantity !== undefined) updateData.quantity = data.quantity;
-    if (data.notes !== undefined) updateData.notes = data.notes;
-    if (data.imageUrl !== undefined) updateData.image_url = data.imageUrl;
-    if (data.productId !== undefined) updateData.product_id = data.productId;
-    return stockRepo.update(id, updateData as any);
+  async update(id: string, data: CakeStockUpdateInput): Promise<boolean> {
+    return stockRepo.update(id, stockUpdateToRow(data));
   }
 
   async delete(id: string): Promise<boolean> {

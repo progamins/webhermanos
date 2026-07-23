@@ -8,12 +8,25 @@ export const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-export const apiLimiter = rateLimit({
+const limiterBase = {
   windowMs: 60 * 1000,
-  max: 60,
   message: { success: false, error: 'Demasiadas solicitudes. Intenta de nuevo en un minuto.' },
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req: any) => {
+    const forwarded = req.headers['x-forwarded-for'];
+    return typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : req.ip || 'unknown';
+  },
+};
+
+export const apiLimiter = rateLimit({
+  ...limiterBase,
+  max: parseInt(process.env.API_RATE_LIMIT || '60', 10),
+});
+
+export const adminLimiter = rateLimit({
+  ...limiterBase,
+  max: parseInt(process.env.ADMIN_RATE_LIMIT || '30', 10),
 });
 
 export const contactLimiter = rateLimit({

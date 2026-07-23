@@ -1,3 +1,6 @@
+import logger from '../lib/logger.js';
+import { orderCreateToRow, orderUpdateToRow, timelineCreateToRow } from '../lib/rowMapper.js';
+import type { Order, OrderCreateInput, OrderUpdateInput, ProgressPhoto } from '../lib/types.js';
 import { OrderRepository, OrderRow, OrderTimelineRepository } from '../repositories/index.js';
 import { ActivityLogService } from './ActivityService.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -13,7 +16,7 @@ function parseOrder(row: OrderRow) {
     size: row.size,
     flavor: row.flavor,
     customerName: row.customer_name,
-    customerAge: row.customer_age,
+    customerAge: row.customer_age ? Number(row.customer_age) : null,
     customerEmail: row.customer_email,
     customerPhone: row.customer_phone,
     message: row.message,
@@ -46,7 +49,7 @@ function parseOrder(row: OrderRow) {
   };
 }
 
-function safeParseJson(val: string, fallback: any = []) {
+function safeParseJson<T>(val: string, fallback: T[] = [] as T[]): T[] {
   try { return typeof val === 'string' ? JSON.parse(val) : val || fallback; }
   catch { return fallback; }
 }
@@ -56,69 +59,34 @@ function generateTrackingCode(): string {
 }
 
 export class OrderService {
-  async getAll(): Promise<any[]> {
+  async getAll(): Promise<Order[]> {
     const rows = await orderRepo.findAllOrdered();
     return rows.map(parseOrder);
   }
 
-  async getById(id: string): Promise<any | null> {
+  async getById(id: string): Promise<Order | null> {
     const row = await orderRepo.findById(id);
     return row ? parseOrder(row) : null;
   }
 
-  async getByTrackingCode(code: string): Promise<any | null> {
+  async getByTrackingCode(code: string): Promise<Order | null> {
     const row = await orderRepo.findByTrackingCode(code);
     return row ? parseOrder(row) : null;
   }
 
-  async getByEmail(email: string): Promise<any[]> {
+  async getByEmail(email: string): Promise<Order[]> {
     const rows = await orderRepo.findByEmail(email);
     return rows.map(parseOrder);
   }
 
-  async create(data: any): Promise<any> {
+  async create(data: OrderCreateInput): Promise<{ id: string; trackingCode: string }> {
     const trackingCode = generateTrackingCode();
     const id = data.id || uuidv4();
 
-    await orderRepo.create({
-      id,
-      tracking_code: trackingCode,
-      customer_name: data.customerName,
-      customer_email: data.customerEmail,
-      customer_phone: data.customerPhone || null,
-      customer_age: data.customerAge || null,
-      product_name: data.productName,
-      product_id: data.productId || null,
-      size: data.size,
-      flavor: data.flavor,
-      selected_decoration: data.selectedDecoration || null,
-      custom_color: data.customColor || null,
-      theme: data.theme || null,
-      message: data.message || null,
-      celebrated_name: data.celebratedName || null,
-      special_notes: data.specialNotes || null,
-      total_price: data.totalPrice || 0,
-      status: 'Pendiente',
-      delivery_type: data.deliveryType || 'recojo',
-      delivery_date: data.deliveryDate || null,
-      delivery_time: data.deliveryTime || null,
-      delivery_address: data.deliveryAddress || null,
-      whatsapp_message: data.whatsappMessage || null,
-      payment_status: 'pendiente',
-      payment_method: 'Ninguno',
-      monto_pagado: 0,
-      progress_photos: '[]',
-      fulfilled_from_stock: 0,
-    } as any);
+    await orderRepo.create(orderCreateToRow(data, id, trackingCode));
 
     // Log timeline
-    await timelineRepo.create({
-      id: uuidv4(),
-      order_id: id,
-      previous_status: null,
-      new_status: 'Pendiente',
-      changed_by: 'system',
-    } as any);
+    await timelineRepo.create(timelineCreateToRow(uuidv4(), id, null, 'Pendiente', 'system'));
 
     return { id, trackingCode };
   }
@@ -129,14 +97,7 @@ export class OrderService {
 
     await orderRepo.updateStatus(id, status, cancelReason);
 
-    await timelineRepo.create({
-      id: uuidv4(),
-      order_id: id,
-      previous_status: order.status,
-      new_status: status,
-      changed_by: changedBy,
-      notes: cancelReason || null,
-    } as any);
+    await timelineRepo.create(timelineCreateToRow(uuidv4(), id, order.status, status, changedBy, cancelReason));
 
     await ActivityLogService.log(
       'Estado de pedido actualizado',
@@ -147,55 +108,23 @@ export class OrderService {
     return true;
   }
 
-  async update(id: string, data: any): Promise<boolean> {
-    const updateData: any = {};
-    const fieldMap: Record<string, string> = {
-      productName: 'product_name', size: 'size', flavor: 'flavor',
-      customerName: 'customer_name', customerEmail: 'customer_email',
-      customerPhone: 'customer_phone', deliveryDate: 'delivery_date',
-      deliveryTime: 'delivery_time', deliveryAddress: 'delivery_address',
-      deliveryType: 'delivery_type', totalPrice: 'total_price',
-      theme: 'theme', specialNotes: 'special_notes',
-      selectedDecoration: 'selected_decoration', customColor: 'custom_color',
-      message: 'message', celebratedName: 'celebrated_name',
-      cancelReason: 'cancel_reason', customerAge: 'customer_age',
-      paymentStatus: 'payment_status', paymentMethod: 'payment_method',
-      montoPagado: 'monto_pagado', fechaPago: 'fecha_pago',
-      confirmedByAdmin: 'confirmed_by_admin', voucherUrl: 'voucher_url',
-      voucherName: 'voucher_name', fulfilledFromStock: 'fulfilled_from_stock',
-      assignedStockId: 'assigned_stock_id',
-    };
-
-    for (const [clientKey, dbKey] of Object.entries(fieldMap)) {
-      if (data[clientKey] !== undefined) {
-        if (clientKey === 'fulfilledFromStock') {
-          updateData[dbKey] = data[clientKey] ? 1 : 0;
-        } else {
-          updateData[dbKey] = data[clientKey];
-        }
-      }
-    }
-
-    if (data.progressPhotos !== undefined) {
-      updateData.progress_photos = JSON.stringify(data.progressPhotos);
-    }
-
-    return orderRepo.update(id, updateData as any);
+  async update(id: string, data: OrderUpdateInput): Promise<boolean> {
+    return orderRepo.update(id, orderUpdateToRow(data));
   }
 
   async delete(id: string): Promise<boolean> {
     return orderRepo.delete(id);
   }
 
-  async getTimeline(orderId: string): Promise<any[]> {
+  async getTimeline(orderId: string): Promise<{ id: string; previous_status: string | null; new_status: string; changed_by: string | null; notes: string | null; created_at: string }[]> {
     return timelineRepo.findByOrderId(orderId);
   }
 
-  async getMonthlyStats(): Promise<any[]> {
+  async getMonthlyStats(): Promise<{ month: string; total: number; count: number }[]> {
     return orderRepo.getMonthlyStats();
   }
 
-  async getRecent(limit: number = 10): Promise<any[]> {
+  async getRecent(limit: number = 10): Promise<Order[]> {
     const rows = await orderRepo.getRecentOrders(limit);
     return rows.map(parseOrder);
   }

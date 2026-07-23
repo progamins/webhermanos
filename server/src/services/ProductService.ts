@@ -1,3 +1,6 @@
+import logger from '../lib/logger.js';
+import { productCreateToRow, productUpdateToRow } from '../lib/rowMapper.js';
+import type { Product, ProductCreateInput, ProductUpdateInput } from '../lib/types.js';
 import { ProductRepository, ProductRow } from '../repositories/index.js';
 
 const productRepo = new ProductRepository();
@@ -19,59 +22,34 @@ function parseProduct(row: ProductRow) {
   };
 }
 
-function safeParseJson(val: string, fallback: any = []) {
+function safeParseJson<T>(val: string, fallback: T[] = [] as T[]): T[] {
   try { return typeof val === 'string' ? JSON.parse(val) : val || fallback; }
   catch { return fallback; }
 }
 
 export class ProductService {
-  async getAll(): Promise<any[]> {
+  async getAll(): Promise<Product[]> {
     const rows = await productRepo.findAll('created_at DESC');
     return rows.map(parseProduct);
   }
 
-  async getActive(): Promise<any[]> {
+  async getActive(): Promise<Product[]> {
     const rows = await productRepo.findActive();
     return rows.map(parseProduct);
   }
 
-  async getById(id: string): Promise<any | null> {
+  async getById(id: string): Promise<Product | null> {
     const row = await productRepo.findById(id);
     return row ? parseProduct(row) : null;
   }
 
-  async create(data: any): Promise<any> {
-    const row = await productRepo.create({
-      id: data.id,
-      name: data.name,
-      description: data.description || null,
-      base_price: data.basePrice || 0,
-      category: data.category || 'Especiales',
-      preparation_time: data.preparationTime || '48 horas',
-      active: data.active !== false ? 1 : 0,
-      stock: data.stock !== false ? 1 : 0,
-      images: JSON.stringify(data.images || []),
-      flavors: JSON.stringify(data.flavors || []),
-      decorations: JSON.stringify(data.decorations || []),
-      tags: JSON.stringify(data.tags || []),
-    } as any);
+  async create(data: ProductCreateInput): Promise<Product> {
+    const row = await productRepo.create(productCreateToRow(data, data.id));
     return parseProduct(row);
   }
 
-  async update(id: string, data: any): Promise<boolean> {
-    const updateData: any = {};
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.description !== undefined) updateData.description = data.description;
-    if (data.basePrice !== undefined) updateData.base_price = data.basePrice;
-    if (data.category !== undefined) updateData.category = data.category;
-    if (data.preparationTime !== undefined) updateData.preparation_time = data.preparationTime;
-    if (data.active !== undefined) updateData.active = data.active ? 1 : 0;
-    if (data.stock !== undefined) updateData.stock = data.stock ? 1 : 0;
-    if (data.images !== undefined) updateData.images = JSON.stringify(data.images);
-    if (data.flavors !== undefined) updateData.flavors = JSON.stringify(data.flavors);
-    if (data.decorations !== undefined) updateData.decorations = JSON.stringify(data.decorations);
-    if (data.tags !== undefined) updateData.tags = JSON.stringify(data.tags);
-    return productRepo.update(id, updateData as any);
+  async update(id: string, data: ProductUpdateInput): Promise<boolean> {
+    return productRepo.update(id, productUpdateToRow(data));
   }
 
   async delete(id: string): Promise<boolean> {

@@ -1,3 +1,4 @@
+import logger from '../lib/logger.js';
 import { env } from '../config/env.js';
 
 export class AiService {
@@ -5,15 +6,15 @@ export class AiService {
 
   async initialize(): Promise<void> {
     if (!env.GEMINI_API_KEY) {
-      console.warn('[AI] GEMINI_API_KEY not configured. AI features disabled.');
+      logger.warn('GEMINI_API_KEY not configured. AI features disabled.', { service: 'AI' });
       return;
     }
     try {
       const { GoogleGenAI } = await import('@google/genai');
       this.client = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
-      console.log('[AI] Gemini AI initialized.');
+      logger.info('Gemini AI initialized', { service: 'AI' });
     } catch (err) {
-      console.warn('[AI] Failed to initialize Gemini:', err);
+      logger.warn('Failed to initialize Gemini', { service: 'AI', error: (err as Error)?.message });
     }
   }
 
@@ -27,7 +28,7 @@ export class AiService {
       });
       return result.text || '';
     } catch (err: any) {
-      console.error('[AI] Generation error:', err?.message);
+      logger.error('Generation error', { service: 'AI', error: err?.message });
       return '';
     }
   }

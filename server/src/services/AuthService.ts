@@ -1,3 +1,5 @@
+import logger from '../lib/logger.js';
+import { sessionToRow } from '../lib/rowMapper.js';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { AdminAuthRepository } from '../repositories/index.js';
@@ -55,11 +57,7 @@ export class AuthService {
       const token = uuidv4();
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-      await adminSessionRepo.create({
-        token,
-        role,
-        expires_at: expiresAt.slice(0, 19).replace('T', ' '),
-      } as any);
+      await adminSessionRepo.create(sessionToRow(token, role, expiresAt.slice(0, 19).replace('T', ' ')));
 
       await adminAuthRepo.setActiveSession(role, token);
 
@@ -70,7 +68,7 @@ export class AuthService {
 
       return { success: true, token, expiresAt, role };
     } catch (error: any) {
-      console.error('[AuthService] Login error:', error);
+      logger.error('Login error', { service: 'AuthService', error: error?.message });
       return { success: false, error: 'Error en el servidor al iniciar sesión.' };
     }
   }
@@ -97,7 +95,7 @@ export class AuthService {
 
       return { valid: true, role: session.role };
     } catch (error) {
-      console.error('[AuthService] Verify error:', error);
+      logger.error('Verify error', { service: 'AuthService', error: (error as Error)?.message });
       return { valid: false, error: 'Error al verificar sesión.' };
     }
   }

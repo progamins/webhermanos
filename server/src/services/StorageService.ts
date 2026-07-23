@@ -1,5 +1,8 @@
+import logger from '../lib/logger.js';
+import { uploadToRow } from '../lib/rowMapper.js';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { env } from '../config/env.js';
 import { UploadRepository } from '../repositories/index.js';
@@ -91,12 +94,31 @@ export class StorageService {
     return { files, totalSize, totalFiles: files.length };
   }
 
+  /** Computa SHA256 hash de un buffer */
+  computeHash(buffer: Buffer): string {
+    return crypto.createHash('sha256').update(buffer).digest('hex');
+  }
+
   async saveFile(
     buffer: Buffer,
     originalName: string,
     mimeType: string,
     uploadedBy: string = 'admin'
-  ): Promise<{ url: string; filename: string; id: string }> {
+  ): Promise<{ url: string; filename: string; id: string; duplicateReused?: boolean }> {
+    // ── Compute hash BEFORE writing — check if duplicate exists ──
+    const contentHash = this.computeHash(buffer);
+
+    try {
+      const existing = await uploadRepo.findByHash(contentHash);
+      if (existing) {
+        // Return existing file — no need to write again
+        logger.info('Duplicado evitado, reusando archivo existente', { service: 'StorageService', url: existing.url });
+        return { url: existing.url, filename: existing.filename, id: existing.id, duplicateReused: true };
+      }
+    } catch (err) {
+      logger.warn('Error al buscar duplicado por hash', { service: 'StorageService', error: (err as Error)?.message });
+    }
+
     const ext = path.extname(originalName) || '.jpg';
     const filename = `${uuidv4()}${ext}`;
     const filePath = path.join(this.uploadDir, filename);
@@ -114,17 +136,38 @@ export class StorageService {
 
     const url = `/uploads/${filename}`;
 
-    const upload = await uploadRepo.create({
-      id: uuidv4(),
-      filename,
-      original_name: originalName,
-      mime_type: mimeType,
-      size_bytes: buffer.length,
-      url,
-      uploaded_by: uploadedBy,
-    } as any);
-
-    return { url, filename, id: upload.id };
+    try {
+      const upload = await uploadRepo.create(
+        uploadToRow({
+          filename,
+          original_name: originalName,
+          mime_type: mimeType,
+          size_bytes: buffer.length,
+          url,
+          content_hash: contentHash,
+          uploaded_by: uploadedBy,
+        })
+      );
+      return { url, filename, id: upload.id };
+    } catch (createErr: any) {
+      // ER_DUP_ENTRY (1062) = UNIQUE INDEX violation — race condition
+      // Delete the file we just wrote and return the existing record
+      if (createErr?.errno === 1062) {
+        try { await fs.promises.unlink(filePath); } catch { /* best-effort */ }
+        try {
+          const existing = await uploadRepo.findByHash(contentHash);
+          if (existing) {
+            logger.info('Race condition resuelta, reusando archivo existente', { service: 'StorageService', url: existing.url, filename });
+            return { url: existing.url, filename: existing.filename, id: existing.id, duplicateReused: true };
+          }
+        } catch { /* fall through */ }
+        // Could not recover — file was deleted but existing record not found.
+        // Throw with a clearer message.
+        throw new Error(`ER_DUP_ENTRY no recuperable: hash=${contentHash.slice(0, 12)}…, archivo=${filename} eliminado`);
+      }
+      // Re-throw if we couldn't recover
+      throw createErr;
+    }
   }
 
   async saveFromPath(

@@ -1,3 +1,6 @@
+import logger from '../lib/logger.js';
+import { reviewCreateToRow, reviewUpdateToRow } from '../lib/rowMapper.js';
+import type { Review, ReviewCreateInput, ReviewUpdateInput } from '../lib/types.js';
 import { ReviewRepository, ReviewRow } from '../repositories/index.js';
 
 const reviewRepo = new ReviewRepository();
@@ -17,45 +20,28 @@ function parseReview(row: ReviewRow) {
 }
 
 export class ReviewService {
-  async getAll(): Promise<any[]> {
+  async getAll(): Promise<Review[]> {
     const rows = await reviewRepo.findAll('date DESC');
     return rows.map(parseReview);
   }
 
-  async getApproved(): Promise<any[]> {
+  async getApproved(): Promise<Review[]> {
     const rows = await reviewRepo.findApproved();
     return rows.map(parseReview);
   }
 
-  async getPending(): Promise<any[]> {
+  async getPending(): Promise<Review[]> {
     const rows = await reviewRepo.findPending();
     return rows.map(parseReview);
   }
 
-  async create(data: any): Promise<any> {
-    const row = await reviewRepo.create({
-      id: data.id,
-      author: data.author,
-      role: data.role || null,
-      rating: data.rating,
-      comment: data.comment,
-      cake_model: data.cakeModel || null,
-      date: data.date ? new Date(data.date).toISOString().substring(0, 10) : new Date().toISOString().slice(0, 10),
-      approved: data.approved ? 1 : 0,
-      response: data.response || null,
-    } as any);
+  async create(data: ReviewCreateInput): Promise<Review> {
+    const row = await reviewRepo.create(reviewCreateToRow(data));
     return parseReview(row);
   }
 
-  async update(id: string, data: any): Promise<boolean> {
-    const updateData: any = {};
-    if (data.approved !== undefined) updateData.approved = data.approved ? 1 : 0;
-    if (data.response !== undefined) updateData.response = data.response;
-    if (data.author !== undefined) updateData.author = data.author;
-    if (data.rating !== undefined) updateData.rating = data.rating;
-    if (data.comment !== undefined) updateData.comment = data.comment;
-    if (data.date !== undefined) updateData.date = new Date(data.date).toISOString().substring(0, 10);
-    return reviewRepo.update(id, updateData as any);
+  async update(id: string, data: ReviewUpdateInput): Promise<boolean> {
+    return reviewRepo.update(id, reviewUpdateToRow(data));
   }
 
   async delete(id: string): Promise<boolean> {

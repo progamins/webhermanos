@@ -1,0 +1,64 @@
+/* ============= ADMIN DESIGN SYSTEM — VARIABLES ============= */
+/* Diseñado con la estética de Stripe, Linear, Vercel Dashboard */
+
+:root {
+  /* Admin Primary Colors — tonos elegantes slate/indigo */
+  --admin-primary: #6366f1;
+  --admin-primary-hover: #4f46e5;
+  --admin-primary-light: rgba(99, 102, 241, 0.10);
+  --admin-secondary: #8b5cf6;
+  --admin-success: #10b981;
+  --admin-success-light: rgba(16, 185, 129, 0.10);
+  --admin-warning: #f59e0b;
+  --admin-warning-light: rgba(245, 158, 11, 0.10);
+  --admin-danger: #ef4444;
+  --admin-danger-light: rgba(239, 68, 68, 0.10);
+  --admin-info: #3b82f6;
+
+  /* Admin Surfaces — minimal y limpio */
+  --admin-bg: #f8fafc;
+  --admin-bg-alt: #f1f5f9;
+  --admin-surface: #ffffff;
+  --admin-surface-alt: #f8fafc;
+  --admin-surface-hover: #f1f5f9;
+  --admin-border: #e2e8f0;
+  --admin-border-light: #f1f5f9;
+  --admin-border-hover: #cbd5e1;
+
+  /* Admin Text — grises de alto contraste */
+  --admin-text: #0f172a;
+  --admin-text-secondary: #475569;
+  --admin-text-muted: #94a3b8;
+  --admin-text-placeholder: #cbd5e1;
+
+  /* Admin Sidenav — oscuro para contraste profesional */
+  --admin-sidenav-bg: #0f172a;
+  --admin-sidenav-text: #cbd5e1;
+  --admin-sidenav-text-hover: #f8fafc;
+  --admin-sidenav-item-hover: rgba(255, 255, 255, 0.06);
+  --admin-sidenav-item-active: rgba(99, 102, 241, 0.15);
+  --admin-sidenav-border: rgba(255, 255, 255, 0.06);
+  --admin-sidenav-width: 260px;
+
+  /* Admin Shadows — discretas y modernas */
+  --admin-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --admin-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  --admin-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --admin-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+
+  /* Admin Radii — modernos */
+  --admin-radius-sm: 6px;
+  --admin-radius-md: 8px;
+  --admin-radius-lg: 12px;
+  --admin-radius-xl: 16px;
+  --admin-radius-2xl: 20px;
+
+  /* Admin Typography */
+  --admin-font-sans: "Inter", "Geist Variable", system-ui, -apple-system, sans-serif;
+  --admin-font-mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+
+  /* Admin Transitions */
+  --admin-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --admin-transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --admin-transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}

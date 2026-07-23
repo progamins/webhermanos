@@ -1,3 +1,4 @@
+import logger from '../lib/logger.js';
 import type { Request, Response, NextFunction } from 'express';
 import { AdminSessionRepository, AdminAuthRepository } from '../repositories/index.js';
 
@@ -35,7 +36,7 @@ export async function verifyAdminSession(req: Request, res: Response, next: Next
 
     next();
   } catch (error) {
-    console.error('[Auth Middleware] Error:', error);
+    logger.error('Admin auth middleware error', { service: 'Auth', error: (error as Error)?.message });
     return res.status(500).json({ success: false, error: 'Error al verificar sesión.' });
   }
 }

@@ -1,8 +1,11 @@
+import logger from '../lib/logger.js';
+import { galleryCreateToRow, galleryUpdateToRow } from '../lib/rowMapper.js';
+import type { GalleryItem, GalleryCreateInput, GalleryUpdateInput } from '../lib/types.js';
 import { GalleryRepository, GalleryRow } from '../repositories/index.js';
 
 const galleryRepo = new GalleryRepository();
 
-function formatDate(val: any): string | null {
+function formatDate(val: string | Date | null | undefined): string | null {
   if (!val) return null;
   return new Date(val).toISOString().substring(0, 10);
 }
@@ -19,41 +22,28 @@ function parseGallery(row: GalleryRow) {
 }
 
 export class GalleryService {
-  async getAll(): Promise<any[]> {
+  async getAll(): Promise<GalleryItem[]> {
     const rows = await galleryRepo.findAll('date DESC');
     return rows.map(parseGallery);
   }
 
-  async getByCategory(category: string): Promise<any[]> {
+  async getByCategory(category: string): Promise<GalleryItem[]> {
     const rows = await galleryRepo.findByCategory(category);
     return rows.map(parseGallery);
   }
 
-  async getById(id: string): Promise<any | null> {
+  async getById(id: string): Promise<GalleryItem | null> {
     const row = await galleryRepo.findById(id);
     return row ? parseGallery(row) : null;
   }
 
-  async create(data: any): Promise<any> {
-    const row = await galleryRepo.create({
-      id: data.id,
-      image_url: data.imageUrl,
-      title: data.title,
-      category: data.category || null,
-      description: data.description || null,
-      date: formatDate(data.date) || new Date().toISOString().slice(0, 10),
-    } as any);
+  async create(data: GalleryCreateInput): Promise<GalleryItem> {
+    const row = await galleryRepo.create(galleryCreateToRow(data));
     return parseGallery(row);
   }
 
-  async update(id: string, data: any): Promise<boolean> {
-    const updateData: any = {};
-    if (data.imageUrl !== undefined) updateData.image_url = data.imageUrl;
-    if (data.title !== undefined) updateData.title = data.title;
-    if (data.category !== undefined) updateData.category = data.category;
-    if (data.description !== undefined) updateData.description = data.description;
-    if (data.date !== undefined) updateData.date = formatDate(data.date);
-    return galleryRepo.update(id, updateData as any);
+  async update(id: string, data: GalleryUpdateInput): Promise<boolean> {
+    return galleryRepo.update(id, galleryUpdateToRow(data));
   }
 
   async delete(id: string): Promise<boolean> {

@@ -1,3 +1,4 @@
+import logger from '../lib/logger.js';
 import mysql from 'mysql2/promise';
 import { env } from './env.js';
 
@@ -27,7 +28,7 @@ export function getPool(): mysql.Pool {
     // Handle pool errors gracefully
     pool.on('connection', (conn) => {
       conn.on('error', (err) => {
-        console.error('[DB] Connection error:', (err as Error).message);
+        logger.error('Connection error:', { service: 'DB', error: (err as Error).message });
       });
     });
 
@@ -43,11 +44,11 @@ export function getPool(): mysql.Pool {
         await conn.ping();
         conn.release();
       } catch {
-        console.warn('[DB] Health check failed — pool may need recovery');
+        logger.warn('Health check failed — pool may need recovery', { service: 'DB' });
       }
     }, 5 * 60 * 1000);
 
-    console.log(`[DB] Connection pool created for ${env.DB_HOST}:${env.DB_PORT}/${env.DB_NAME}`);
+    logger.info('Connection pool created', { service: 'DB', host: env.DB_HOST, port: env.DB_PORT, database: env.DB_NAME });
   }
   return pool;
 }
@@ -92,10 +93,10 @@ export async function testConnection(): Promise<boolean> {
     const conn = await getPool().getConnection();
     await conn.ping();
     conn.release();
-    console.log('[DB] Connection test successful!');
+    logger.info('Connection test successful!', { service: 'DB' });
     return true;
   } catch (error: any) {
-    console.error('[DB] Connection test failed:', error?.message || error);
+    logger.error('Connection test failed', { service: 'DB', error: error?.message });
     return false;
   }
 }
@@ -104,7 +105,7 @@ export async function closePool(): Promise<void> {
   if (pool) {
     await pool.end();
     pool = null;
-    console.log('[DB] Connection pool closed.');
+    logger.info('Connection pool closed', { service: 'DB' });
   }
 }
 

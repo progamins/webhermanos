@@ -1,3 +1,4 @@
+import logger from '../lib/logger.js';
 import nodemailer from 'nodemailer';
 import { env } from '../config/env.js';
 import { getEmailTemplates } from '../emails/templates.js';
@@ -86,17 +87,17 @@ export class EmailService {
           subject,
           html,
         });
-        console.log(`[EMAIL] Sent via Resend to ${to}: ${subject}`);
+        logger.info('Sent via Resend', { service: 'EMAIL', to, subject, length: html.length });
         return true;
       } catch (err: any) {
-        console.warn('[EMAIL] Resend failed, falling back to SMTP:', err?.message);
+        logger.warn('Resend failed, falling back to SMTP', { service: 'EMAIL', error: err?.message });
       }
     }
 
     // Fall back to SMTP
     const t = getTransporter();
     if (!t) {
-      console.warn('[EMAIL] No SMTP transporter configured. Email not sent.');
+      logger.warn('No SMTP transporter configured. Email not sent.', { service: 'EMAIL' });
       return false;
     }
 
@@ -107,10 +108,10 @@ export class EmailService {
         subject,
         html,
       });
-      console.log(`[EMAIL] Sent via SMTP to ${to}: ${subject}`);
+      logger.info('Sent via SMTP', { service: 'EMAIL', to, subject });
       return true;
     } catch (err: any) {
-      console.error('[EMAIL] SMTP error:', err?.message);
+      logger.error('SMTP error', { service: 'EMAIL', error: err?.message });
       return false;
     }
   }

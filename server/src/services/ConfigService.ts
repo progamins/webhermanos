@@ -1,3 +1,5 @@
+import logger from '../lib/logger.js';
+import type { AppConfig } from '../lib/types.js';
 import { ConfigRepository } from '../repositories/index.js';
 
 const configRepo = new ConfigRepository();
@@ -24,7 +26,7 @@ const DEFAULT_CONFIG = {
 };
 
 export class ConfigService {
-  async getAppConfig(): Promise<any> {
+  async getAppConfig(): Promise<AppConfig> {
     const config = await configRepo.getAppConfig();
     if (!config) {
       await configRepo.setAppConfig(DEFAULT_CONFIG);
@@ -33,18 +35,18 @@ export class ConfigService {
     return { ...DEFAULT_CONFIG, ...config };
   }
 
-  async updateAppConfig(data: any): Promise<any> {
+  async updateAppConfig(data: Partial<AppConfig>): Promise<AppConfig> {
     const current = await this.getAppConfig();
     const merged = { ...current, ...data };
     await configRepo.setAppConfig(merged);
     return merged;
   }
 
-  async getAdminAuth(): Promise<any | null> {
+  async getAdminAuth(): Promise<{ role: string; password_hash: string; active_session_token?: string } | null> {
     return configRepo.getAdminAuth();
   }
 
-  async setAdminAuth(data: any): Promise<void> {
+  async setAdminAuth(data: { role: string; password_hash?: string }): Promise<void> {
     await configRepo.setAdminAuth(data);
   }
 }

@@ -1,3 +1,4 @@
+import logger from '../lib/logger.js';
 import { Router, Request, Response, NextFunction } from 'express';
 import { verifyAdminSession, requireRole } from '../middleware/auth.js';
 
@@ -98,7 +99,7 @@ router.post('/products', verifyAdminSession, async (req, res) => {
     }
     res.json({ success: true, product });
   } catch (err: any) {
-    console.error('[Admin Products] Error al guardar producto:', err);
+    logger.error('Error saving product', { service: 'Admin', error: err?.message });
     res.status(500).json({ success: false, error: err.message || 'Error guardando producto.' });
   }
 });
@@ -170,7 +171,7 @@ router.post('/orders/update-payment', verifyAdminSession, async (req, res) => {
     });
     res.json({ success: true });
   } catch (err: any) {
-    console.error('[Admin] Error al actualizar pago:', err);
+    logger.error('Error updating payment', { service: 'Admin', error: err?.message });
     res.status(500).json({ success: false, error: err.message || 'Error al actualizar el pago.' });
   }
 });
@@ -414,7 +415,7 @@ router.post('/storage/backfill', verifyAdminSession, async (req, res) => {
       errors,
     });
   } catch (err: any) {
-    console.error('[Backfill Error]', err);
+    logger.error('Backfill error', { service: 'Admin', error: (err as Error)?.message });
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -540,12 +541,69 @@ router.post('/storage/cleanup-orphans', verifyAdminSession, async (req, res) => 
       errorCount: deleteErrors.length,
     });
   } catch (err: any) {
-    console.error('[Cleanup Orphans Error]', err);
+    logger.error('Cleanup orphans error', { service: 'Admin', error: (err as Error)?.message });
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ─── STORAGE BACKFILL HASHES — computar hashes SHA256 de archivos existentes ───
+router.post('/storage/backfill-hashes', verifyAdminSession, async (req, res) => {
+  try {
+    const crypto = await import('crypto');
+    const fs = await import('fs');
+    const path = await import('path');
+    const { env } = await import('../config/env.js');
+    const { UploadRepository } = await import('../repositories/index.js');
+
+    const uploadDir = path.resolve(env.UPLOAD_DIR);
+    const uploadRepo = new UploadRepository();
+
+    // Get all uploads from DB that have no hash yet
+    const allUploads = await uploadRepo.findAll();
+    const pending = allUploads.filter((u: any) => !u.content_hash);
+
+    if (pending.length === 0) {
+      return res.json({ success: true, message: 'Todos los archivos ya tienen hash.', processed: 0 });
+    }
+
+    let processed = 0;
+    let errors = 0;
+
+    for (const upload of pending) {
+      try {
+        const filePath = path.join(uploadDir, upload.filename);
+        if (!fs.existsSync(filePath)) {
+          errors++;
+          continue;
+        }
+        const buffer = fs.readFileSync(filePath);
+        const hash = crypto.createHash('sha256').update(buffer).digest('hex');
+        await uploadRepo.updateHash(upload.id, hash);
+        processed++;
+      } catch (e) {
+        errors++;
+      }
+    }
+
+    logger.info('Backfill hashes completed', { service: 'Admin', processed, errors });
+
+    res.json({
+      success: true,
+      processed,
+      errors,
+      total: allUploads.length,
+      message: `${processed} hash(es) computados de ${pending.length} pendientes.`,
+    });
+  } catch (err: any) {
+    logger.error('Backfill hashes error', { service: 'Admin', error: (err as Error)?.message });
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
 // ─── STORAGE FIND DUPLICATES — detectar imágenes duplicadas por hash ───
+// Optimizado: usa content_hash de la BD para evitar escanear todo el disco.
+// Fase 1: GROUP BY content_hash en la tabla uploads (rápido, sin I/O de disco)
+// Fase 2: Solo calcula hash para archivos sin hash registrado o no listados en uploads
 router.post('/storage/find-duplicates', verifyAdminSession, async (req, res) => {
   try {
     const crypto = await import('crypto');
@@ -559,30 +617,7 @@ router.post('/storage/find-duplicates', verifyAdminSession, async (req, res) => 
     const productRepo = new ProductRepository();
     const galleryRepo = new GalleryRepository();
 
-    // 1. Scan disk and compute SHA256 hash for each file
-    let diskFiles: string[] = [];
-    try {
-      diskFiles = fs.readdirSync(uploadDir).filter((f: string) => f !== '.' && f !== '..' && !f.startsWith('.'));
-    } catch { /* ignore */ }
-
-    const fileHashes: Map<string, { filename: string; size: number; hash: string }> = new Map();
-    const hashGroups: Map<string, { filename: string; size: number }[]> = new Map();
-
-    for (const file of diskFiles) {
-      try {
-        const filePath = path.join(uploadDir, file);
-        const stat = fs.statSync(filePath);
-        if (!stat.isFile()) continue;
-        const buffer = fs.readFileSync(filePath);
-        const hash = crypto.createHash('sha256').update(buffer).digest('hex');
-        fileHashes.set(file, { filename: file, size: stat.size, hash });
-
-        if (!hashGroups.has(hash)) hashGroups.set(hash, []);
-        hashGroups.get(hash)!.push({ filename: file, size: stat.size });
-      } catch { /* skip unreadable */ }
-    }
-
-    // 2. Collect all URLs referenced in DB
+    // ── 1. Cargar datos de referencia (productos, galería, config, stock, órdenes) ──
     const referencedUrls = new Set<string>();
 
     // Products images
@@ -616,17 +651,12 @@ router.post('/storage/find-duplicates', verifyAdminSession, async (req, res) => 
       }
     }
 
-    // Uploads table
-    const uploads = await uploadRepo.findAll();
-    for (const u of uploads) {
-      if (u.filename) referencedUrls.add(u.filename);
-    }
-
     // Cake stock images
+    let stockItems: any[] = [];
     try {
       const { CakeStockRepository } = await import('../repositories/index.js');
       const stockRepo = new CakeStockRepository();
-      const stockItems = await stockRepo.findAll();
+      stockItems = await stockRepo.findAll();
       for (const s of stockItems) {
         if (s.image_url && s.image_url.startsWith('/uploads/')) {
           referencedUrls.add(s.image_url.replace('/uploads/', ''));
@@ -635,10 +665,11 @@ router.post('/storage/find-duplicates', verifyAdminSession, async (req, res) => 
     } catch { /* ignore */ }
 
     // Orders voucher URLs & progress photos
+    let orders: any[] = [];
     try {
       const { OrderRepository } = await import('../repositories/index.js');
       const orderRepo = new OrderRepository();
-      const orders = await orderRepo.findAll();
+      orders = await orderRepo.findAll();
       for (const o of orders) {
         if (o.voucher_url && o.voucher_url.startsWith('/uploads/')) {
           referencedUrls.add(o.voucher_url.replace('/uploads/', ''));
@@ -654,16 +685,89 @@ router.post('/storage/find-duplicates', verifyAdminSession, async (req, res) => 
       }
     } catch { /* ignore */ }
 
-    // 3. Build duplicate groups (only groups with 2+ files)
+    // ── 2. FASE 1 — GROUP BY content_hash en la BD (rápido, sin I/O de disco) ──
+    const uploads = await uploadRepo.findAll();
+    const uploadsByFilename = new Map<string, any>();
+    for (const u of uploads) {
+      uploadsByFilename.set(u.filename, u);
+      // Also add to referenced URLs
+      if (u.filename) referencedUrls.add(u.filename);
+    }
+
+    // Build hashGroups from DB records that have content_hash
+    const hashGroups: Map<string, { filename: string; size: number }[]> = new Map();
+    const filesWithHash = new Set<string>();  // files already processed via DB hash
+
+    for (const u of uploads) {
+      if (!u.content_hash || !u.filename) continue;
+      filesWithHash.add(u.filename);
+
+      if (!hashGroups.has(u.content_hash)) {
+        hashGroups.set(u.content_hash, []);
+      }
+      hashGroups.get(u.content_hash)!.push({
+        filename: u.filename,
+        size: u.size_bytes || 0,
+      });
+    }
+
+    // ── 3. FASE 2 — Escanear disco SOLO para archivos sin hash registrado ──
+    let diskFiles: string[] = [];
+    try {
+      diskFiles = fs.readdirSync(uploadDir).filter((f: string) => f !== '.' && f !== '..' && !f.startsWith('.'));
+    } catch { /* ignore */ }
+
+    // Files that need hash computation:
+    // a) Files in uploads table but without content_hash (pre-migration)
+    // b) Files on disk NOT in uploads table (orphans/huérfanos)
+    let filesNeedingHash = 0;
+    let hashedOnTheFly = 0;
+
+    for (const file of diskFiles) {
+      if (filesWithHash.has(file)) continue; // already has hash in DB
+
+      filesNeedingHash++;
+      try {
+        const filePath = path.join(uploadDir, file);
+        const stat = fs.statSync(filePath);
+        if (!stat.isFile()) continue;
+
+        const buffer = fs.readFileSync(filePath);
+        const hash = crypto.createHash('sha256').update(buffer).digest('hex');
+        hashedOnTheFly++;
+
+        // If this file exists in uploads table but has no hash, update the record
+        const upload = uploadsByFilename.get(file);
+        if (upload && !upload.content_hash) { // null or undefined pre-migration
+          try {
+            await uploadRepo.updateHash(upload.id, hash);
+          } catch { /* best-effort */ }
+        }
+
+        if (!hashGroups.has(hash)) {
+          hashGroups.set(hash, []);
+        }
+        hashGroups.get(hash)!.push({
+          filename: file,
+          size: stat.size,
+        });
+      } catch { /* skip unreadable */ }
+    }
+
+    // ── 4. Construir grupos de duplicados (solo grupos con 2+ archivos) ──
     const duplicateGroups: Array<{
       hash: string;
       totalSize: number;
       savedSpace: number;
+      source: 'db' | 'disk';
       files: Array<{ filename: string; size: number; used: boolean; usage: string[] }>;
     }> = [];
 
     for (const [hash, group] of hashGroups.entries()) {
       if (group.length < 2) continue;
+
+      // Determine source: all files from DB with hash = 'db', otherwise 'disk'
+      const allFromDb = group.every(f => filesWithHash.has(f.filename));
 
       const filesWithUsage = group.map(f => {
         const usage: string[] = [];
@@ -702,18 +806,15 @@ router.post('/storage/find-duplicates', verifyAdminSession, async (req, res) => 
         };
       });
 
-      const usedFiles = filesWithUsage.filter(f => f.used);
-      const unusedFiles = filesWithUsage.filter(f => !f.used);
-
-      // Calculate space savings from removing duplicates
       const totalSize = group.reduce((sum, f) => sum + f.size, 0);
-      const spaceIfKeepOne = group.length > 0 ? group[0].size : 0; // keep one copy
+      const spaceIfKeepOne = group.length > 0 ? group[0].size : 0;
       const savedSpace = totalSize - spaceIfKeepOne;
 
       duplicateGroups.push({
         hash: hash.slice(0, 16) + '…',
         totalSize,
         savedSpace,
+        source: allFromDb ? 'db' : 'disk',
         files: filesWithUsage,
       });
     }
@@ -741,9 +842,17 @@ router.post('/storage/find-duplicates', verifyAdminSession, async (req, res) => 
       totalRemovable,
       totalBytesRemovable,
       totalSizeRemovableFormatted: formatBytes(totalBytesRemovable),
+      // Metadata sobre el modo de detección
+      stats: {
+        filesWithDbHash: filesWithHash.size,
+        filesNeedingHash,
+        hashedOnTheFly,
+        dbGroups: [...hashGroups.entries()].filter(([, g]) => g.length >= 2 && g.every(f => filesWithHash.has(f.filename))).length,
+        diskGroups: [...hashGroups.entries()].filter(([, g]) => g.length >= 2 && !g.every(f => filesWithHash.has(f.filename))).length,
+      },
     });
   } catch (err: any) {
-    console.error('[Find Duplicates Error]', err);
+    logger.error('Find duplicates error', { service: 'Admin', error: (err as Error)?.message });
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -960,7 +1069,7 @@ router.get('/diagnostics', verifyAdminSession, async (req, res) => {
       },
     });
   } catch (err: any) {
-    console.error('[Diagnostics Error]', err);
+    logger.error('Diagnostics error', { service: 'Admin', error: (err as Error)?.message });
     res.status(500).json({ success: false, error: err.message });
   }
 });

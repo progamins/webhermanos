@@ -8,7 +8,10 @@
     "server"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace=server",
+    "dev": "powershell -ExecutionPolicy Bypass -File tunnel.ps1",
+    "dev:server": "npm run dev --workspace=server",
+    "dev:client": "npm run dev --workspace=client",
+    "tunnel": "powershell -ExecutionPolicy Bypass -File tunnel.ps1",
     "build": "npm run build --workspace=client && npm run build --workspace=server",
     "start": "npm run start --workspace=server",
     "clean": "rm -rf dist node_modules client/node_modules server/node_modules",

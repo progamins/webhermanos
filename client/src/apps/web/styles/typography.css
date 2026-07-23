@@ -1,0 +1,27 @@
+/* ============= WEB TYPOGRAPHY ============= */
+
+/* Body text */
+html, body {
+  font-family: "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Playfair Display", Georgia, serif;
+}
+
+::placeholder {
+  color: var(--theme-text-muted) !important;
+  opacity: 0.7;
+}
+
+img {
+  color: transparent;
+}
+
+img:not([src]),
+img[src=""] {
+  opacity: 0;
+}

@@ -1,0 +1,66 @@
+/* ============= ADMIN ANIMATIONS ============= */
+
+/* Fade in */
+@keyframes admin-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Slide up */
+@keyframes admin-slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Slide in from left */
+@keyframes admin-slide-in-left {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Scale in */
+@keyframes admin-scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Skeleton shimmer */
+@keyframes admin-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Spin for loading */
+@keyframes admin-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Pulse for live indicators */
+@keyframes admin-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Utility classes */
+.admin-animate-fade-in {
+  animation: admin-fade-in var(--admin-transition-normal) ease-out;
+}
+
+.admin-animate-slide-up {
+  animation: admin-slide-up var(--admin-transition-normal) ease-out;
+}
+
+.admin-animate-scale-in {
+  animation: admin-scale-in var(--admin-transition-normal) ease-out;
+}
+
+.admin-shimmer {
+  background: linear-gradient(90deg, var(--admin-bg-alt) 25%, var(--admin-border) 50%, var(--admin-bg-alt) 75%);
+  background-size: 200% 100%;
+  animation: admin-shimmer 1.5s infinite ease-in-out;
+}
+
+.admin-spin {
+  animation: admin-spin 1s linear infinite;
+}

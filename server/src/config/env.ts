@@ -1,3 +1,4 @@
+import logger from '../lib/logger.js';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -53,6 +54,9 @@ export interface EnvConfig {
 
   // App
   APP_URL: string;
+  ADMIN_SECRET_PATH: string;
+  ALLOWED_ADMIN_IPS: string[];
+  ALLOWED_MAC_ADDRESSES: string[];
   ADMIN_DEFAULT_PASSWORD: string;
   ANALYST_DEFAULT_PASSWORD: string;
   STOCK_MANAGER_DEFAULT_PASSWORD: string;
@@ -67,7 +71,7 @@ function loadEnv(): EnvConfig {
 
   const missing = requiredVars.filter(v => !process.env[v]);
   if (missing.length > 0) {
-    console.warn(`[ENV] Variables faltantes: ${missing.join(', ')}. Usando valores por defecto.`);
+    logger.warn('Variables faltantes, usando valores por defecto', { service: 'ENV', missing: missing.join(', ') });
   }
 
   return {
@@ -97,6 +101,9 @@ function loadEnv(): EnvConfig {
     GA_MEASUREMENT_ID: process.env.VITE_GA_MEASUREMENT_ID || '',
 
     APP_URL: process.env.APP_URL || 'http://localhost:3000',
+    ADMIN_SECRET_PATH: process.env.ADMIN_SECRET_PATH || 'ADMIN_SECRET_PATH_PLACEHOLDER',
+    ALLOWED_ADMIN_IPS: (process.env.ALLOWED_ADMIN_IPS || '127.0.0.1,::1,192.168.15.0/24,IP_PUBLIC_PLACEHOLDER').split(',').map(s => s.trim()),
+    ALLOWED_MAC_ADDRESSES: (process.env.ALLOWED_MAC_ADDRESSES || 'MAC_ADDRESS_PLACEHOLDER').split(',').map(s => s.trim().toUpperCase()),
     ADMIN_DEFAULT_PASSWORD: process.env.ADMIN_DEFAULT_PASSWORD || 'ADMIN_PASSWORD_PLACEHOLDER',
     ANALYST_DEFAULT_PASSWORD: process.env.ANALYST_DEFAULT_PASSWORD || 'ANALYST_PASSWORD_PLACEHOLDER',
     STOCK_MANAGER_DEFAULT_PASSWORD: process.env.STOCK_MANAGER_DEFAULT_PASSWORD || 'STOCK_PASSWORD_PLACEHOLDER',

@@ -1,0 +1,391 @@
+/* ============= ADMIN LAYOUT ============= */
+
+/* === Sidenav === */
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--admin-bg);
+  font-family: var(--admin-font-sans);
+  color: var(--admin-text);
+}
+
+.admin-sidenav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--admin-sidenav-width);
+  background: var(--admin-sidenav-bg);
+  border-right: 1px solid var(--admin-sidenav-border);
+  display: flex;
+  flex-direction: column;
+  z-index: 40;
+  overflow-y: auto;
+}
+
+.admin-sidenav-header {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--admin-sidenav-border);
+}
+
+.admin-sidenav-brand {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #f8fafc;
+  letter-spacing: -0.01em;
+}
+
+.admin-sidenav-brand-sub {
+  font-size: 10px;
+  font-family: var(--admin-font-mono);
+  color: var(--admin-sidenav-text);
+  opacity: 0.5;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.admin-sidenav-nav {
+  padding: 12px 12px;
+  flex: 1;
+}
+
+.admin-sidenav-section {
+  margin-bottom: 8px;
+}
+
+.admin-sidenav-section-title {
+  padding: 8px 12px 6px;
+  font-size: 9px;
+  font-family: var(--admin-font-mono);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--admin-sidenav-text);
+  opacity: 0.35;
+}
+
+.admin-sidenav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--admin-radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--admin-sidenav-text);
+  transition: all var(--admin-transition-fast);
+  cursor: pointer;
+  text-decoration: none;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+
+.admin-sidenav-item:hover {
+  background: var(--admin-sidenav-item-hover);
+  color: var(--admin-sidenav-text-hover);
+}
+
+.admin-sidenav-item.active {
+  background: var(--admin-sidenav-item-active);
+  color: #a5b4fc;
+}
+
+.admin-sidenav-item svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.admin-sidenav-item.active svg {
+  opacity: 1;
+}
+
+.admin-sidenav-footer {
+  padding: 12px;
+  border-top: 1px solid var(--admin-sidenav-border);
+}
+
+/* === Main Content Area === */
+.admin-main {
+  flex: 1;
+  margin-left: var(--admin-sidenav-width);
+  min-width: 0;
+}
+
+.admin-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: rgba(248, 250, 252, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--admin-border);
+  padding: 0 32px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-header-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--admin-text);
+  letter-spacing: -0.01em;
+}
+
+.admin-header-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--admin-text-muted);
+}
+
+.admin-header-breadcrumb span {
+  color: var(--admin-text-secondary);
+}
+
+.admin-content {
+  padding: 32px;
+}
+
+/* === Cards === */
+.admin-card {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-lg);
+  box-shadow: var(--admin-shadow-sm);
+  transition: box-shadow var(--admin-transition-normal);
+}
+
+.admin-card:hover {
+  box-shadow: var(--admin-shadow-md);
+}
+
+.admin-card-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--admin-border-light);
+}
+
+.admin-card-body {
+  padding: 20px 24px;
+}
+
+.admin-card-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--admin-border-light);
+  background: var(--admin-surface-alt);
+  border-radius: 0 0 var(--admin-radius-lg) var(--admin-radius-lg);
+}
+
+/* Stats grid */
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.admin-stat-card {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-lg);
+  padding: 20px;
+  transition: all var(--admin-transition-normal);
+}
+
+.admin-stat-card:hover {
+  border-color: var(--admin-border-hover);
+  box-shadow: var(--admin-shadow-md);
+}
+
+.admin-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--admin-text-muted);
+  margin-bottom: 4px;
+}
+
+.admin-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--admin-text);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.admin-stat-sub {
+  font-size: 12px;
+  color: var(--admin-text-secondary);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.admin-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--admin-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* === Tabs === */
+.admin-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--admin-bg-alt);
+  padding: 3px;
+  border-radius: var(--admin-radius-lg);
+  margin-bottom: 24px;
+}
+
+.admin-tab {
+  padding: 8px 16px;
+  border-radius: var(--admin-radius-md);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--admin-text-secondary);
+  transition: all var(--admin-transition-fast);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.admin-tab:hover {
+  color: var(--admin-text);
+}
+
+.admin-tab.active {
+  background: var(--admin-surface);
+  color: var(--admin-primary);
+  box-shadow: var(--admin-shadow-sm);
+}
+
+/* === Badges === */
+.admin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.admin-badge-primary {
+  background: var(--admin-primary-light);
+  color: var(--admin-primary);
+}
+
+.admin-badge-success {
+  background: var(--admin-success-light);
+  color: var(--admin-success);
+}
+
+.admin-badge-warning {
+  background: var(--admin-warning-light);
+  color: var(--admin-warning);
+}
+
+.admin-badge-danger {
+  background: var(--admin-danger-light);
+  color: var(--admin-danger);
+}
+
+/* === Buttons === */
+.admin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--admin-radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all var(--admin-transition-fast);
+  cursor: pointer;
+  border: none;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.admin-btn:hover {
+  transform: translateY(-1px);
+}
+
+.admin-btn:active {
+  transform: translateY(0);
+}
+
+.admin-btn-primary {
+  background: var(--admin-primary);
+  color: white;
+  box-shadow: 0 1px 3px rgba(99, 102, 241, 0.2);
+}
+
+.admin-btn-primary:hover {
+  background: var(--admin-primary-hover);
+  box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
+}
+
+.admin-btn-secondary {
+  background: var(--admin-surface);
+  color: var(--admin-text-secondary);
+  border: 1px solid var(--admin-border);
+}
+
+.admin-btn-secondary:hover {
+  background: var(--admin-bg-alt);
+  border-color: var(--admin-border-hover);
+}
+
+.admin-btn-ghost {
+  background: transparent;
+  color: var(--admin-text-secondary);
+}
+
+.admin-btn-ghost:hover {
+  background: var(--admin-bg-alt);
+  color: var(--admin-text);
+}
+
+.admin-btn-sm {
+  padding: 4px 10px;
+  font-size: 11px;
+  border-radius: var(--admin-radius-sm);
+}
+
+.admin-btn-icon {
+  padding: 8px;
+  width: 34px;
+  height: 34px;
+}

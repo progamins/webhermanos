@@ -1,3 +1,4 @@
+import logger from '../lib/logger.js';
 import { Router } from 'express';
 import { orderService } from '../services/OrderService.js';
 import { productService } from '../services/ProductService.js';
@@ -22,7 +23,7 @@ router.get('/products', async (req, res) => {
     const products = await productService.getAll();
     res.json(products);
   } catch (err: any) {
-    console.error('[Products Error]', err);
+    logger.error('Error fetching products', { service: 'API', error: err?.message });
     res.status(500).json({ error: 'Error al obtener productos.' });
   }
 });
@@ -33,7 +34,7 @@ router.get('/reviews', async (req, res) => {
     const reviews = await reviewService.getApproved();
     res.json(reviews);
   } catch (err: any) {
-    console.error('[Reviews Error]', err);
+    logger.error('Error fetching reviews', { service: 'API', error: err?.message });
     res.status(500).json({ error: 'Error al obtener reseñas.' });
   }
 });
@@ -44,7 +45,7 @@ router.get('/gallery', async (req, res) => {
     const gallery = await galleryService.getAll();
     res.json(gallery);
   } catch (err: any) {
-    console.error('[Gallery Error]', err);
+    logger.error('Error fetching gallery', { service: 'API', error: err?.message });
     res.status(500).json({ error: 'Error al obtener galería.' });
   }
 });
@@ -55,7 +56,7 @@ router.get('/config', async (req, res) => {
     const config = await configService.getAppConfig();
     res.json(config);
   } catch (err: any) {
-    console.error('[Config Error]', err);
+    logger.error('Error fetching config', { service: 'API', error: err?.message });
     res.status(500).json({ error: 'Error al obtener configuración.' });
   }
 });
@@ -69,7 +70,7 @@ router.get('/config/critical-urls', async (req, res) => {
       faviconUrl: config.faviconUrl,
     });
   } catch (err: any) {
-    console.error('[Config Critical URLs Error]', err);
+    logger.error('Error fetching critical URLs', { service: 'API', error: err?.message });
     res.status(500).json({ error: 'Error al obtener URLs críticas.' });
   }
 });
@@ -92,7 +93,7 @@ router.get('/orders', async (req, res) => {
     }
     res.status(400).json({ error: 'Se requiere trackingCode o email.' });
   } catch (err: any) {
-    console.error('[Orders Error]', err);
+    logger.error('Error fetching orders', { service: 'API', error: err?.message });
     res.status(500).json({ error: 'Error al obtener pedidos.' });
   }
 });
@@ -118,7 +119,7 @@ router.post('/orders', async (req, res) => {
 
     res.json({ success: true, id: result.id, trackingCode: result.trackingCode });
   } catch (err: any) {
-    console.error('[Order Create Error]', err);
+    logger.error('Error creating order', { service: 'API', error: err?.message });
     res.status(500).json({ error: err.message || 'Error al crear el pedido.' });
   }
 });
@@ -134,7 +135,7 @@ router.post('/otp/send', async (req, res) => {
     const result = await otpService.generateAndSend(email, customerName, orders);
     res.json(result);
   } catch (err: any) {
-    console.error('[OTP Send Error]', err);
+    logger.error('Error sending OTP', { service: 'API', error: err?.message });
     res.status(500).json({ error: 'Error al enviar código de verificación.' });
   }
 });
@@ -148,7 +149,7 @@ router.post('/otp/verify', async (req, res) => {
     const result = await otpService.verify(email, code);
     res.json(result);
   } catch (err: any) {
-    console.error('[OTP Verify Error]', err);
+    logger.error('Error verifying OTP', { service: 'API', error: err?.message });
     res.status(500).json({ error: 'Error al verificar código.' });
   }
 });
@@ -166,7 +167,7 @@ router.post('/contact', contactLimiter, async (req, res) => {
 
     res.json({ success: true, message: 'Mensaje enviado correctamente.' });
   } catch (err: any) {
-    console.error('[Contact Error]', err);
+    logger.error('Error sending contact', { service: 'API', error: err?.message });
     res.status(500).json({ error: 'Error al procesar mensaje de contacto.' });
   }
 });
@@ -206,8 +207,7 @@ router.get('/events', (req, res) => {
   RealtimeService.sendSSEHeaders(res);
   const clientId = RealtimeService.addClient(res);
 
-  req.on('close', () => {
-    console.log(`[SSE] Client ${clientId} disconnected.`);
+  req.on('close', () => {        logger.info('SSE client disconnected', { service: 'SSE', clientId });
   });
 });
 

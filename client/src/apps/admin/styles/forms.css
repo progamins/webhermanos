@@ -1,0 +1,236 @@
+/* ============= ADMIN FORM STYLES ============= */
+
+.admin-form-group {
+  margin-bottom: 20px;
+}
+
+.admin-form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--admin-text);
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+
+.admin-form-label-muted {
+  color: var(--admin-text-secondary);
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.admin-form-hint {
+  font-size: 11px;
+  color: var(--admin-text-muted);
+  margin-top: 4px;
+}
+
+.admin-form-error {
+  font-size: 11px;
+  color: var(--admin-danger);
+  margin-top: 4px;
+}
+
+/* Input */
+.admin-input {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  font-size: 13px;
+  font-family: var(--admin-font-sans);
+  color: var(--admin-text);
+  transition: all var(--admin-transition-fast);
+  outline: none;
+}
+
+.admin-input:hover {
+  border-color: var(--admin-border-hover);
+}
+
+.admin-input:focus {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px var(--admin-primary-light);
+}
+
+.admin-input::placeholder {
+  color: var(--admin-text-placeholder);
+}
+
+.admin-input-sm {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+/* Select */
+.admin-select {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  font-size: 13px;
+  font-family: var(--admin-font-sans);
+  color: var(--admin-text);
+  transition: all var(--admin-transition-fast);
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
+
+.admin-select:hover {
+  border-color: var(--admin-border-hover);
+}
+
+.admin-select:focus {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px var(--admin-primary-light);
+}
+
+/* Textarea */
+.admin-textarea {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  font-size: 13px;
+  font-family: var(--admin-font-sans);
+  color: var(--admin-text);
+  transition: all var(--admin-transition-fast);
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.admin-textarea:hover {
+  border-color: var(--admin-border-hover);
+}
+
+.admin-textarea:focus {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px var(--admin-primary-light);
+}
+
+/* Checkbox & Radio */
+.admin-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--admin-text);
+}
+
+.admin-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1.5px solid var(--admin-border);
+  accent-color: var(--admin-primary);
+  cursor: pointer;
+}
+
+/* Toggle switch */
+.admin-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.admin-toggle-track {
+  width: 36px;
+  height: 20px;
+  background: var(--admin-border);
+  border-radius: 9999px;
+  transition: all var(--admin-transition-fast);
+  position: relative;
+}
+
+.admin-toggle-track.active {
+  background: var(--admin-primary);
+}
+
+.admin-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  transition: all var(--admin-transition-fast);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.admin-toggle-track.active .admin-toggle-thumb {
+  left: 18px;
+}
+
+/* File upload */
+.admin-file-upload {
+  border: 2px dashed var(--admin-border);
+  border-radius: var(--admin-radius-lg);
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--admin-transition-normal);
+}
+
+.admin-file-upload:hover {
+  border-color: var(--admin-primary);
+  background: var(--admin-primary-light);
+}
+
+.admin-file-upload.has-file {
+  border-style: solid;
+  border-color: var(--admin-success);
+  background: var(--admin-success-light);
+}
+
+/* Search input */
+.admin-search {
+  position: relative;
+}
+
+.admin-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--admin-text-muted);
+  pointer-events: none;
+}
+
+.admin-search input {
+  padding-left: 34px;
+}
+
+/* Grid layouts for forms */
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.admin-form-section {
+  margin-bottom: 32px;
+}
+
+.admin-form-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--admin-text);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--admin-border-light);
+}

@@ -1,3 +1,4 @@
+import logger from '../lib/logger.js';
 import type { Request, Response, NextFunction } from 'express';
 
 export class AppError extends Error {
@@ -10,7 +11,13 @@ export class AppError extends Error {
 }
 
 export function errorHandler(err: Error, req: Request, res: Response, next: NextFunction) {
-  console.error(`[Error] ${err.message}`, err.stack);
+  logger.error('Request error', {
+    service: 'ErrorHandler',
+    path: req.path,
+    method: req.method,
+    error: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+  });
 
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({
