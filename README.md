@@ -96,49 +96,7 @@ Cópialas desde `.env.example` a `.env` (que **no** se sube a GitHub):
 
 ---
 
-## 🌍 Subir a GitHub (para clonarlo en Linux más tarde)
-
-### 1. Crear el repositorio
-- Entra en https://github.com/new y crea un repo **vacío** (sin README ni .gitignore).
-- O por CLI si tienes `gh`:
-  ```bash
-  gh repo create maison-rosas --private --source=. --remote=origin
-  ```
-
-### 2. Asegurar que NO se suben secretos ni archivos pesados
-El `.gitignore` ya excluye: `.env`, `node_modules/`, `dist/`, `uploads/`,
-`*.log`, `lighthouse-*.json`, `.zcode/`. Verifícalo:
-```bash
-git status --short
-# NO debe aparecer .env, node_modules ni uploads/
-```
-
-### 3. Hacer commit y push
-```bash
-git add -A
-git commit -m "feat: dockerize app (Dockerfile + compose) y limpieza de estructura"
-git branch -M main
-git remote add origin https://github.com/<tu-usuario>/maison-rosas.git   # si no lo creaste con gh
-git push -u origin main
-```
-
-### 4. En la máquina Linux destino
-```bash
-git clone https://github.com/<tu-usuario>/maison-rosas.git
-cd maison-rosas
-cp .env.example .env
-nano .env                       # pega tus secretos reales (SMTP, etc.)
-docker compose up -d --build
-```
-
-> 💡 Para llevar también los **datos** (productos, pedidos, imágenes), haz un backup
-> en Windows con los comandos de [docker/README.md](docker/README.md#-backups)
-> y restáuralo en Linux.
-
----
-
 ## 📚 Documentación adicional
 
 - 🐳 [docker/README.md](docker/README.md) — Guía Docker completa
-- 🚀 [README_RENDER.md](README_RENDER.md) — Deploy en Render
 - 🌐 [README_DEPLOY_HOSTGATOR.md](README_DEPLOY_HOSTGATOR.md) — Deploy en HostGator
