@@ -21,7 +21,7 @@ sin instalar Node, MySQL ni XAMPP manualmente.
 
 ```bash
 cp .env.example .env          # 1. Copia el entorno
-#                              2. Edita .env con tus claves (GEMINI_API_KEY, SMTP, etc.)
+#                              2. Edita .env con tus claves (SMTP, etc.)
 docker compose up -d --build   # 3. Levanta cliente + servidor + MySQL
 ```
 
@@ -45,7 +45,7 @@ npm install
 
 # 2. Configurar entorno
 cp .env.example .env
-#    - Edita .env: DB_HOST=localhost, DB_USER, DB_PASSWORD, GEMINI_API_KEY...
+#    - Edita .env: DB_HOST=localhost, DB_USER, DB_PASSWORD...
 
 # 3. Crear base de datos + tablas
 npm run db:migrate
@@ -94,7 +94,6 @@ Cópialas desde `.env.example` a `.env` (que **no** se sube a GitHub):
 | `DB_HOST` | `db` | `localhost` | Hostname de MySQL |
 | `DB_USER` / `DB_PASSWORD` | `root` / `MYSQL_ROOT_PASSWORD` | tu config | Credenciales DB |
 | `MYSQL_ROOT_PASSWORD` | ✅ (define) | — | Contraseña root del contenedor MySQL |
-| `GEMINI_API_KEY` | ✅ | ✅ | Clave de Google AI Studio |
 | `SMTP_USER` / `SMTP_PASS` | ✅ | ✅ | Gmail + contraseña de aplicación |
 | `GOOGLE_MAPS_PLATFORM_KEY` | opcional | opcional | Clave Google Maps |
 | `APP_URL` | `http://localhost:3000` | `http://localhost:3000` | URL pública |
@@ -132,7 +131,7 @@ git push -u origin main
 git clone https://github.com/<tu-usuario>/maison-rosas.git
 cd maison-rosas
 cp .env.example .env
-nano .env                       # pega tus secretos reales (GEMINI, SMTP, etc.)
+nano .env                       # pega tus secretos reales (SMTP, etc.)
 docker compose up -d --build
 ```
 

@@ -5,7 +5,6 @@ dotenv.config();
 import { env } from './config/env.js';
 import { testConnection } from './config/db.js';
 import { createApp } from './app.js';
-import { aiService } from './services/AiService.js';
 
 async function bootstrap() {
   logger.info('══════════════════════════════════════════════', { service: 'Server' });
@@ -25,8 +24,6 @@ async function bootstrap() {
     process.exit(1);
   }
 
-  // Initialize AI service
-  await aiService.initialize();
 
   // Create and start express app
   const app = createApp();

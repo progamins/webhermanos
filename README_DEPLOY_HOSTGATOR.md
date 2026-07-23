@@ -101,7 +101,7 @@ El archivo `.htaccess` del repositorio ya está configurado para:
 | 🖼️ Galería de imágenes | ✅ Firestore |
 | ⭐ Opiniones de clientes | ✅ Firestore |
 | 🔍 Consulta de pedidos | ✅ OTP por correo |
-| 🧁 Personalizador IA | ✅ Gemini API |
+
 | ✅ Favicon editable | ✅ Desde panel admin |
 
 ---

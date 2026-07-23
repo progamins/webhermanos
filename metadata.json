@@ -2,5 +2,5 @@
   "name": "Maison Rosas",
   "description": "Pastelería de Autor & Repostería Fina por la familia Rosas Albines. Modelos exclusivos personalizados y pedidos integrados por WhatsApp.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": []
 }

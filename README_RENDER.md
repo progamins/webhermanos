@@ -1,6 +1,6 @@
 # Guía para Desplegar Maison Rosas en Render 🚀
 
-Este proyecto es una aplicación **Full-Stack (Vite + React en el Frontend, Node.js + Express en el Backend)** con base de datos en tiempo real (Firebase Firestore) e Inteligencia Artificial (Gemini API).
+Este proyecto es una aplicación **Full-Stack (Vite + React en el Frontend, Node.js + Express en el Backend)** con base de datos MySQL.
 
 Sigue estos pasos sencillos para desplegar tu aplicación en **Render**:
 
@@ -32,7 +32,7 @@ En la sección **"Environment"** de la configuración de tu servicio en Render, 
 |---|---|
 | `NODE_ENV` | `production` (Indica que corre en modo optimizado de producción) |
 | `PORT` | `3000` (Render lo maneja de forma automática, pero es recomendable definirlo) |
-| `GEMINI_API_KEY` | Tu API Key de Google AI Studio (Necesaria para Carol, la chef virtual que genera mensajes y dedicatorias). |
+
 | `GOOGLE_MAPS_PLATFORM_KEY` | Tu clave de Google Maps (Para la localización interactiva de la tienda). |
 | `RESEND_API_KEY` | *(Opcional)* Tu API Key de [Resend](https://resend.com/) si deseas enviar correos automáticos reales a tus clientes. |
 | `RESEND_SENDER_EMAIL` | *(Opcional)* Tu correo verificado en Resend (ej. `edwinraulrosasalbines@gmail.com`). |

@@ -46,7 +46,6 @@ export interface EnvConfig {
   RESEND_SENDER_EMAIL: string;
 
   // Google
-  GEMINI_API_KEY: string;
   GOOGLE_MAPS_PLATFORM_KEY: string;
 
   // Google Analytics
@@ -95,7 +94,6 @@ function loadEnv(): EnvConfig {
     RESEND_API_KEY: process.env.RESEND_API_KEY || '',
     RESEND_SENDER_EMAIL: process.env.RESEND_SENDER_EMAIL || '',
 
-    GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
     GOOGLE_MAPS_PLATFORM_KEY: process.env.GOOGLE_MAPS_PLATFORM_KEY || '',
 
     GA_MEASUREMENT_ID: process.env.VITE_GA_MEASUREMENT_ID || '',

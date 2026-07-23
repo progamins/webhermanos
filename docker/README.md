@@ -34,7 +34,6 @@ cp .env.example .env
 Abre `.env` y configura **al menos**:
 - `MYSQL_ROOT_PASSWORD` → una contraseña segura para MySQL.
 - `DB_PASSWORD` → **igual** que `MYSQL_ROOT_PASSWORD` (la app se conecta como root por simplicidad).
-- `GEMINI_API_KEY` → tu clave de Google AI Studio.
 - `SMTP_USER` y `SMTP_PASS` → tu correo + [contraseña de aplicación](https://myaccount.google.com/apppasswords) de Gmail.
 - `GOOGLE_MAPS_PLATFORM_KEY` → tu clave de Google Maps (opcional).
 
