@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/progamins/webhermanos/main/public/logo.png" width="200" alt="Maison Rosas"/>
+  <img src="https://raw.githubusercontent.com/progamins/webhermanos/main/client/public/logo.png" width="200" alt="Maison Rosas"/>
   <h1 style="margin-top: 12px; font-size: 2.5em;">🍰 Maison Rosas</h1>
   <p style="font-size: 1.1em; color: #666;">Pastelería de autor &amp; repostería fina</p>
   <br/>
