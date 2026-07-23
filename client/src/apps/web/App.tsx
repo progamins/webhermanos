@@ -42,8 +42,15 @@ const FAQ = lazy(() => import('./components/FAQ'));
 const Contact = lazy(() => import('./components/Contact'));
 const OrderTracking = lazy(() => import('./components/OrderTracking'));
 
+const ENTRANCE_SEEN_KEY = 'maison_entrance_seen';
+
+const getHasSeenEntrance = (): boolean => {
+  try { return localStorage.getItem(ENTRANCE_SEEN_KEY) === 'true'; }
+  catch { return false; }
+};
+
 export default function App() {
-  const [showEntrance, setShowEntrance] = useState(true);
+  const [showEntrance, setShowEntrance] = useState(!getHasSeenEntrance());
   const [products, setProducts] = useState<Product[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
@@ -292,7 +299,8 @@ export default function App() {
     },
   };
 
-  // Animación de entrada — duración reducida en mobile
+  // Animación de entrada — solo se muestra UNA vez por usuario (localStorage)
+  // Su función principal es precargar imágenes críticas.
   useEffect(() => {
     const isMobile = window.innerWidth < 768;
     const savedHeroUrl = (() => { try { return localStorage.getItem('maison_hero_url'); } catch { return null; } })();
@@ -301,8 +309,18 @@ export default function App() {
     if (savedHeroUrl) urlsToPreload.push(savedHeroUrl);
     if (savedLogoUrl) urlsToPreload.push(savedLogoUrl);
     if (urlsToPreload.length > 0) preloadImages(urlsToPreload);
+
+    // Si el usuario ya vio la animación, la saltamos (precarga igual se ejecuta)
+    if (getHasSeenEntrance()) {
+      setShowEntrance(false);
+      return;
+    }
+
     const duration = isMobile ? 800 : 1400;
-    const timer = setTimeout(() => setShowEntrance(false), duration);
+    const timer = setTimeout(() => {
+      try { localStorage.setItem(ENTRANCE_SEEN_KEY, 'true'); } catch {}
+      setShowEntrance(false);
+    }, duration);
     return () => clearTimeout(timer);
   }, []);
 
