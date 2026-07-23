@@ -301,7 +301,7 @@ export default function App() {
     if (savedHeroUrl) urlsToPreload.push(savedHeroUrl);
     if (savedLogoUrl) urlsToPreload.push(savedLogoUrl);
     if (urlsToPreload.length > 0) preloadImages(urlsToPreload);
-    const duration = isMobile ? 1200 : 2200;
+    const duration = isMobile ? 800 : 1400;
     const timer = setTimeout(() => setShowEntrance(false), duration);
     return () => clearTimeout(timer);
   }, []);
@@ -468,14 +468,15 @@ export default function App() {
             className="fixed inset-0 z-[9999] flex items-center justify-center entrance-container"
             style={{ backgroundColor: 'var(--theme-bg)' }}
           >
-            <div className="absolute top-1/3 left-1/3 w-64 h-64 rounded-full bg-brand-100/40 blur-3xl" aria-hidden="true" />
-            <div className="absolute bottom-1/3 right-1/3 w-48 h-48 rounded-full bg-brand-secondary/15 blur-3xl" aria-hidden="true" />
-            <div className="text-center relative z-10 entrance-content">
+            <div className="text-center entrance-content">
+              {/* ─── Icono Cake con bounce CSS puro (GPU) ─── */}
               <div className="flex justify-center mb-2 entrance-icon">
                 <div className="entrance-bounce">
                   <Cake className="w-8 h-8 text-brand-400" />
                 </div>
               </div>
+
+              {/* ─── Título ─── */}
               <h1 className="font-serif text-4xl font-bold tracking-tight entrance-title"
                 style={{
                   background: 'linear-gradient(135deg, #C4847D 0%, #D4A373 50%, #C4847D 100%)',
@@ -485,25 +486,31 @@ export default function App() {
                 }}>
                 Maison Rosas
               </h1>
+
+              {/* ─── Divisor ─── */}
               <div className="h-px bg-gradient-to-r from-transparent via-brand-300/60 to-transparent mx-auto origin-center entrance-divider" style={{ width: '50%' }} />
+
+              {/* ─── Subtítulo ─── */}
               <p className="text-[10px] font-mono tracking-[0.3em] text-brand-500 uppercase mt-3 entrance-subtitle">Alma Artesanal</p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <Navbar
-        currentView={currentView}
-        setCurrentView={handleViewChange}
-        logoUrl={config?.logoUrl}
-        theme={theme}
-        onToggleTheme={() => {
-          hasUserInteracted.current = true;
-          const next = theme === 'dark' ? 'light' : 'dark';
-          try { localStorage.setItem('maison_theme', next); } catch {}
-          setTheme(next);
-        }}
-      />
+      {!showEntrance && (
+        <Navbar
+          currentView={currentView}
+          setCurrentView={handleViewChange}
+          logoUrl={config?.logoUrl}
+          theme={theme}
+          onToggleTheme={() => {
+            hasUserInteracted.current = true;
+            const next = theme === 'dark' ? 'light' : 'dark';
+            try { localStorage.setItem('maison_theme', next); } catch {}
+            setTheme(next);
+          }}
+        />
+      )}
 
       <AnimatePresence mode="wait">
         {currentView === 'tracking' ? (

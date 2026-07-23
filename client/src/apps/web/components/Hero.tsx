@@ -96,10 +96,14 @@ function Hero({ onViewCatalog, onViewHistory, config }: HeroProps) {
         style={shouldParallax ? { y: bgParallaxY } : undefined}
         aria-hidden="true"
       >
-        <div className="absolute -top-20 left-[5%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-brand-200/30 via-brand-100/20 to-transparent dark:from-brand-800/10 dark:via-brand-900/5 dark:to-transparent blur-[80px] will-change-transform animate-orb-slow" />
-        <div className="absolute top-[45%] -right-[10%] w-[450px] h-[450px] rounded-full bg-gradient-to-br from-brand-secondary/20 via-brand-300/15 to-transparent dark:from-brand-600/8 dark:via-brand-700/5 dark:to-transparent blur-[80px] will-change-transform animate-orb-slow-reverse" />
-        <div className="absolute -bottom-[15%] left-[20%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-brand-400/15 via-brand-500/10 to-transparent dark:from-brand-700/6 dark:via-brand-800/4 dark:to-transparent blur-[100px] will-change-transform animate-orb-drift" />
-        <div className="absolute top-[15%] -left-[5%] w-[300px] h-[300px] rounded-full bg-gradient-to-r from-white/40 via-brand-100/20 to-transparent dark:from-white/5 dark:via-brand-200/5 dark:to-transparent blur-[60px] will-change-transform animate-light-sweep" />
+        {!isMobile && (
+          <>
+            <div className="absolute -top-20 left-[5%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-brand-200/30 via-brand-100/20 to-transparent dark:from-brand-800/10 dark:via-brand-900/5 dark:to-transparent blur-[80px] will-change-transform animate-orb-slow" />
+            <div className="absolute top-[45%] -right-[10%] w-[450px] h-[450px] rounded-full bg-gradient-to-br from-brand-secondary/20 via-brand-300/15 to-transparent dark:from-brand-600/8 dark:via-brand-700/5 dark:to-transparent blur-[80px] will-change-transform animate-orb-slow-reverse" />
+            <div className="absolute -bottom-[15%] left-[20%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-brand-400/15 via-brand-500/10 to-transparent dark:from-brand-700/6 dark:via-brand-800/4 dark:to-transparent blur-[100px] will-change-transform animate-orb-drift" />
+            <div className="absolute top-[15%] -left-[5%] w-[300px] h-[300px] rounded-full bg-gradient-to-r from-white/40 via-brand-100/20 to-transparent dark:from-white/5 dark:via-brand-200/5 dark:to-transparent blur-[60px] will-change-transform animate-light-sweep" />
+          </>
+        )}
       </motion.div>
 
       <motion.div
@@ -107,7 +111,7 @@ function Hero({ onViewCatalog, onViewHistory, config }: HeroProps) {
         style={shouldParallax ? { y: particlesParallaxY } : undefined}
         aria-hidden="true"
       >
-        {!reducedMotion &&
+        {!reducedMotion && !isMobile &&
           floatingParticles.map((p) => (
             <motion.div
               key={p.id}
@@ -115,17 +119,13 @@ function Hero({ onViewCatalog, onViewHistory, config }: HeroProps) {
                 p.isStar ? 'bg-brand-400 dark:bg-brand-300' : 'bg-brand-300 dark:bg-brand-400'
               }`}
               style={{ width: p.size, height: p.size, left: `${p.x}%`, top: `${p.y}%` }}
-              animate={
-                isMobile
-                  ? { y: [0, -20, 0], x: [0, 5, 0], opacity: [p.opacityBase, p.opacityBase * 2, p.opacityBase], scale: [1, 1.1, 1] }
-                  : {
-                      y: [0, -50 - p.driftX * 0.5, -20, -60, 0],
-                      x: [0, p.driftX * 0.3, -p.driftX * 0.2, p.driftX * 0.5, 0],
-                      opacity: [p.opacityBase, p.opacityBase * 3, p.opacityBase * 1.5, p.opacityBase * 2.5, p.opacityBase],
-                      scale: [1, 1.4, 0.8, 1.2, 1],
-                    }
-              }
-              transition={{ duration: isMobile ? p.duration * 1.5 : p.duration, repeat: Infinity, delay: isMobile ? p.delay * 0.5 : p.delay, ease: 'easeInOut' }}
+              animate={{
+                y: [0, -50 - p.driftX * 0.5, -20, -60, 0],
+                x: [0, p.driftX * 0.3, -p.driftX * 0.2, p.driftX * 0.5, 0],
+                opacity: [p.opacityBase, p.opacityBase * 3, p.opacityBase * 1.5, p.opacityBase * 2.5, p.opacityBase],
+                scale: [1, 1.4, 0.8, 1.2, 1],
+              }}
+              transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
             />
           ))}
         {!reducedMotion &&
@@ -250,7 +250,7 @@ function Hero({ onViewCatalog, onViewHistory, config }: HeroProps) {
             className="lg:col-span-5 relative flex justify-center"
             style={shouldParallax ? { y: imageParallaxY } : undefined}
           >
-            {!reducedMotion && (
+            {!reducedMotion && !isMobile && (
               <>
                 <motion.div
                   animate={{ rotate: 360 }}
