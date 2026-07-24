@@ -81,7 +81,7 @@ export default function Reviews({ reviews, onRefreshReviews, loading = false }: 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const reducedMotion = useReducedMotion();
 
-  const approvedReviews = reviews.filter(r => r.approved);
+  const approvedReviews = useMemo(() => reviews.filter(r => r.approved), [reviews]);
 
   // Calculate review stats
   const avgRating = useMemo(() => {
@@ -89,16 +89,14 @@ export default function Reviews({ reviews, onRefreshReviews, loading = false }: 
     return approvedReviews.reduce((sum, r) => sum + r.rating, 0) / approvedReviews.length;
   }, [approvedReviews]);
 
-  const ratingDistribution = useMemo(() => {
-    const dist = [0, 0, 0, 0, 0];
-    approvedReviews.forEach(r => { if (r.rating >= 1 && r.rating <= 5) dist[r.rating - 1]++; });
-    return dist;
-  }, [approvedReviews]);
-
   // Split reviews into two marquee rows
-  const midPoint = Math.ceil(approvedReviews.length / 2);
-  const marqueeRow1 = approvedReviews.slice(0, midPoint);
-  const marqueeRow2 = approvedReviews.slice(midPoint);
+  const { marqueeRow1, marqueeRow2 } = useMemo(() => {
+    const midPoint = Math.ceil(approvedReviews.length / 2);
+    return {
+      marqueeRow1: approvedReviews.slice(0, midPoint),
+      marqueeRow2: approvedReviews.slice(midPoint),
+    };
+  }, [approvedReviews]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();

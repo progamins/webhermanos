@@ -134,14 +134,16 @@ input, textarea, select, button, a, label, summary {
   outline: none;
 }
 
-/* Content-visibility for below-fold sections speeds up initial render */
-section[id], footer {
-  content-visibility: auto;
-  contain-intrinsic-size: 600px;
+/* Content-visibility for below-fold sections speeds up initial render.
+   Solo se aplica en viewports lo suficientemente anchos como para garantizar
+   altura útil; en mobile muy angosto puede causar layout shift al hacer scroll. */
+@media (min-width: 768px) {
+  section[id]:not(#inicio):not(#tracking), footer {
+    content-visibility: auto;
+    contain-intrinsic-size: 600px;
+  }
 }
-#inicio {
-  content-visibility: visible;
-}
+#inicio,
 #hero-badge, #hero-title, #hero-desc, #hero-actions, #hero-stats, #hero-image-container, #hero-review-floater {
   content-visibility: visible;
 }
@@ -195,31 +197,63 @@ section[id], footer {
   }
 }
 
-/* Liquid Glass */
+/* ========= iOS 26 — Liquid Glass (nav de la web) =========
+ * Aspectos clave reproducidos:
+ *  1. Tinte translúcido muy ligero (no opaco) → deja pasar color del fondo con saturación extra
+ *  2. Borde specular dual (light/dark) que simula la refracción del vidrio en el borde
+ *  3. Highlight interno superior + sombra interna inferior (efecto "lente")
+ *  4. Glow exterior etéreo + drop shadow inferior sutil
+ *  5. Sheen diagonal casi imperceptible
+ */
 .liquid-glass {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.25) 100%);
-  backdrop-filter: blur(25px) saturate(190%);
-  -webkit-backdrop-filter: blur(25px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  box-shadow: 
-    0 12px 40px 0 rgba(212, 163, 115, 0.12),
-    inset 0 1px 2px 0 rgba(255, 255, 255, 0.45),
-    inset 0 -1px 3px 0 rgba(0, 0, 0, 0.02);
-  border-radius: 24px;
+  position: relative;
+  --lg-tint: rgba(255, 255, 255, 0.22);
+  --lg-tint-2: rgba(255, 255, 255, 0.10);
+  --lg-edge: rgba(255, 255, 255, 0.75);
+  --lg-edge-soft: rgba(255, 255, 255, 0.20);
+  --lg-highlight: rgba(255, 255, 255, 0.55);
+  --lg-inner-shadow: rgba(0, 0, 0, 0.08);
+  --lg-glow: rgba(212, 163, 115, 0.10);
+  background: linear-gradient(135deg, var(--lg-tint) 0%, var(--lg-tint-2) 100%);
+  backdrop-filter: blur(28px) saturate(200%) brightness(108%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%) brightness(108%);
+  /* Borde dual: línea brillante + halo exterior */
+  border: 0.5px solid var(--lg-edge);
+  box-shadow:
+    0 0 0 0.5px var(--lg-edge-soft) inset,
+    0 10px 40px -8px var(--lg-glow),
+    0 18px 50px -12px rgba(0, 0, 0, 0.12),
+    inset 0 1px 1px 0 var(--lg-highlight),
+    inset 0 -1px 2px 0 var(--lg-inner-shadow);
+  border-radius: 999px;
+  isolate: isolate;
 }
 
 .dark .liquid-glass {
-  background: linear-gradient(135deg, rgba(18, 18, 22, 0.65) 0%, rgba(24, 24, 28, 0.35) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 
-    0 12px 40px 0 rgba(0, 0, 0, 0.4),
-    inset 0 1px 2px 0 rgba(255, 255, 255, 0.15),
-    inset 0 -1px 3px 0 rgba(0, 0, 0, 0.25);
+  --lg-tint: rgba(28, 25, 23, 0.30);
+  --lg-tint-2: rgba(18, 16, 14, 0.18);
+  --lg-edge: rgba(255, 255, 255, 0.45);
+  --lg-edge-soft: rgba(255, 255, 255, 0.08);
+  --lg-highlight: rgba(255, 255, 255, 0.18);
+  --lg-inner-shadow: rgba(0, 0, 0, 0.4);
+  --lg-glow: rgba(212, 163, 115, 0.06);
+  box-shadow:
+    0 0 0 0.5px var(--lg-edge-soft) inset,
+    0 12px 45px -10px rgba(0, 0, 0, 0.55),
+    0 20px 60px -15px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px 0 var(--lg-highlight),
+    inset 0 -1px 2px 0 var(--lg-inner-shadow);
 }
 
 @media (max-width: 768px) {
-  .liquid-glass { backdrop-filter: blur(12px) saturate(150%); -webkit-backdrop-filter: blur(12px) saturate(150%); }
-  .dark .liquid-glass { backdrop-filter: blur(12px) saturate(150%); -webkit-backdrop-filter: blur(12px) saturate(150%); }
+  .liquid-glass {
+    backdrop-filter: blur(14px) saturate(160%) brightness(105%);
+    -webkit-backdrop-filter: blur(14px) saturate(160%) brightness(105%);
+  }
+  .dark .liquid-glass {
+    backdrop-filter: blur(14px) saturate(160%) brightness(105%);
+    -webkit-backdrop-filter: blur(14px) saturate(160%) brightness(105%);
+  }
 }
 
 .liquid-glass-sheen {
@@ -378,13 +412,17 @@ section[id], footer {
     animation-iteration-count: 1 !important;
   }
   .entrance-bounce { animation-duration: 4s !important; }
-  @media (max-width: 380px) {
-    [class*=" animate-orb-"], [class^="animate-orb-"], .animate-light-sweep { display: none !important; }
-  }
   .mobile-hidden-particle { display: none; }
   .backdrop-blur-xl, .backdrop-blur-lg { backdrop-filter: blur(6px) !important; -webkit-backdrop-filter: blur(6px) !important; }
   .backdrop-blur-md, .backdrop-blur-sm { backdrop-filter: blur(3px) !important; -webkit-backdrop-filter: blur(3px) !important; }
   .fixed, [class*="sticky"] { transform: translateZ(0); }
   .animate-gradient-shift { animation: none; }
-  section[id]:not(#inicio), footer { content-visibility: auto; contain-intrinsic-size: 400px; }
+  section[id]:not(#inicio):not(#tracking), footer { content-visibility: auto; contain-intrinsic-size: 400px; }
+}
+
+/* Móviles muy angostos: desactivar totalmente los orbes/blobs animados
+   (su blur grande es costoso en GPUs móviles entry-level). */
+@media (max-width: 380px) {
+  [class*=" animate-orb-"], [class^="animate-orb-"], .animate-light-sweep,
+  .animate-blob-1, .animate-blob-2, .animate-blob-3 { display: none !important; }
 }

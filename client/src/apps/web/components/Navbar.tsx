@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useCallback, useRef } from 'react';
+import { memo, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { useReducedMotion, useIsMobile } from '../../../shared/hooks';
 import { Cake, Menu, ShoppingBag, HelpCircle, PhoneCall, Star, Sun, Moon } from 'lucide-react';
@@ -71,6 +71,30 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
     };
   }, []);
 
+  // ─── Auto-ocultar el nav cuando hay un modal/overlay abierto (Customizer, etc.) ───
+  // Desacoplado: observa el body y cualquier portal con z >= 100 o id "customizer-modal".
+  useEffect(() => {
+    const isOverlay = (el: HTMLElement): boolean => {
+      if (el.id === 'customizer-modal') return true;
+      const z = Number(el.style?.zIndex || getComputedStyle(el).zIndex || 0);
+      return z >= 100;
+    };
+    const scan = () => {
+      const overlayOpen =
+        document.body.style.overflow === 'hidden' ||
+        !!document.getElementById('customizer-modal') ||
+        Array.from(document.body.children).some((c) => {
+          if (!(c instanceof HTMLElement)) return false;
+          return c.id !== 'root' && c.id !== 'admin-root' && (c.classList?.contains('fixed') || c.classList?.contains('inset-0')) && isOverlay(c);
+        });
+      setNavHidden((prev) => (prev === overlayOpen ? prev : overlayOpen));
+    };
+    scan();
+    const mo = new MutationObserver(scan);
+    mo.observe(document.body, { attributes: true, attributeFilter: ['style', 'class'], childList: true, subtree: true });
+    return () => mo.disconnect();
+  }, []);
+
   // ─── Mouse tracking para el highlight especular (Apple touch-point illumination) ───
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!navRef.current || reducedMotion) return;
@@ -128,27 +152,56 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
   const isDark = theme === 'dark';
   const textColor = isDark ? '#f0ede8' : '#3d2a25';
   const textMuted = isDark ? 'rgba(240,237,232,0.7)' : 'rgba(61,42,37,0.7)';
-  const glassBg = isDark
-    ? atTop
-      ? 'linear-gradient(135deg, rgba(25,23,21,0.85), rgba(20,18,16,0.75))'
-      : 'linear-gradient(135deg, rgba(30,28,26,0.35), rgba(20,18,16,0.20))'
-    : atTop
-      ? 'linear-gradient(135deg, rgba(255,255,255,0.70), rgba(255,255,255,0.50))'
-      : 'linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.06))';
-  const glassBorder = isDark
-    ? atTop ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(255,255,255,0.10)'
-    : atTop ? '1px solid rgba(255,255,255,0.40)' : '1px solid rgba(255,255,255,0.35)';
-  const glassShadow = atTop
-    ? isDark
-      ? '0 2px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)'
-      : '0 2px 12px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.8)'
-    : scrolled
+
+  // ─── iOS 26 Liquid Glass: estilos memoizados ───
+  // Se recalculaban en cada render (cada frame de scroll). Ahora solo cambian
+  // cuando realmente varían sus inputs (atTop, scrolled, tema). El navbar
+  // escuchando scroll dispara setScrolled/setAtTop, que re-render el componente;
+  // si las strings idénticas fueran re-creadas React igual las propaga al <nav>
+  // forzando layout/style invalidation. Con useMemo el <nav> solo recibe nuevas
+  // props cuando los estilos realmente cambiaron.
+  const glassStyles = useMemo(() => {
+    // ─── iOS 26 Liquid Glass: tinte translúcido mínimamente opaco ───
+    // La saturación/brillo la aporta backdrop-filter; aquí solo damos el tinte.
+    const glassBg = isDark
+      ? atTop
+        ? 'linear-gradient(135deg, rgba(28,25,23,0.55), rgba(18,16,14,0.35))'
+        : 'linear-gradient(135deg, rgba(28,25,23,0.22), rgba(18,16,14,0.12))'
+      : atTop
+        ? 'linear-gradient(135deg, rgba(255,255,255,0.40), rgba(255,255,255,0.20))'
+        : 'linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06))';
+
+    // Borde specular dual: línea brillante + halo (refracción del borde del vidrio)
+    const glassBorder = isDark
+      ? atTop ? '0.5px solid rgba(255,255,255,0.35)' : '0.5px solid rgba(255,255,255,0.22)'
+      : atTop ? '0.5px solid rgba(255,255,255,0.75)' : '0.5px solid rgba(255,255,255,0.50)';
+
+    // Sombra interna superior (highlight) + inferior (inner shadow) + drop + glow etéreo
+    const glassShadow = atTop
       ? isDark
-        ? '0 24px 60px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.08), inset 0 -1px 1px rgba(0,0,0,0.2)'
-        : '0 24px 60px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.5), inset 0 -1px 1px rgba(255,255,255,0.08)'
-      : isDark
-        ? '0 20px 50px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.1), inset 0 -1px 1px rgba(0,0,0,0.15)'
-        : '0 20px 50px rgba(0,0,0,0.12), inset 0 1px 1px rgba(255,255,255,0.7), inset 0 -1px 1px rgba(255,255,255,0.12)';
+        ? '0 0 0 0.5px rgba(255,255,255,0.08) inset, 0 10px 40px -10px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.14), inset 0 -1px 2px rgba(0,0,0,0.35)'
+        : '0 0 0 0.5px rgba(255,255,255,0.18) inset, 0 10px 40px -10px rgba(0,0,0,0.10), 0 2px 12px rgba(212,163,115,0.08), inset 0 1px 1px rgba(255,255,255,0.55), inset 0 -1px 2px rgba(0,0,0,0.06)'
+      : scrolled
+        ? isDark
+          ? '0 0 0 0.5px rgba(255,255,255,0.06) inset, 0 24px 70px -12px rgba(0,0,0,0.6), 0 12px 40px -10px rgba(212,163,115,0.05), inset 0 1px 1px rgba(255,255,255,0.10), inset 0 -1px 2px rgba(0,0,0,0.4)'
+          : '0 0 0 0.5px rgba(255,255,255,0.14) inset, 0 24px 70px -12px rgba(0,0,0,0.15), 0 12px 40px -10px rgba(212,163,115,0.10), inset 0 1px 1px rgba(255,255,255,0.45), inset 0 -1px 2px rgba(0,0,0,0.08)'
+        : isDark
+          ? '0 0 0 0.5px rgba(255,255,255,0.07) inset, 0 18px 55px -12px rgba(0,0,0,0.5), 0 8px 30px -10px rgba(212,163,115,0.04), inset 0 1px 1px rgba(255,255,255,0.12), inset 0 -1px 2px rgba(0,0,0,0.38)'
+          : '0 0 0 0.5px rgba(255,255,255,0.16) inset, 0 18px 55px -12px rgba(0,0,0,0.12), 0 8px 30px -10px rgba(212,163,115,0.09), inset 0 1px 1px rgba(255,255,255,0.50), inset 0 -1px 2px rgba(0,0,0,0.07)';
+
+    // ─── Vidrio físico iOS 26: blur amplio + saturación + brightness ───
+    // Mientras más translúcida la capa, más se cuela el color del fondo con saturación extra.
+    // Mobile: blur reducido (~14-18px) para rendimiento en GPUs entry-level.
+    const blurAmount = isMobile
+      ? (scrolled || atTop ? 18 : 14)
+      : (scrolled || atTop ? 34 : 28);
+    const saturateAmount = isMobile
+      ? '165%'
+      : `${atTop ? 210 : 200}%`;
+    const glassBlurFilter = `blur(${blurAmount}px) saturate(${saturateAmount}) brightness(${isMobile ? 105 : 108}%)`;
+
+    return { glassBg, glassBorder, glassShadow, glassBlurFilter };
+  }, [atTop, scrolled, isDark, isMobile]);
 
   return (
     <>
@@ -159,39 +212,46 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
         animate={{
           opacity: navHidden ? 0 : 1,
           y: navHidden ? -20 : 0,
-          // ─── En mobile: animamos posición con spring rápido ───
+          // ─── Centrado del pill flotante: delegado a Framer Motion (x: '-50%') ───
+          // Importante: si mezclamos `translate: '-50% 0'` (CSS) con el `transform`
+          // que Framer Motion escribe para animar `y`, hay una carrera que hace que
+          // al recargar/scroll rápido el nav "salte" hacia la izquierda (se pierde
+          // el translateX(-50%) de centrado). Centralizar aquí evita el conflicto.
+          x: atTop ? '0%' : '-50%',
+          // ─── Posición del pill flotante ───
+          // Mobile y desktop comparten el mismo mecanismo (spring) para que el nav
+          // reaccione suavemente al pasar de "barra anclada al tope" (atTop=true) a
+          // "pill centrado flotante" (atTop=false). Antes desktop usaba transiciones
+          // CSS sobre `top/left/width/translate` — eso peleaba con Framer Motion al
+          // recargar+scroll rápido y producía saltos horizontales.
           ...(isMobile ? {
-            top: atTop ? 0 : 20,
+            top: atTop ? 0 : 16,
             left: atTop ? 0 : '50%',
+            width: atTop ? '100%' : 'min(calc(100% - 32px), 640px)',
+          } : {
+            top: atTop ? 0 : 20,
+            left: atTop ? '0%' : '50%',
             width: atTop ? '100%' : 'min(1400px, calc(100vw - 40px))',
-          } : {}),
+          }),
         }}
         transition={reducedMotion ? { duration: 0 } : {
           type: 'spring',
-          stiffness: isMobile ? 400 : 400,
-          damping: isMobile ? 22 : 20,
-          mass: isMobile ? 0.6 : 0.6,
+          // Spring más amortiguado en mobile para evitar rebote visual del pill
+          // al cruzar el breakpoint del scroll (atTop ⇄ flotante) en pantallas
+          // chicas con inercia táctil activa.
+          stiffness: 400,
+          damping: isMobile ? 24 : 20,
+          mass: 0.6,
         }}
         onMouseMove={handleMouseMove}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         style={{
           position: 'fixed',
-          // ─── Desktop: CSS transitions gestionan la posición ───
-          top: isMobile ? undefined : (atTop ? '0px' : '20px'),
-          left: isMobile ? undefined : (atTop ? '0px' : '50%'),
-          translate: atTop ? '0 0' : '-50% 0',
-          width: isMobile ? undefined : (atTop ? '100%' : 'min(1400px, calc(100vw - 40px))'),
-          zIndex: 9999,
-          transform: isHovering && !reducedMotion && !atTop ? 'translateY(-2px)' : 'translateY(0)',
+          zIndex: 90,
           pointerEvents: navHidden ? 'none' : 'auto',
-          // ─── Desktop: CSS transitions (mobile usa las de Framer Motion) ───
-          transition: isMobile
-            ? (reducedMotion ? 'none' : 'translate 0.3s cubic-bezier(.22,.61,.36,1), transform 0.2s cubic-bezier(.22,.61,.36,1), pointer-events 0s 0.2s')
-            : (reducedMotion
-              ? 'none'
-              : 'top 0.2s cubic-bezier(.22,.61,.36,1), left 0.2s cubic-bezier(.22,.61,.36,1), width 0.2s cubic-bezier(.22,.61,.36,1), translate 0.2s cubic-bezier(.22,.61,.36,1), transform 0.2s cubic-bezier(.22,.61,.36,1), pointer-events 0s 0.2s'),
         }}
+        whileHover={reducedMotion || atTop ? undefined : { y: -2 }}
       >
         <nav
           ref={navRef}
@@ -202,16 +262,12 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
             overflow: 'hidden',
             position: 'relative',
 
-            // ─── Vidrio físico (mobile: blur reducido para rendimiento) ───
-            backdropFilter: isMobile
-              ? `blur(${scrolled || atTop ? 15 : 10}px) saturate(110%) brightness(105%)`
-              : `blur(${scrolled || atTop ? 40 : 30}px) saturate(200%) brightness(108%)`,
-            WebkitBackdropFilter: isMobile
-              ? `blur(${scrolled || atTop ? 15 : 10}px) saturate(110%) brightness(105%)`
-              : `blur(${scrolled || atTop ? 40 : 30}px) saturate(200%) brightness(108%)`,
-            background: glassBg,
-            border: glassBorder,
-            boxShadow: glassShadow,
+            // ─── Vidrio físico iOS 26: blur/saturación/brightness memoizados ───
+            backdropFilter: glassStyles.glassBlurFilter,
+            WebkitBackdropFilter: glassStyles.glassBlurFilter,
+            background: glassStyles.glassBg,
+            border: glassStyles.glassBorder,
+            boxShadow: glassStyles.glassShadow,
 
             transition: reducedMotion
               ? 'none'
@@ -222,51 +278,70 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
           role="navigation"
           aria-label="Navegación principal"
         >
-          {/* ─── Glass Layer: gradiente de superficie pulida (solo desktop) ─── */}
+          {/* ─── Glass Layer: gradiente de superficie pulida (efecto lente superior) ─── */}
           {!isMobile && (
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
                 background: isDark
-                  ? 'linear-gradient(180deg, rgba(255,255,255,0.06), transparent 60%)'
-                  : 'linear-gradient(180deg, rgba(255,255,255,0.20), transparent 60%)',
+                  ? 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 45%)'
+                  : 'linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.04) 45%, transparent 70%)',
                 borderRadius: 'inherit',
               }}
               aria-hidden="true"
             />
           )}
 
-          {/* ─── Specular Highlight: sigue al cursor (solo desktop) ─── */}
+          {/* ─── Specular Highlight: sigue al cursor (illumination touch-point de iOS 26) ─── */}
           {!isMobile && (
             <div
               className="absolute pointer-events-none"
               style={{
                 top: '-100%',
                 left: '-10%',
-                width: '60%',
+                width: '70%',
                 height: '300%',
-                background: `radial-gradient(circle at ${mousePos.x}% ${mousePos.y}%, rgba(255,255,255,${isHovering ? 0.40 : 0.20}), transparent 60%)`,
-                filter: 'blur(50px)',
+                background: `radial-gradient(circle at ${mousePos.x}% ${mousePos.y}%, rgba(255,255,255,${isHovering ? 0.45 : 0.22}) 0%, rgba(255,255,255,0.06) 35%, transparent 65%)`,
+                filter: 'blur(45px)',
                 borderRadius: 'inherit',
-                transition: reducedMotion ? 'none' : isHovering ? 'none' : 'background 0.3s ease',
-                opacity: isHovering ? 1 : 0.6,
+                mixBlendMode: isDark ? 'screen' : 'soft-light',
+                transition: reducedMotion ? 'none' : isHovering ? 'none' : 'opacity 0.3s ease',
+                opacity: isHovering ? 1 : 0.55,
                 willChange: 'transform, opacity',
               }}
               aria-hidden="true"
             />
           )}
 
-          {/* ─── Sheen sutil: reflejo de borde (solo desktop) ─── */}
+          {/* ─── Edge Specular: borde brillante tipo refracción del vidrio (solo desktop) ─── */}
           {!isMobile && (
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
                 background: isDark
-                  ? 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 50%, rgba(255,255,255,0.02) 100%)'
-                  : 'linear-gradient(135deg, rgba(255,255,255,0.25) 0%, transparent 50%, rgba(255,255,255,0.10) 100%)',
+                  ? 'linear-gradient(135deg, rgba(255,255,255,0.22) 0%, transparent 22%, transparent 78%, rgba(255,255,255,0.18) 100%)'
+                  : 'linear-gradient(135deg, rgba(255,255,255,0.55) 0%, transparent 22%, transparent 78%, rgba(255,255,255,0.45) 100%)',
                 borderRadius: 'inherit',
-                mask: 'linear-gradient(to bottom, black 0%, black 40%, transparent 60%, transparent 100%)',
-                WebkitMask: 'linear-gradient(to bottom, black 0%, black 40%, transparent 60%, transparent 100%)',
+                padding: '0.5px',
+                WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
+                WebkitMaskComposite: 'xor',
+                maskComposite: 'exclude',
+              }}
+              aria-hidden="true"
+            />
+          )}
+
+          {/* ─── Sheen sutil: reflejo diagonal del vidrio (solo desktop) ─── */}
+          {!isMobile && (
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: isDark
+                  ? 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 40%, transparent 60%, rgba(255,255,255,0.04) 100%)'
+                  : 'linear-gradient(135deg, rgba(255,255,255,0.30) 0%, transparent 40%, transparent 60%, rgba(255,255,255,0.12) 100%)',
+                borderRadius: 'inherit',
+                mask: 'linear-gradient(to bottom, black 0%, black 35%, transparent 55%, transparent 100%)',
+                WebkitMask: 'linear-gradient(to bottom, black 0%, black 35%, transparent 55%, transparent 100%)',
               }}
               aria-hidden="true"
             />

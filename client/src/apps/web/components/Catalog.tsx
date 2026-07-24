@@ -1,9 +1,10 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { useReducedMotion } from '../../../shared/hooks';
 import { Search, Clock, CheckCircle2, ChevronRight, SlidersHorizontal, Images, X } from 'lucide-react';
 import type { Product } from '../../../shared/types';
 import { optimizeImageUrl } from '../../../shared/utils/images';
+import { lazyImportPrewarm } from '../../../shared/utils/lazyImportPrewarm';
 import CachedImage from '../../../shared/components/CachedImage';
 import Skeleton from '../../../shared/components/ui/Skeleton';
 import EmptyState from '../../../shared/components/ui/EmptyState';
@@ -49,6 +50,18 @@ export default function Catalog({ products, onSelectCustomize, loading = false }
   const [carouselProduct, setCarouselProduct] = useState<Product | null>(null);
   const [carouselStartIndex, setCarouselStartIndex] = useState(0);
   const [carouselCurrentIndex, setCarouselCurrentIndex] = useState(0);
+
+  // Prewarm el chunk del Customizer en idle: al hacer clic en "Personalizar Pedido"
+  // el modal ya está en caché y aparece sin delay de red.
+  useEffect(() => {
+    const run = () => lazyImportPrewarm(() => import('./Customizer'));
+    if ('requestIdleCallback' in window) {
+      const h = (window as Window).requestIdleCallback(run, { timeout: 2000 });
+      return () => (window as Window).cancelIdleCallback(h as number);
+    }
+    const t = setTimeout(run, 600);
+    return () => clearTimeout(t);
+  }, []);
 
   const filteredProducts = useMemo(
     () =>
@@ -282,6 +295,7 @@ export default function Catalog({ products, onSelectCustomize, loading = false }
                       <ShimmerButton
                         disabled={!product.stock}
                         onClick={() => onSelectCustomize(product)}
+                        onMouseEnter={() => lazyImportPrewarm(() => import('./Customizer'))}
                         variant="brand"
                         size="default"
                         className={cn(

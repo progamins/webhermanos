@@ -80,8 +80,8 @@ export default function Contact({ config }: ContactProps) {
 
   return (
     <section id="contacto" className="py-24 bg-transparent relative overflow-hidden" aria-label="Contacto">
-      <div className="absolute top-1/4 left-1/10 w-96 h-96 bg-brand-200/20 dark:bg-brand-900/10 rounded-full blur-3xl pointer-events-none animate-blob-1 will-change-transform" aria-hidden="true" />
-      <div className="absolute bottom-1/4 right-1/10 w-96 h-96 bg-brand-secondary/10 dark:bg-zinc-900/20 rounded-full blur-3xl pointer-events-none animate-blob-2 will-change-transform" aria-hidden="true" />
+      <div className="absolute top-1/4 left-1/10 w-96 h-96 bg-brand-200/20 dark:bg-brand-900/10 rounded-full blur-3xl pointer-events-none animate-blob-1 will-change-transform hidden sm:block" aria-hidden="true" />
+      <div className="absolute bottom-1/4 right-1/10 w-96 h-96 bg-brand-secondary/10 dark:bg-zinc-900/20 rounded-full blur-3xl pointer-events-none animate-blob-2 will-change-transform hidden sm:block" aria-hidden="true" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div

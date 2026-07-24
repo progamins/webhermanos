@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, memo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { imageCache } from '../utils/imageCache';
 import { imageMemoryCache } from '../utils/imageMemoryCache';
 import { optimizeImageUrl, getLocalImageUrl } from '../utils/images';
@@ -7,20 +7,21 @@ import { ImageOff } from 'lucide-react';
 interface CachedImageProps extends Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'src' | 'onLoad' | 'onError'> {
   /** URL de la imagen a cargar */
   src: string;
-  /** Ancho para optimización (se pasa a optimizeImageUrl) */
+  /** Ancho para optimización (se pasa a optimizeImageUrl). En mobile se reduce automáticamente. */
   width?: number;
   /** Alto explícito para evitar Layout Shift (CLS) */
   height?: number;
   /** Si es true: loading=eager, fetchPriority=high, decoding=async */
   priority?: boolean;
+  /** Atributo sizes para imágenes responsive: "(max-width: 768px) 90vw, 600px" etc.
+   *  Si se provee, se genera un srcSet automático con 3 resoluciones (width, width*2, 320px). */
+  sizes?: string;
   /** Callback cuando la imagen termina de cargar */
   onLoad?: () => void;
   /** Callback cuando hay error */
   onError?: () => void;
   /** Clase extra para el wrapper */
   wrapperClassName?: string;
-  /** Mostrar placeholder vacío mientras carga */
-  showPlaceholder?: boolean;
 }
 
 function CachedImage({
@@ -28,35 +29,43 @@ function CachedImage({
   width = 600,
   height,
   priority = false,
+  sizes,
   onLoad,
   onError,
   wrapperClassName = '',
-  showPlaceholder = false,
   className = '',
   alt = '',
   style,
   ...imgProps
 }: CachedImageProps) {
-  // Sin src → espacio vacío, sin layout shift si hay height
-  if (!src) {
-    return (
-      <div
-        className={`relative overflow-hidden bg-zinc-100/30 dark:bg-zinc-900/30 ${wrapperClassName || className}`}
-        style={{
-          aspectRatio: height ? undefined : (style?.aspectRatio || '4/3'),
-          width: style?.width,
-          height: height || style?.height,
-          ...style,
-        }}
-      />
-    );
-  }
+  // ═══════════════════════════════════════════
+  // TODOS LOS HOOKS AL INICIO — antes de cualquier return condicional
+  // (React Rules of Hooks: mismo orden en cada render)
+  // ═══════════════════════════════════════════
 
-  // Convertir URL externa → local (proxy) → optimizada
+  const [isMobileWidth] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+  const effectiveWidth = priority && isMobileWidth ? Math.min(width, 320) : width;
+
+  // Convertir URL externa → local (proxy) → optimizada con el ancho efectivo
   const localUrl = getLocalImageUrl(src);
-  const directUrl = optimizeImageUrl(localUrl, width);
+  const directUrl = optimizeImageUrl(localUrl, effectiveWidth);
 
-  // Estado: arranca con la URL directa (INMEDIATAMENTE, sin esperar)
+  // srcSet responsive — 3 resoluciones: effectiveWidth, 2x, y 320px (mobile mínimo)
+  const srcSet = useMemo(() => {
+    if (!sizes || !src) return undefined;
+    const resolutions = [
+      optimizeImageUrl(localUrl, Math.min(effectiveWidth, 320)),
+      optimizeImageUrl(localUrl, effectiveWidth),
+      optimizeImageUrl(localUrl, effectiveWidth * 2),
+    ];
+    const widths: (string | null)[] = ['320w', effectiveWidth > 320 ? `${effectiveWidth}w` : null, `${effectiveWidth * 2}w`];
+    return resolutions
+      .map((url, i) => widths[i] ? `${url} ${widths[i]}` : null)
+      .filter(Boolean)
+      .join(', ');
+  }, [localUrl, effectiveWidth, sizes, src]);
+
+  // Estado de la imagen
   const [cachedSrc, setCachedSrc] = useState<string>(directUrl);
   const [error, setError] = useState(false);
   const [loadOrigin, setLoadOrigin] = useState<'memory' | 'network' | ''>('');
@@ -68,7 +77,7 @@ function CachedImage({
     setError(false);
 
     const localSrc = getLocalImageUrl(src);
-    const optimized = optimizeImageUrl(localSrc, width);
+    const optimized = optimizeImageUrl(localSrc, effectiveWidth);
     setCachedSrc(optimized);
 
     // 1. MemoryCache (HTMLImageElement ya cargado) → reusar URL directa
@@ -92,7 +101,7 @@ function CachedImage({
     }
 
     return () => { mountedRef.current = false; };
-  }, [src, width]);
+  }, [src, effectiveWidth]);
 
   // Callbacks estables con useCallback
   const handleImgError = useCallback(() => {
@@ -103,11 +112,29 @@ function CachedImage({
 
   const handleImgLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     if (!mountedRef.current) return;
-    // Registrar en MemoryCache para reuso instantáneo en misma sesión
     const img = e.currentTarget;
     if (img.src) imageMemoryCache.preload(img.src);
     onLoad?.();
   }, [onLoad]);
+
+  // ═══════════════════════════════════════════
+  // RENDER — condicionales sin hooks
+  // ═══════════════════════════════════════════
+
+  // Sin src → espacio vacío, sin layout shift si hay height
+  if (!src) {
+    return (
+      <div
+        className={`relative overflow-hidden bg-zinc-100/30 dark:bg-zinc-900/30 ${wrapperClassName || className}`}
+        style={{
+          aspectRatio: height ? undefined : (style?.aspectRatio || '4/3'),
+          width: style?.width,
+          height: height || style?.height,
+          ...style,
+        }}
+      />
+    );
+  }
 
   // Estado de error
   if (error) {
@@ -129,8 +156,9 @@ function CachedImage({
     );
   }
 
-  // Placeholder solo cuando se pide explícitamente
-  if (showPlaceholder && !cachedSrc) {
+  // Nunca renderizar <img src=""> — si cachedSrc está vacío mostramos placeholder
+  // (ocurre durante la transición: src pasa de "" a URL real pero cachedSrc aún es "").
+  if (!cachedSrc) {
     return (
       <div
         className={`relative overflow-hidden rounded-xl ${wrapperClassName || className}`}
@@ -148,8 +176,10 @@ function CachedImage({
   return (
     <img
       src={cachedSrc}
+      srcSet={srcSet}
+      sizes={sizes}
       alt={alt}
-      width={width}
+      width={effectiveWidth}
       height={height}
       className={className}
       style={style}
@@ -170,5 +200,6 @@ export default memo(CachedImage, (prev, next) => {
     && prev.priority === next.priority
     && prev.width === next.width
     && prev.className === next.className
-    && prev.alt === next.alt;
+    && prev.alt === next.alt
+    && prev.sizes === next.sizes;
 });

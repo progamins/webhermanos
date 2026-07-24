@@ -32,10 +32,16 @@ import { imageMemoryCache } from '../../shared/utils/imageMemoryCache';
 import { preloadImages } from '../../shared/utils/imageCache';
 import { getLocalImageUrl } from '../../shared/utils/images';
 import { Toaster } from '../../shared/components/ui';
+import SectionSkeleton from '../../shared/components/SectionSkeleton';
 
 const History = lazy(() => import('./components/History'));
 const Catalog = lazy(() => import('./components/Catalog'));
-const Customizer = lazy(() => import('./components/Customizer'));
+import { lazyImportPrewarm } from '../../shared/utils/lazyImportPrewarm'
+
+// Factory compartida: lazy() la usa para montar, onHover/idle la usa para prewarm.
+// Vite dedupea por specifier → la promesa del chunk es la misma en ambos usos.
+const loadCustomizer = () => import('./components/Customizer')
+const Customizer = lazy(loadCustomizer);
 const Gallery = lazy(() => import('./components/Gallery'));
 const Reviews = lazy(() => import('./components/Reviews'));
 const FAQ = lazy(() => import('./components/FAQ'));
@@ -122,11 +128,112 @@ export default function App() {
     }
   }, [config?.logoUrl]);
 
-  // Favicon dinámico y título
+  // Favicon dinámico, título, meta tags SEO y JSON-LD
   useEffect(() => {
     if (!config) return;
+
+    // ─── Título ───
     document.title = config.seoTitle || 'Maison Rosas | Pastelería de Autor & Repostería Fina';
 
+    // ─── Meta description ───
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+      metaDesc = document.createElement('meta');
+      metaDesc.setAttribute('name', 'description');
+      document.head.appendChild(metaDesc);
+    }
+    metaDesc.setAttribute('content', config.seoDescription || 'Pastelería de autor y repostería fina en Sullana, Piura. Pasteles personalizados.');
+
+    // ─── Open Graph ───
+    const ogMappings: [string, string][] = [
+      ['og:title', config.seoTitle || 'Maison Rosas | Pastelería de Autor & Repostería Fina'],
+      ['og:description', config.seoDescription || 'Pasteles personalizados de diseño exclusivo. Ingredientes premium, amor artesanal.'],
+      ['og:image', config.heroImage || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=1200&auto=format&fit=crop&q=80'],
+      ['og:url', 'https://maisonrosas.com/'],
+      ['og:site_name', 'Maison Rosas'],
+      ['og:locale', 'es_PE'],
+    ];
+    for (const [prop, content] of ogMappings) {
+      let tag = document.querySelector(`meta[property="${prop}"]`);
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute('property', prop);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute('content', content);
+    }
+
+    // ─── Twitter Card ───
+    const twitterOgImage = config.heroImage || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=1200&auto=format&fit=crop&q=80';
+    const twitterMappings: [string, string][] = [
+      ['twitter:card', 'summary_large_image'],
+      ['twitter:title', config.seoTitle?.split('|')[0]?.trim() || 'Maison Rosas | Pastelería de Autor'],
+      ['twitter:description', (config.seoDescription || 'Pasteles personalizados de diseño exclusivo en Sullana, Piura.').slice(0, 200)],
+      ['twitter:image', twitterOgImage],
+    ];
+    for (const [name, content] of twitterMappings) {
+      let tag = document.querySelector(`meta[name="${name}"]`);
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute('name', name);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute('content', content);
+    }
+
+    // ─── JSON-LD Structured Data (dinámico con valores del config) ───
+    const heroImg = config.heroImage || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800&auto=format&fit=crop&q=80';
+    const logoSchema = config.logoUrl || heroImg;
+    const schema = {
+      '@context': 'https://schema.org',
+      '@type': 'Bakery',
+      '@id': 'https://maisonrosas.com/',
+      name: 'Maison Rosas',
+      image: heroImg,
+      logo: logoSchema,
+      description: config.seoDescription || 'Pastelería de autor y repostería fina en Sullana, Piura.',
+      url: 'https://maisonrosas.com/',
+      telephone: config.whatsappNumber ? `+${config.whatsappNumber}` : '+51902568187',
+      email: config.email || 'edwinraulrosasalbines@gmail.com',
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: config.address?.split(',')[0]?.trim() || 'Av. Ricardo Palma 213, Urb. Sánchez Cerro',
+        addressLocality: 'Sullana',
+        addressRegion: 'Piura',
+        addressCountry: 'PE',
+      },
+      openingHoursSpecification: [
+        { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Monday', 'opens': '09:00', 'closes': '19:00' },
+        { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Tuesday', 'opens': '09:00', 'closes': '19:00' },
+        { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Wednesday', 'opens': '09:00', 'closes': '19:00' },
+        { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Thursday', 'opens': '09:00', 'closes': '19:00' },
+        { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Friday', 'opens': '09:00', 'closes': '19:00' },
+        { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Saturday', 'opens': '09:00', 'closes': '19:00' },
+        { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Sunday', 'opens': '10:00', 'closes': '14:00' },
+      ],
+      priceRange: 'S/. 95 - S/. 150',
+      servesCuisine: 'Repostería Fina',
+      areaServed: { '@type': 'City', name: 'Sullana' },
+      sameAs: [
+        config.facebookUrl,
+        config.instagramUrl,
+        config.whatsappNumber ? `https://wa.me/${config.whatsappNumber}` : 'https://wa.me/51902568187',
+      ].filter(Boolean),
+      founder: [
+        { '@type': 'Person', name: 'Carol Rosas Albines' },
+        { '@type': 'Person', name: 'Edwin Raúl Rosas Albines' },
+      ],
+    };
+    let script = document.getElementById('ld-json-dynamic');
+    if (!script) {
+      script = document.createElement('script');
+      script.id = 'ld-json-dynamic';
+      script.setAttribute('type', 'application/ld+json');
+      document.head.appendChild(script);
+    }
+    script.textContent = JSON.stringify(schema, null, 2);
+
+    // ─── Favicon ───
     const faviconLink = document.getElementById('dynamic-favicon') as HTMLLinkElement;
     if (faviconLink) {
       if (config.faviconUrl) {
@@ -144,6 +251,7 @@ export default function App() {
       }
     }
 
+    // ─── localStorage cache ───
     if (config.heroImage) {
       try { localStorage.setItem('maison_hero_url', config.heroImage.split('?')[0]); } catch {}
     } else {
@@ -324,14 +432,7 @@ export default function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  const SectionFallback = () => (
-    <div className="py-24 flex items-center justify-center">
-      <div className="flex flex-col items-center space-y-3">
-        <div className="w-8 h-8 rounded-full border-2 border-brand-200 border-t-brand-500 animate-spin" />
-        <span className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase">Cargando sección...</span>
-      </div>
-    </div>
-  );
+  // Se elimina SectionFallback genérico — se usa SectionSkeleton por sección
 
   // Pantalla de Mantenimiento
   if (maintenanceMode) {
@@ -533,29 +634,29 @@ export default function App() {
       <AnimatePresence mode="wait">
         {currentView === 'tracking' ? (
           <motion.main key="tracking-page" id="main-content" role="main" variants={pageVariants} initial="initial" animate="animate" exit="exit">
-            <Suspense fallback={<SectionFallback />}>
+            <Suspense fallback={<SectionSkeleton section="order-tracking" />}>
               <OrderTracking onBackToHome={() => handleViewChange('inicio')} />
             </Suspense>
           </motion.main>
         ) : (
           <motion.div key="home-pages" id="main-content" role="main" variants={pageVariants} initial="initial" animate="animate" exit="exit">
             <Hero onViewCatalog={() => scrollToSection('catalogo')} onViewHistory={() => scrollToSection('historia')} config={config} />
-            <Suspense fallback={<SectionFallback />}>
+            <Suspense fallback={<SectionSkeleton section="catalog" />}>
               <Catalog products={products} onSelectCustomize={(prod) => setSelectedProductForCustomize(prod)} />
             </Suspense>
-            <Suspense fallback={<SectionFallback />}>
+            <Suspense fallback={<SectionSkeleton section="history" />}>
               <History config={config} />
             </Suspense>
-            <Suspense fallback={<SectionFallback />}>
+            <Suspense fallback={<SectionSkeleton section="gallery" />}>
               <Gallery galleryItems={galleryItems} />
             </Suspense>
-            <Suspense fallback={<SectionFallback />}>
+            <Suspense fallback={<SectionSkeleton section="reviews" />}>
               <Reviews reviews={reviews} onRefreshReviews={loadPublicData} />
             </Suspense>
-            <Suspense fallback={<SectionFallback />}>
+            <Suspense fallback={<SectionSkeleton section="faq" />}>
               <FAQ />
             </Suspense>
-            <Suspense fallback={<SectionFallback />}>
+            <Suspense fallback={<SectionSkeleton section="contact" />}>
               <Contact config={config} />
             </Suspense>
           </motion.div>
@@ -564,11 +665,14 @@ export default function App() {
 
       <AnimatePresence>
         {selectedProductForCustomize && (
-          <Customizer
-            product={selectedProductForCustomize}
-            onClose={() => setSelectedProductForCustomize(null)}
-            whatsappNumber={config?.whatsappNumber || '51902568187'}
-          />
+          <Suspense fallback={null}>
+            <Customizer
+              key={selectedProductForCustomize.id}
+              product={selectedProductForCustomize}
+              onClose={() => setSelectedProductForCustomize(null)}
+              whatsappNumber={config?.whatsappNumber || '51902568187'}
+            />
+          </Suspense>
         )}
       </AnimatePresence>
 

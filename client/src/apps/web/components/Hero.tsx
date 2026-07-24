@@ -12,6 +12,11 @@ interface HeroProps {
   config?: AppConfig | null;
 }
 
+// Easing premium reutilizado en animaciones hero/timeline. Constante de módulo
+// para no recrearla en cada render (Hero escucha useScroll y re-renderiza en
+// cada frame de scroll; las variantes antiguas generaban nuevas referencias).
+const PREMIUM_EASE = [0.16, 1, 0.3, 1] as const;
+
 function Hero({ onViewCatalog, onViewHistory, config }: HeroProps) {
   const isMobile = useIsMobile();
   const reducedMotion = useReducedMotion();
@@ -54,33 +59,43 @@ function Hero({ onViewCatalog, onViewHistory, config }: HeroProps) {
     [isMobile]
   );
 
-  const heroContainerVariants = reducedMotion
-    ? { hidden: { opacity: 1 }, show: { opacity: 1 } }
-    : {
-        hidden: { opacity: 0 },
-        show: {
-          opacity: 1,
-          transition: { staggerChildren: 0.1, delayChildren: 0.15 },
-        },
-      };
-
-  const PREMIUM_EASE = [0.16, 1, 0.3, 1] as const;
-
-  const heroItemVariants = reducedMotion
-    ? { hidden: { opacity: 1, y: 0 }, show: { opacity: 1, y: 0 } }
-    : {
-        hidden: { opacity: 0, y: 30, filter: 'blur(4px)' },
-        show: {
-          opacity: 1,
-          y: 0,
-          filter: 'blur(0px)',
-          transition: {
-            type: 'tween' as const,
-            ease: PREMIUM_EASE,
-            duration: isMobile ? 0.45 : 0.55,
+  // ─── Variantes memoizadas ───
+  // Hero escucha useScroll → re-renderiza en cada frame de scroll. Sin useMemo
+  // las variantes se recreaban cada vez generando nuevas referencias de objetos
+  // que motion propagaba a los <motion.div> hijos forzando reconciliation extra.
+  const heroContainerVariants = useMemo(
+    () =>
+      reducedMotion
+        ? { hidden: { opacity: 1 }, show: { opacity: 1 } }
+        : {
+            hidden: { opacity: 0 },
+            show: {
+              opacity: 1,
+              transition: { staggerChildren: 0.1, delayChildren: 0.15 },
+            },
           },
-        },
-      };
+    [reducedMotion]
+  );
+
+  const heroItemVariants = useMemo(
+    () =>
+      reducedMotion
+        ? { hidden: { opacity: 1, y: 0 }, show: { opacity: 1, y: 0 } }
+        : {
+            hidden: { opacity: 0, y: 30, filter: 'blur(4px)' },
+            show: {
+              opacity: 1,
+              y: 0,
+              filter: 'blur(0px)',
+              transition: {
+                type: 'tween' as const,
+                ease: PREMIUM_EASE,
+                duration: isMobile ? 0.45 : 0.55,
+              },
+            },
+          },
+    [reducedMotion, isMobile]
+  );
 
   return (
     <section
@@ -287,7 +302,8 @@ function Hero({ onViewCatalog, onViewHistory, config }: HeroProps) {
               >
                 <CachedImage
                   src={config?.heroImage || ''}
-                  width={600}
+                  width={isMobile ? 320 : 600}
+                  sizes="(max-width: 768px) 85vw, 420px"
                   alt="Pastel destacado de Maison Rosas"
                   wrapperClassName="w-full h-full rounded-[32px]"
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
