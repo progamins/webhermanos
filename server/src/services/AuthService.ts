@@ -9,6 +9,15 @@ import { ActivityLogService } from './ActivityService.js';
 const adminAuthRepo = new AdminAuthRepository();
 const adminSessionRepo = new AdminSessionRepository();
 
+function getRequiredPassword(envVar: string): string {
+  const value = process.env[envVar];
+  if (!value) {
+    logger.error(`Falta ${envVar} en el entorno. Defínelo en .env.`);
+    throw new Error(`Configuración incompleta: ${envVar} no definido.`);
+  }
+  return value;
+}
+
 export class AuthService {
   async login(password: string, role: string = 'admin'): Promise<{
     success: boolean;
@@ -29,9 +38,9 @@ export class AuthService {
       if (!authRow) {
         const salt = bcrypt.genSaltSync(10);
         const defaultPasswords: Record<string, string> = {
-          admin: process.env.ADMIN_DEFAULT_PASSWORD || 'ADMIN_PASSWORD_PLACEHOLDER',
-          analyst: process.env.ANALYST_DEFAULT_PASSWORD || 'ANALYST_PASSWORD_PLACEHOLDER',
-          stock_manager: process.env.STOCK_MANAGER_DEFAULT_PASSWORD || 'STOCK_PASSWORD_PLACEHOLDER',
+          admin: getRequiredPassword('ADMIN_DEFAULT_PASSWORD'),
+          analyst: getRequiredPassword('ANALYST_DEFAULT_PASSWORD'),
+          stock_manager: getRequiredPassword('STOCK_MANAGER_DEFAULT_PASSWORD'),
         };
         await adminAuthRepo.upsertPassword(role, bcrypt.hashSync(defaultPasswords[role], salt));
         authRow = await adminAuthRepo.findByRole(role);

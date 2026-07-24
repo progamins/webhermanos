@@ -99,12 +99,12 @@ function loadEnv(): EnvConfig {
     GA_MEASUREMENT_ID: process.env.VITE_GA_MEASUREMENT_ID || '',
 
     APP_URL: process.env.APP_URL || 'http://localhost:3000',
-    ADMIN_SECRET_PATH: process.env.ADMIN_SECRET_PATH || 'ADMIN_SECRET_PATH_PLACEHOLDER',
-    ALLOWED_ADMIN_IPS: (process.env.ALLOWED_ADMIN_IPS || '127.0.0.1,::1,192.168.15.0/24,IP_PUBLIC_PLACEHOLDER').split(',').map(s => s.trim()),
-    ALLOWED_MAC_ADDRESSES: (process.env.ALLOWED_MAC_ADDRESSES || 'MAC_ADDRESS_PLACEHOLDER').split(',').map(s => s.trim().toUpperCase()),
-    ADMIN_DEFAULT_PASSWORD: process.env.ADMIN_DEFAULT_PASSWORD || 'ADMIN_PASSWORD_PLACEHOLDER',
-    ANALYST_DEFAULT_PASSWORD: process.env.ANALYST_DEFAULT_PASSWORD || 'ANALYST_PASSWORD_PLACEHOLDER',
-    STOCK_MANAGER_DEFAULT_PASSWORD: process.env.STOCK_MANAGER_DEFAULT_PASSWORD || 'STOCK_PASSWORD_PLACEHOLDER',
+    ADMIN_SECRET_PATH: process.env.ADMIN_SECRET_PATH || (() => { logger.error('ADMIN_SECRET_PATH no definido en .env'); process.exit(1); })(),
+    ALLOWED_ADMIN_IPS: (process.env.ALLOWED_ADMIN_IPS || '127.0.0.1,::1').split(',').map(s => s.trim()),
+    ALLOWED_MAC_ADDRESSES: (process.env.ALLOWED_MAC_ADDRESSES || '').split(',').map(s => s.trim().toUpperCase()).filter(Boolean),
+    ADMIN_DEFAULT_PASSWORD: process.env.ADMIN_DEFAULT_PASSWORD || (() => { logger.error('ADMIN_DEFAULT_PASSWORD no definido en .env'); process.exit(1); })(),
+    ANALYST_DEFAULT_PASSWORD: process.env.ANALYST_DEFAULT_PASSWORD || (() => { logger.error('ANALYST_DEFAULT_PASSWORD no definido en .env'); process.exit(1); })(),
+    STOCK_MANAGER_DEFAULT_PASSWORD: process.env.STOCK_MANAGER_DEFAULT_PASSWORD || (() => { logger.error('STOCK_MANAGER_DEFAULT_PASSWORD no definido en .env'); process.exit(1); })(),
 
     UPLOAD_DIR: process.env.UPLOAD_DIR || path.resolve(process.cwd(), 'uploads'),
     MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE || '3145728', 10), // 3MB

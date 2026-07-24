@@ -5,6 +5,15 @@ import { getPool } from './config/db.js';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 
+function getRequiredPassword(envVar: string): string {
+  const value = process.env[envVar];
+  if (!value) {
+    console.error(`[SEED] ERROR: Falta ${envVar} en el entorno. Defínelo en .env antes de ejecutar el seed.`);
+    process.exit(1);
+  }
+  return value;
+}
+
 const INITIAL_PRODUCTS = [
   { id: 'prod-1', name: 'Maison Trufa Imperial', description: 'Exquisito pastel de chocolate belga con capas de ganache suave de cacao y cobertura texturizada coronada por trufas artesanales.', base_price: 120, category: 'Especiales', preparation_time: '48 horas', active: 1, stock: 1, images: '[]', flavors: '["Chocolate Belga","Fudge Intenso","Café Moca"]', decorations: '["Trufas de la Casa","Polvo de Oro Comestible","Salsa Fudge Caliente"]', tags: '["Chocolate","Premium","Trufas"]' },
   { id: 'prod-2', name: 'Rosado Floral Vintage', description: 'Diseño romántico con cobertura en crema de mantequilla vintage color pastel, adornado con rosas naturales seleccionadas y perlas de azúcar.', base_price: 135, category: 'Bodas', preparation_time: '72 horas', active: 1, stock: 1, images: '[]', flavors: '["Vainilla Francesa","Red Velvet","Manjar Blanco de Leche"]', decorations: '["Flores Frescas","Macarons de Frambuesa","Perlas Comestibles"]', tags: '["Boda","Vintage","Rosas"]' },
@@ -111,9 +120,9 @@ async function seed() {
   if ((authRows as any[])[0].count === 0) {
     console.log('[SEED] Seeding admin auth...');
     const salt = bcrypt.genSaltSync(10);
-    const adminHash = bcrypt.hashSync(process.env.ADMIN_DEFAULT_PASSWORD || 'ADMIN_PASSWORD_PLACEHOLDER', salt);
-    const analystHash = bcrypt.hashSync(process.env.ANALYST_DEFAULT_PASSWORD || 'ANALYST_PASSWORD_PLACEHOLDER', salt);
-    const stockHash = bcrypt.hashSync(process.env.STOCK_MANAGER_DEFAULT_PASSWORD || 'STOCK_PASSWORD_PLACEHOLDER', salt);
+    const adminHash = bcrypt.hashSync(getRequiredPassword('ADMIN_DEFAULT_PASSWORD'), salt);
+    const analystHash = bcrypt.hashSync(getRequiredPassword('ANALYST_DEFAULT_PASSWORD'), salt);
+    const stockHash = bcrypt.hashSync(getRequiredPassword('STOCK_MANAGER_DEFAULT_PASSWORD'), salt);
 
     await pool.query('INSERT INTO admin_auth (role, password_hash) VALUES (?, ?)', ['admin', adminHash]);
     await pool.query('INSERT INTO admin_auth (role, password_hash) VALUES (?, ?)', ['analyst', analystHash]);

@@ -15,15 +15,20 @@ export default defineConfig(() => {
     ? process.env.VITE_ALLOWED_HOSTS.split(',').map(s => s.trim())
     : true;
 
-  // Ruta secreta del admin: lee VITE_ADMIN_SECRET_PATH o usa default
-  const adminSecretPath = process.env.VITE_ADMIN_SECRET_PATH || 'ADMIN_SECRET_PATH_PLACEHOLDER';
+  // Ruta secreta del admin: obligatoria via VITE_ADMIN_SECRET_PATH
+  const adminSecretPath = process.env.VITE_ADMIN_SECRET_PATH;
+  if (!adminSecretPath) {
+    throw new Error('Falta VITE_ADMIN_SECRET_PATH en .env. Defínela antes de arrancar.');
+  }
 
   // IPs permitidas + MACs autorizadas
-  const allowedAdminIPs = (process.env.VITE_ALLOWED_ADMIN_IPS || '127.0.0.1,::1,192.168.15.0/24')
+  // ⚠️ Sincronizar con server/src/config/env.ts cuando se añadan IPs
+  // Vacío = sin restricción por IP/MAC (solo credenciales).
+  const allowedAdminIPs = (process.env.VITE_ALLOWED_ADMIN_IPS || '127.0.0.1,::1')
     .split(',').map(s => s.trim());
   const allowedMACs = new Set(
-    (process.env.VITE_ALLOWED_MAC_ADDRESSES || '00-00-00-00-00-00')
-      .split(',').map(s => s.trim().toUpperCase())
+    (process.env.VITE_ALLOWED_MAC_ADDRESSES || '')
+      .split(',').map(s => s.trim().toUpperCase()).filter(Boolean)
   );
 
   function viteClientIP(req: any): string {
@@ -97,7 +102,7 @@ export default defineConfig(() => {
             if (process.env.NODE_ENV !== 'production') console.log('[DEBUG-MAC] 🚫 IP denegada:', clientIP, '| IPs permitidas:', allowedAdminIPs);
             res.statusCode = 403;
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            res.end(getDeniedHTML());
+            res.end(getDeniedHTML(clientIP));
             return;
           }
           // CONDICIÓN 2: MAC (desde cookie o header)
