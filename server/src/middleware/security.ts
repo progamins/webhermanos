@@ -73,6 +73,9 @@ export const ALLOWED_IMAGE_DOMAINS = [
 ];
 
 export function isAllowedImageUrl(url: string): boolean {
+  // Rutas relativas (locales) siempre permitidas
+  if (url.startsWith('/')) return true;
+
   try {
     const parsed = new URL(url);
     return ALLOWED_IMAGE_DOMAINS.some(

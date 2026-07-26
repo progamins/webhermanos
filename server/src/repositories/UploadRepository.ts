@@ -45,4 +45,13 @@ export class UploadRepository extends BaseRepository<UploadRow> {
   async updateHash(id: string, hash: string): Promise<void> {
     await this.update(id, { content_hash: hash } as Partial<UploadRow>);
   }
+
+  /** Busca un archivo por su nombre de archivo. Devuelve el primero o null. */
+  async findByFilename(filename: string): Promise<UploadRow | null> {
+    const rows = await this.queryRaw<UploadRow[]>(
+      'SELECT * FROM uploads WHERE filename = ? LIMIT 1',
+      [filename]
+    );
+    return rows.length > 0 ? rows[0] : null;
+  }
 }

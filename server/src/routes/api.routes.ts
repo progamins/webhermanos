@@ -14,6 +14,7 @@ import { contactLimiter, apiLimiter } from '../middleware/rateLimit.js';
 import { isValidEmail, escapeHtml, isAllowedImageUrl } from '../middleware/security.js';
 import { RealtimeService } from '../services/RealtimeService.js';
 import { calculatePrice } from '../services/PricingService.js';
+import { env } from '../config/env.js';
 const router = Router();
 
 // ─── Health ───
@@ -402,26 +403,24 @@ router.get('/uploads/:filename', async (req, res) => {
       try {
         const { UploadRepository } = await import('../repositories/index.js');
         const uploadRepo = new UploadRepository();
-        const uploads = await uploadRepo.findAll();
-        const upload = uploads.find((u: any) => u.filename === filename);
+        const upload = await uploadRepo.findByFilename(filename);
         if (upload?.url && upload.url.startsWith('http')) {
           return res.redirect(302, upload.url);
         }
       } catch { /* ignore */ }
-      res.status(404).json({ error: 'Archivo no encontrado' });
-    } else {
-      // En local, usar env.UPLOAD_DIR
-      const { env } = await import('../config/env.js');
-      const uploadsDir = env.UPLOAD_DIR;
-      const filePath = path.join(uploadsDir, filename);
-      if (fs.existsSync(filePath)) {
-        return res.sendFile(filePath);
-      }
-      res.status(404).json({ error: 'Archivo no encontrado' });
+      return res.status(404).json({ error: 'Archivo no encontrado' });
     }
+
+    // En local, usar env.UPLOAD_DIR (importado estáticamente)
+    const uploadsDir = env.UPLOAD_DIR;
+    const filePath = path.join(uploadsDir, filename);
+    if (fs.existsSync(filePath)) {
+      return res.sendFile(filePath);
+    }
+    return res.status(404).json({ error: 'Archivo no encontrado' });
   } catch (err: any) {
     logger.error('Error serving upload', { service: 'API', error: err?.message });
-    res.status(500).json({ error: 'Error al servir archivo.' });
+    return res.status(500).json({ error: 'Error al servir archivo.' });
   }
 });
 
