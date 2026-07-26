@@ -192,9 +192,9 @@ export class StorageService {
           url = `/api/uploads/${filename}`;
         }
       } else {
-        // Sin Blob: guardar en /tmp y servir por API
+        // Sin Blob: guardar en /tmp (rápido) y en MySQL (persistente)
         const tmpPath = path.join('/tmp', filename);
-        await fs.promises.writeFile(tmpPath, buffer);
+        await fs.promises.writeFile(tmpPath, buffer).catch(() => {});
         url = `/api/uploads/${filename}`;
       }
     } else {
@@ -206,7 +206,7 @@ export class StorageService {
       url = `/uploads/${filename}`;
     }
 
-    // ── Registrar en la BD ──
+    // ── Registrar en la BD (con file_data para persistencia en Vercel) ──
     try {
       const upload = await uploadRepo.create(
         uploadToRow({
@@ -219,6 +219,14 @@ export class StorageService {
           uploaded_by: uploadedBy,
         })
       );
+      // En Vercel sin Blob, almacenar el buffer en MySQL para persistencia
+      if (isVercel && !process.env.BLOB_READ_WRITE_TOKEN) {
+        try {
+          await uploadRepo.updateFileData(upload.id, buffer);
+        } catch (dataErr) {
+          logger.warn('No se pudo almacenar file_data en BD', { service: 'StorageService', error: (dataErr as Error)?.message });
+        }
+      }
       return { url, filename, id: upload.id };
     } catch (createErr: any) {
       // ER_DUP_ENTRY (1062) = UNIQUE INDEX violation — race condition

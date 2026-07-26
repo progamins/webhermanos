@@ -372,6 +372,14 @@ router.post('/csp-report', (req, res) => {
   res.status(204).end();
 });
 
+// MIME types por extensión
+const MIME_MAP: Record<string, string> = {
+  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+  '.png': 'image/png', '.gif': 'image/gif',
+  '.webp': 'image/webp', '.svg': 'image/svg+xml',
+  '.avif': 'image/avif', '.pdf': 'application/pdf',
+};
+
 // Placeholder SVG para imágenes no encontradas
 const MISSING_IMAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
   <rect width="400" height="300" fill="#f4f4f5"/>
@@ -391,31 +399,29 @@ router.get('/uploads/:filename', async (req, res) => {
       const filePath = path.join('/tmp', filename);
       if (fs.existsSync(filePath)) {
         const ext = path.extname(filename).toLowerCase();
-        const mimeMap: Record<string, string> = {
-          '.jpg': 'image/jpeg',
-          '.jpeg': 'image/jpeg',
-          '.png': 'image/png',
-          '.gif': 'image/gif',
-          '.webp': 'image/webp',
-          '.svg': 'image/svg+xml',
-          '.pdf': 'application/pdf',
-        };
-        const contentType = mimeMap[ext] || 'application/octet-stream';
+        const contentType = MIME_MAP[ext] || 'application/octet-stream';
         res.setHeader('Content-Type', contentType);
         res.setHeader('Cache-Control', 'public, max-age=3600');
         const fileBuffer = fs.readFileSync(filePath);
         return res.send(fileBuffer);
       }
-      // Intentar buscar en la BD por si hay un registro con URL externa
+      // Intentar buscar en la BD: primero file_data (persistente), luego URL externa
       try {
         const { UploadRepository } = await import('../repositories/index.js');
         const uploadRepo = new UploadRepository();
         const upload = await uploadRepo.findByFilename(filename);
+        if (upload?.file_data) {
+          const ext = path.extname(filename).toLowerCase();
+          const contentType = MIME_MAP[ext] || 'application/octet-stream';
+          res.setHeader('Content-Type', contentType);
+          res.setHeader('Cache-Control', 'public, max-age=3600');
+          return res.send(upload.file_data);
+        }
         if (upload?.url && upload.url.startsWith('http')) {
           return res.redirect(302, upload.url);
         }
       } catch { /* ignore */ }
-      // No encontrado en /tmp ni en BD → placeholder SVG
+      // No encontrado en /tmp ni en BD (con datos) → placeholder SVG
       res.setHeader('Content-Type', 'image/svg+xml');
       res.setHeader('Cache-Control', 'no-cache');
       return res.send(MISSING_IMAGE_SVG);
@@ -430,7 +436,7 @@ router.get('/uploads/:filename', async (req, res) => {
     // Placeholder SVG para archivos locales no encontrados
     res.setHeader('Content-Type', 'image/svg+xml');
     res.setHeader('Cache-Control', 'no-cache');
-    return res.send(placeholder);
+    return res.send(MISSING_IMAGE_SVG);
   } catch (err: any) {
     logger.error('Error serving upload', { service: 'API', error: err?.message });
     return res.status(500).json({ error: 'Error al servir archivo.' });

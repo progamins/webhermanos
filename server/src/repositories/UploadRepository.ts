@@ -8,6 +8,7 @@ export interface UploadRow {
   size_bytes: number;
   url: string;
   content_hash: string | null;
+  file_data: Buffer | null;
   uploaded_by: string | null;
   created_at: string;
 }
@@ -53,5 +54,13 @@ export class UploadRepository extends BaseRepository<UploadRow> {
       [filename]
     );
     return rows.length > 0 ? rows[0] : null;
+  }
+
+  /** Actualiza file_data de un archivo */
+  async updateFileData(id: string, data: Buffer): Promise<void> {
+    await this.executeRaw(
+      'UPDATE uploads SET file_data = ? WHERE id = ?',
+      [data, id]
+    );
   }
 }
