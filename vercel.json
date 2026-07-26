@@ -1,21 +1,17 @@
 {
   "version": 2,
-  "name": "maison-rosas",
   "buildCommand": "npm run build --workspace=client",
   "outputDirectory": "client/dist",
   "installCommand": "npm ci --workspaces --include-workspace-root",
   "devCommand": "npm run dev --workspace=client",
-  "framework": "vite",
   "functions": {
     "api/index.ts": {
       "maxDuration": 30,
-      "memory": 512,
-      "runtime": "@vercel/node@4"
+      "memory": 512
     }
   },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" },
-    { "source": "/uploads/(.*)", "destination": "/api/uploads" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
