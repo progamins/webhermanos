@@ -39,6 +39,23 @@ try {
   app = createApp();
 } catch (err: any) {
   console.error('[Vercel API] Error al iniciar la aplicación:', err?.message || err);
+  if (err?.stack) console.error('[Vercel API] Stack:', err.stack);
+
+  // Verificar si las env vars están presentes para diagnóstico
+  const envStatus = {
+    DB_HOST: !!process.env.DB_HOST,
+    DB_PORT: !!process.env.DB_PORT,
+    DB_USER: !!process.env.DB_USER,
+    DB_PASSWORD: !!process.env.DB_PASSWORD,
+    DB_NAME: !!process.env.DB_NAME,
+    ADMIN_SECRET_PATH: !!process.env.ADMIN_SECRET_PATH,
+    ADMIN_DEFAULT_PASSWORD: !!process.env.ADMIN_DEFAULT_PASSWORD,
+    ANALYST_DEFAULT_PASSWORD: !!process.env.ANALYST_DEFAULT_PASSWORD,
+    STOCK_MANAGER_DEFAULT_PASSWORD: !!process.env.STOCK_MANAGER_DEFAULT_PASSWORD,
+    APP_URL: !!process.env.APP_URL,
+    VERCEL: process.env.VERCEL,
+    NODE_ENV: process.env.NODE_ENV,
+  };
 
   // Fallback: app mínima que informa qué falta con JSON descriptivo
   app = express();
@@ -50,7 +67,9 @@ try {
       error: isEnvVarMissing
         ? 'Configuración incompleta: faltan variables de entorno'
         : 'Error interno del servidor',
-      detail: isEnvVarMissing ? message : undefined,
+      detail: isEnvVarMissing ? message : 'Consulta los logs de Vercel para más detalles.',
+      errorMessage: message,
+      envStatus,
       hint: 'Revisa las Environment Variables en: https://vercel.com/dashboard',
     });
   });
