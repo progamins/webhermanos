@@ -18,6 +18,80 @@ router.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
+// ─── Status / Diagnostics ───
+router.get('/status', async (req, res, next) => {
+  try {
+    const results: Record<string, any> = {
+      server: {
+        status: 'running',
+        node: process.version,
+        platform: process.platform,
+        environment: process.env.NODE_ENV || 'not set',
+        vercel: process.env.VERCEL === 'true' ? 'yes' : 'no',
+        time: new Date().toISOString(),
+        uptime: process.uptime(),
+      },
+      env: {},
+      database: { connected: false, tables: {}, error: null },
+    };
+
+    // ─── Env vars check (sin mostrar valores sensibles) ───
+    const requiredEnv = [
+      'DB_HOST', 'DB_PORT', 'DB_USER', 'DB_PASSWORD', 'DB_NAME',
+      'ADMIN_SECRET_PATH', 'ADMIN_DEFAULT_PASSWORD',
+      'ANALYST_DEFAULT_PASSWORD', 'STOCK_MANAGER_DEFAULT_PASSWORD',
+      'APP_URL',
+    ];
+    const optionalEnv = ['BLOB_READ_WRITE_TOKEN', 'GOOGLE_MAPS_PLATFORM_KEY', 'VITE_GA_MEASUREMENT_ID'];
+    for (const key of requiredEnv) {
+      results.env[key] = process.env[key] ? '✅ configurado' : '❌ faltante';
+    }
+    for (const key of optionalEnv) {
+      results.env[key] = process.env[key] ? '✅ configurado' : '⚪ opcional';
+    }
+
+    // ─── Database test ───
+    let conn: any = null;
+    try {
+      const { getPool } = await import('../config/db.js');
+      const pool = getPool();
+      conn = await pool.getConnection();
+      await conn.ping();
+      results.database.connected = true;
+
+      const safeTables = new Set(['products', 'reviews', 'gallery', 'orders', 'config', 'admin_auth', 'cake_stock', 'contact_messages']);
+      for (const table of safeTables) {
+        try {
+          const [rows] = await conn.query(`SELECT COUNT(*) as count FROM \`${table}\``);
+          results.database.tables[table] = (rows as any[])[0].count;
+        } catch {
+          results.database.tables[table] = '❌ no existe';
+        }
+      }
+    } catch (err: any) {
+      results.database.connected = false;
+      results.database.error = err?.message || 'Error desconocido al conectar a BD';
+    } finally {
+      if (conn) {
+        try { conn.release(); } catch { /* ignore release errors */ }
+      }
+    }
+
+    // ─── Overall status ───
+    const allTablesOk = Object.values(results.database.tables).every(v => typeof v === 'number');
+    const allEnvOk = Object.values(results.env).every(v => v === '✅ configurado');
+
+    results.overall = allTablesOk && allEnvOk && results.database.connected
+      ? '✅ TODO FUNCIONANDO'
+      : '⚠️ Hay problemas que revisar';
+
+    res.json(results);
+  } catch (err: any) {
+    logger.error('Error en status endpoint', { service: 'API', error: err?.message });
+    res.status(500).json({ error: 'Error al generar diagnóstico.', detail: err?.message });
+  }
+});
+
 // ─── Products ───
 router.get('/products', async (req, res) => {
   try {
