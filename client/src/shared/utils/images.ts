@@ -14,6 +14,10 @@ export function getLocalImageUrl(url: string): string {
   if (url.startsWith('/api/uploads/') || url.startsWith('data:')) return url;
   // Redirigir URLs antiguas /uploads/ → /api/uploads/ (ruta que tiene handler en Vercel)
   if (url.startsWith('/uploads/')) return url.replace('/uploads/', '/api/uploads/');
+  // Bare filename (sin prefijo ni ruta) → asumir que es /api/uploads/
+  if (!url.startsWith('/') && !url.startsWith('http://') && !url.startsWith('https://')) {
+    return `/api/uploads/${url}`;
+  }
   // Ya está en el mismo origen → no tocar
   if (typeof window !== 'undefined' && url.startsWith(window.location.origin)) return url;
   // URL externa → proxy local
@@ -54,6 +58,11 @@ function getOptimalWidth(requestedWidth: number): number {
  */
 export function optimizeImageUrl(url: string, width: number = 600): string {
   if (!url) return url;
+
+  // Safety net: bare filename → prefijar con /api/uploads/
+  if (!url.startsWith('/') && !url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('data:')) {
+    url = `/api/uploads/${url}`;
+  }
 
   const optimalWidth = getOptimalWidth(width);
   const quality = isMobileWidth() ? 60 : 80; // Lower quality on mobile = smaller files
