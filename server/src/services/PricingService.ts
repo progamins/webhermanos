@@ -1,11 +1,13 @@
 import logger from '../lib/logger.js';
 import { productService } from './ProductService.js';
 
-// 🔒 SIZE_TIERS y PREMIUM_FILLINGS importados desde la fuente única de verdad
-//    en client/src/shared/constants/pricing.ts.
-//    NUNCA duplicar estos datos aquí — cualquier cambio debe hacerse en el
-//    archivo compartido para mantener cliente y servidor sincronizados.
-import { SIZE_TIERS, PREMIUM_FILLINGS } from '../../../client/src/shared/constants/pricing.ts';
+// 🔒 SIZE_TIERS y PREMIUM_FILLINGS
+//    En local se importaban desde client/src/shared/constants/pricing.ts,
+//    pero en Vercel serverless las importaciones cruzadas entre workspaces
+//    no funcionan (nft no sigue rutas ../../../client/).
+//    Por eso tenemos una copia local en server/src/constants/pricing.ts.
+//    ⚠️ Si modificas los precios, actualiza AMBOS archivos.
+import { SIZE_TIERS, PREMIUM_FILLINGS } from '../constants/pricing.js';
 
 // 🔒 Validación de integridad en tiempo de carga: garantiza que ningún
 //    modifier de tamaño sea negativo. Si alguien edita SIZE_TIERS en el
