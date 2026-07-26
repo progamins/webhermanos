@@ -40,7 +40,9 @@ const logger = winston.createLogger({
 });
 
 // En producción se puede agregar transporte a archivo
-if (isProduction) {
+// ⚠️ En Vercel serverless NO se puede escribir al sistema de archivos (solo /tmp).
+const isVercel = process.env.VERCEL === 'true';
+if (isProduction && !isVercel) {
   logger.add(new winston.transports.File({
     filename: 'logs/error.log',
     level: 'error',
