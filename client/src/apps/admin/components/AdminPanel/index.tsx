@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Toaster } from '../../../../shared/components/ui';
 import {
   LayoutDashboard, Cake, ShoppingBag, MessageSquare, Settings, RefreshCw,
-  Image, Layers, CreditCard, LogOut, Trash2, HardDrive
+  Image, Layers, CreditCard, LogOut, Trash2, HardDrive, Search, X
 } from 'lucide-react';
 import type { Product, Order, Review, GalleryItem, AppConfig, AdminRole } from '../../../../shared/types';
 import { dbService } from '../../../../shared/services/dbService';
@@ -37,33 +37,41 @@ export interface AdminPanelProps {
 
 type ActiveTab = 'dashboard' | 'products' | 'orders' | 'reviews' | 'settings' | 'images' | 'payments' | 'stock' | 'storage';
 
-const ROLE_TABS: Record<AdminRole, { id: ActiveTab; label: string; icon: React.ElementType }[]> = {
-  admin: [
-    { id: 'dashboard', label: 'Panel Principal', icon: LayoutDashboard },
-    { id: 'products', label: 'Modelos / Plantillas', icon: Cake },
-    { id: 'stock', label: 'Stock Físico', icon: Layers },
-    { id: 'orders', label: 'Pedidos', icon: ShoppingBag },
-    { id: 'payments', label: 'Pagos y Comprobantes', icon: CreditCard },
-    { id: 'reviews', label: 'Opiniones', icon: MessageSquare },
-    { id: 'images', label: 'Galería', icon: Image },
-    { id: 'storage', label: 'Almacenamiento', icon: HardDrive },
-    { id: 'settings', label: 'Configuración', icon: Settings },
-  ],
-  analyst: [
-    { id: 'dashboard', label: 'Panel Principal', icon: LayoutDashboard },
-    { id: 'orders', label: 'Pedidos', icon: ShoppingBag },
-    { id: 'payments', label: 'Pagos y Comprobantes', icon: CreditCard },
-    { id: 'reviews', label: 'Opiniones', icon: MessageSquare },
-  ],
-  stock_manager: [
-    { id: 'dashboard', label: 'Panel Principal', icon: LayoutDashboard },
-    { id: 'stock', label: 'Stock Físico', icon: Layers },
-    { id: 'images', label: 'Galería', icon: Image },
-  ],
+const SIDEBAR_SECTIONS: { title: string; tabs: { id: ActiveTab; label: string; icon: React.ElementType }[] }[] = [
+  {
+    title: 'Negocio',
+    tabs: [
+      { id: 'dashboard', label: 'Panel Principal', icon: LayoutDashboard },
+      { id: 'products', label: 'Modelos', icon: Cake },
+      { id: 'stock', label: 'Stock Físico', icon: Layers },
+      { id: 'orders', label: 'Pedidos', icon: ShoppingBag },
+      { id: 'payments', label: 'Pagos', icon: CreditCard },
+    ],
+  },
+  {
+    title: 'Contenido',
+    tabs: [
+      { id: 'reviews', label: 'Opiniones', icon: MessageSquare },
+      { id: 'images', label: 'Galería', icon: Image },
+      { id: 'storage', label: 'Archivos', icon: HardDrive },
+    ],
+  },
+  {
+    title: 'Sistema',
+    tabs: [
+      { id: 'settings', label: 'Configuración', icon: Settings },
+    ],
+  },
+];
+
+const ROLE_TABS: Record<AdminRole, ActiveTab[]> = {
+  admin: ['dashboard', 'products', 'stock', 'orders', 'payments', 'reviews', 'images', 'storage', 'settings'],
+  analyst: ['dashboard', 'orders', 'payments', 'reviews'],
+  stock_manager: ['dashboard', 'stock', 'images'],
 };
 
 const ROLE_CONFIG: Record<AdminRole, { label: string; color: string }> = {
-  admin: { label: 'Administrador', color: 'bg-brand-500' },
+  admin: { label: 'Administrador', color: 'bg-indigo-500' },
   analyst: { label: 'Analista', color: 'bg-blue-500' },
   stock_manager: { label: 'Gestor de Stock', color: 'bg-emerald-500' },
 };
@@ -74,6 +82,7 @@ export default function AdminPanel({
   onLogout
 }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
+  const [searchQuery, setSearchQuery] = useState('');
   const [voucherModalOrder, setVoucherModalOrder] = useState<Order | null>(null);
   const [screenshotUrlToView, setScreenshotUrlToView] = useState<string | null>(null);
   const [screenshotTitleToView, setScreenshotTitleToView] = useState<string>('');
@@ -108,140 +117,197 @@ export default function AdminPanel({
   }
 
   const roleInfo = ROLE_CONFIG[adminRole] || ROLE_CONFIG.admin;
-  const tabs = ROLE_TABS[adminRole] || ROLE_TABS.admin;
+  const allowedTabs = ROLE_TABS[adminRole] || ROLE_TABS.admin;
+
+  // Filtrar secciones del sidebar según el rol
+  const filteredSections = SIDEBAR_SECTIONS.map(section => ({
+    ...section,
+    tabs: section.tabs.filter(tab => allowedTabs.includes(tab.id)),
+  })).filter(section => section.tabs.length > 0);
+
+  // Búsqueda global
+  const filteredData = searchQuery.toLowerCase();
+  const searchResults = filteredData ? {
+    products: products.filter(p => p.name.toLowerCase().includes(filteredData)),
+    orders: orders.filter(o => o.customerName.toLowerCase().includes(filteredData) || o.trackingCode.toLowerCase().includes(filteredData)),
+  } : null;
 
   return (
-    <section className="py-24 min-h-screen relative overflow-hidden" style={{ backgroundColor: 'var(--theme-bg)' }}>
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-75" aria-hidden="true">
-        <div className="absolute top-[10%] left-[5%] w-[450px] h-[450px] rounded-full bg-brand-100/40 dark:bg-brand-950/15 blur-3xl animate-blob-1" />
-        <div className="absolute bottom-[10%] right-[5%] w-[500px] h-[500px] rounded-full bg-brand-200/30 dark:bg-brand-900/10 blur-3xl animate-blob-2" />
-        <div className="absolute top-[40%] right-[30%] w-[350px] h-[350px] rounded-full bg-rose-100/30 dark:bg-rose-950/10 blur-3xl animate-blob-3" />
-      </div>
+    <div className="admin-layout">
+      {/* ═══ SIDEBAR ═══ */}
+      <aside className="admin-sidenav">
+        <div className="admin-sidenav-header">
+          <div className="admin-sidenav-brand">Maison Rosas</div>
+          <div className="admin-sidenav-brand-sub">Panel de Administración</div>
+        </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between pb-6 mb-8 gap-4 border-b" style={{ borderColor: 'var(--theme-border)' }}>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className={`${roleInfo.color} text-white px-2 py-0.5 rounded-md text-[9px] font-mono uppercase font-bold tracking-wider shadow-sm`}>
-                {roleInfo.label}
-              </span>
-              <span className="text-xs font-mono font-bold" style={{ color: 'var(--theme-text-muted)' }}>Sesión Segura</span>
+        <nav className="admin-sidenav-nav">
+          {filteredSections.map(section => (
+            <div key={section.title} className="admin-sidenav-section">
+              <div className="admin-sidenav-section-title">{section.title}</div>
+              {section.tabs.map(tab => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`admin-sidenav-item ${isActive ? 'active' : ''}`}
+                    role="tab"
+                    aria-selected={isActive}
+                  >
+                    <Icon aria-hidden="true" />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
             </div>
-            <h1 className="text-3xl font-serif font-bold mt-1" style={{ color: 'var(--theme-text)' }}>Panel de Administración</h1>
+          ))}
+        </nav>
+
+        <div className="admin-sidenav-footer">
+          <div className="flex items-center gap-2 px-3 py-2 mb-2">
+            <span className={`w-1.5 h-1.5 rounded-full ${roleInfo.color}`} />
+            <span className="text-[10px] font-mono font-bold" style={{ color: 'var(--admin-sidenav-text)', opacity: 0.6 }}>
+              {roleInfo.label}
+            </span>
           </div>
-          <div className="flex items-center space-x-2">
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="admin-sidenav-item"
+              style={{ color: 'var(--admin-sidenav-text)', opacity: 0.5 }}
+            >
+              <LogOut aria-hidden="true" />
+              <span>Cerrar Sesión</span>
+            </button>
+          )}
+        </div>
+      </aside>
+
+      {/* ═══ MAIN CONTENT ═══ */}
+      <main className="admin-main">
+        {/* ─── Header ─── */}
+        <header className="admin-header">
+          <div className="admin-header-left">
+            <h1 className="admin-header-title">
+              {filteredSections.flatMap(s => s.tabs).find(t => t.id === activeTab)?.label || 'Panel'}
+            </h1>
+          </div>
+          <div className="admin-header-right">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: 'var(--admin-text-muted)' }} aria-hidden="true" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Buscar productos o pedidos..."
+                className="pl-9 pr-3 py-2 text-xs rounded-lg border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                style={{ backgroundColor: 'var(--admin-bg-alt)', borderColor: 'var(--admin-border)', color: 'var(--admin-text)', width: '220px' }}
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700">
+                  <X className="h-3 w-3" style={{ color: 'var(--admin-text-muted)' }} />
+                </button>
+              )}
+            </div>
+
             <button
               onClick={handleRefresh}
-              className="p-2.5 border rounded-xl hover:bg-white/60 dark:hover:bg-zinc-800/60 transition-all hover:scale-[1.03] shadow-sm flex items-center justify-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-              style={{ borderColor: 'var(--theme-border)', backgroundColor: 'var(--theme-surface)' }}
+              className="admin-btn admin-btn-ghost admin-btn-icon"
               title="Sincronizar datos"
               aria-label="Sincronizar datos"
-              id="admin-refresh-data"
             >
-              <RefreshCw className="h-4 w-4" style={{ color: 'var(--theme-text-secondary)' }} aria-hidden="true" />
+              <RefreshCw className="h-4 w-4" />
             </button>
             <button
               onClick={handleClearCache}
-              className="p-2.5 border rounded-xl hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-all hover:scale-[1.03] shadow-sm flex items-center justify-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
-              style={{ borderColor: 'var(--theme-border)', backgroundColor: 'var(--theme-surface)' }}
-              title="Limpiar caché del Service Worker"
+              className="admin-btn admin-btn-ghost admin-btn-icon"
+              title="Limpiar caché"
               aria-label="Limpiar caché"
-              id="admin-clear-cache-btn"
             >
-              <Trash2 className="h-4 w-4 text-amber-500" aria-hidden="true" />
+              <Trash2 className="h-4 w-4" style={{ color: 'var(--admin-warning)' }} />
             </button>
-            {onLogout && (
-              <button
-                onClick={onLogout}
-                className="p-2.5 border rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 transition-all hover:scale-[1.03] shadow-sm flex items-center justify-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-                style={{ borderColor: 'var(--theme-border)', backgroundColor: 'var(--theme-surface)' }}
-                title="Cerrar Sesión"
-                aria-label="Cerrar sesión"
-                id="admin-logout-btn"
-              >
-                <LogOut className="h-4 w-4 text-red-400" aria-hidden="true" />
-              </button>
+          </div>
+        </header>
+
+        {/* ─── Content ─── */}
+        <div className="admin-content">
+          {/* Search Results Overlay */}
+          {searchResults && (
+            <div className="mb-6 p-4 rounded-xl border" style={{ backgroundColor: 'var(--admin-surface)', borderColor: 'var(--admin-border)' }}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>
+                  Resultados para "{searchQuery}"
+                </h3>
+                <button onClick={() => setSearchQuery('')} className="text-xs font-mono" style={{ color: 'var(--admin-text-muted)' }}>
+                  Limpiar búsqueda
+                </button>
+              </div>
+              <div className="flex gap-4 text-xs flex-wrap">
+                <span style={{ color: 'var(--admin-text-secondary)' }}>
+                  🎂 {searchResults.products.length} {searchResults.products.length === 1 ? 'modelo' : 'modelos'} encontrados
+                </span>
+                <span style={{ color: 'var(--admin-text-secondary)' }}>
+                  📦 {searchResults.orders.length} {searchResults.orders.length === 1 ? 'pedido' : 'pedidos'} encontrados
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div id="admin-tab-content">
+            {activeTab === 'dashboard' && (
+              <AdminDashboard
+                orders={orders}
+                products={products}
+                onNavigate={(tab) => setActiveTab(tab as ActiveTab)}
+              />
             )}
+            {activeTab === 'products' && (
+              <AdminProducts
+                products={searchResults ? searchResults.products : products}
+                onRefreshData={onRefreshData}
+                showToast={showToast}
+              />
+            )}
+            {activeTab === 'orders' && (
+              <AdminOrders
+                orders={searchResults ? searchResults.orders : orders}
+                setOrders={setOrders}
+                onRefreshData={onRefreshData}
+                showToast={showToast}
+                onOpenPaymentModal={(ord) => setPaymentModalOrder(ord)}
+              />
+            )}
+            {activeTab === 'payments' && (
+              <AdminPayments
+                orders={orders}
+                setOrders={setOrders}
+                onRefreshData={onRefreshData}
+                showToast={showToast}
+                onViewScreenshot={(url, title) => {
+                  setScreenshotUrlToView(url);
+                  setScreenshotTitleToView(title);
+                }}
+              />
+            )}
+            {activeTab === 'reviews' && (
+              <AdminReviews reviews={reviews} onRefreshData={onRefreshData} showToast={showToast} />
+            )}
+            {activeTab === 'images' && (
+              <AdminGallery galleryItems={galleryItems} config={config} onRefreshData={onRefreshData} showToast={showToast} />
+            )}
+            {activeTab === 'settings' && (
+              <AdminSettings config={config} onRefreshData={onRefreshData} showToast={showToast} />
+            )}
+            {activeTab === 'stock' && (
+              <AdminStock products={products} orders={orders} onRefreshData={onRefreshData} showToast={showToast} />
+            )}
+            {activeTab === 'storage' && <AdminImageManager />}
           </div>
         </div>
-
-        <div
-          className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap md:space-x-2 gap-2 p-2 mb-8 rounded-3xl shadow-sm border"
-          style={{ backgroundColor: 'var(--theme-surface-glass)', borderColor: 'var(--theme-border)' }}
-          id="admin-panel-tabs"
-          role="tablist"
-          aria-label="Secciones del panel"
-        >
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center justify-center md:justify-start space-x-2 px-3 py-3 md:px-5 md:py-3.5 rounded-2xl text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider transition-all duration-300 whitespace-nowrap cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
-                  activeTab === tab.id
-                    ? 'bg-brand-500 text-white shadow-md scale-[1.02]'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-brand-600 dark:hover:text-brand-400'
-                }`}
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                aria-controls={`admin-panel-content-${tab.id}`}
-                id={`admin-tab-btn-${tab.id}`}
-              >
-                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div id="admin-tab-content">
-          {activeTab === 'dashboard' && (
-            <AdminDashboard
-              orders={orders}
-              products={products}
-              onNavigate={(tab) => setActiveTab(tab as ActiveTab)}
-            />
-          )}
-          {activeTab === 'products' && (
-            <AdminProducts products={products} onRefreshData={onRefreshData} showToast={showToast} />
-          )}
-          {activeTab === 'orders' && (
-            <AdminOrders
-              orders={orders}
-              setOrders={setOrders}
-              onRefreshData={onRefreshData}
-              showToast={showToast}
-              onOpenPaymentModal={(ord) => setPaymentModalOrder(ord)}
-            />
-          )}
-          {activeTab === 'payments' && (
-            <AdminPayments
-              orders={orders}
-              setOrders={setOrders}
-              onRefreshData={onRefreshData}
-              showToast={showToast}
-              onViewScreenshot={(url, title) => {
-                setScreenshotUrlToView(url);
-                setScreenshotTitleToView(title);
-              }}
-            />
-          )}
-          {activeTab === 'reviews' && (
-            <AdminReviews reviews={reviews} onRefreshData={onRefreshData} showToast={showToast} />
-          )}
-          {activeTab === 'images' && (
-            <AdminGallery galleryItems={galleryItems} config={config} onRefreshData={onRefreshData} showToast={showToast} />
-          )}
-          {activeTab === 'settings' && (
-            <AdminSettings config={config} onRefreshData={onRefreshData} showToast={showToast} />
-          )}
-          {activeTab === 'stock' && (
-            <AdminStock products={products} orders={orders} onRefreshData={onRefreshData} showToast={showToast} />
-          )}
-          {activeTab === 'storage' && <AdminImageManager />}
-        </div>
-      </div>
+      </main>
 
       <AdminPaymentModal
         order={paymentModalOrder}
@@ -276,6 +342,6 @@ export default function AdminPanel({
           duration: 4500,
         }}
       />
-    </section>
+    </div>
   );
 }
