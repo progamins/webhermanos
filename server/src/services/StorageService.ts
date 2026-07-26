@@ -169,22 +169,33 @@ export class StorageService {
     const filename = `${uuidv4()}${ext}`;
 
     // ═══════════════════════════════════════════════════════════════
-    // 🌀 VERCEL: Usar Vercel Blob para almacenar archivos
+    // 🌀 VERCEL: Guardar archivo
     // ═══════════════════════════════════════════════════════════════
     let url: string;
     if (isVercel) {
-      try {
-        const { put } = await getVercelBlob();
-        const blobResult = await put(filename, buffer, {
-          contentType: mimeType,
-          access: 'public',
-          addRandomSuffix: true,
-        });
-        url = blobResult.url;
-        logger.info('Archivo subido a Vercel Blob', { service: 'StorageService', url, filename });
-      } catch (blobErr) {
-        logger.error('Error al subir a Vercel Blob', { service: 'StorageService', error: (blobErr as Error)?.message });
-        throw new Error(`Error al subir archivo a Vercel Blob: ${(blobErr as Error)?.message}`);
+      if (process.env.BLOB_READ_WRITE_TOKEN) {
+        // Usar Vercel Blob si hay token configurado
+        try {
+          const { put } = await getVercelBlob();
+          const blobResult = await put(filename, buffer, {
+            contentType: mimeType,
+            access: 'public',
+            addRandomSuffix: true,
+          });
+          url = blobResult.url;
+          logger.info('Archivo subido a Vercel Blob', { service: 'StorageService', url, filename });
+        } catch (blobErr) {
+          logger.error('Error al subir a Vercel Blob, usando fallback /tmp', { service: 'StorageService', error: (blobErr as Error)?.message });
+          // Fallback: guardar en /tmp
+          const tmpPath = path.join('/tmp', filename);
+          await fs.promises.writeFile(tmpPath, buffer);
+          url = `/api/uploads/${filename}`;
+        }
+      } else {
+        // Sin Blob: guardar en /tmp y servir por API
+        const tmpPath = path.join('/tmp', filename);
+        await fs.promises.writeFile(tmpPath, buffer);
+        url = `/api/uploads/${filename}`;
       }
     } else {
       // ── LOCAL: Usar sistema de archivos local ──

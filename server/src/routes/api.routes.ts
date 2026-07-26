@@ -1,5 +1,7 @@
 import logger from '../lib/logger.js';
 import { Router } from 'express';
+import fs from 'fs';
+import path from 'path';
 import bcrypt from 'bcryptjs';
 import { orderService } from '../services/OrderService.js';
 import { productService } from '../services/ProductService.js';
@@ -367,6 +369,60 @@ router.post('/csp-report', (req, res) => {
     'line-number': report?.['line-number'],
   });
   res.status(204).end();
+});
+
+// ─── Serve uploaded files (Vercel /tmp fallback) ───
+router.get('/uploads/:filename', async (req, res) => {
+  try {
+    // 🔒 Sanitizar: solo el nombre base, evitar path traversal
+    const filename = path.basename(req.params.filename);
+    const isVercel = process.env.VERCEL === 'true';
+
+    if (isVercel) {
+      // En Vercel, los archivos subidos sin Blob se guardan en /tmp
+      const filePath = path.join('/tmp', filename);
+      if (fs.existsSync(filePath)) {
+        const ext = path.extname(filename).toLowerCase();
+        const mimeMap: Record<string, string> = {
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.png': 'image/png',
+          '.gif': 'image/gif',
+          '.webp': 'image/webp',
+          '.svg': 'image/svg+xml',
+          '.pdf': 'application/pdf',
+        };
+        const contentType = mimeMap[ext] || 'application/octet-stream';
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+        const fileBuffer = fs.readFileSync(filePath);
+        return res.send(fileBuffer);
+      }
+      // Intentar buscar en la BD por si hay un registro con URL externa
+      try {
+        const { UploadRepository } = await import('../repositories/index.js');
+        const uploadRepo = new UploadRepository();
+        const uploads = await uploadRepo.findAll();
+        const upload = uploads.find((u: any) => u.filename === filename);
+        if (upload?.url && upload.url.startsWith('http')) {
+          return res.redirect(302, upload.url);
+        }
+      } catch { /* ignore */ }
+      res.status(404).json({ error: 'Archivo no encontrado' });
+    } else {
+      // En local, usar env.UPLOAD_DIR
+      const { env } = await import('../config/env.js');
+      const uploadsDir = env.UPLOAD_DIR;
+      const filePath = path.join(uploadsDir, filename);
+      if (fs.existsSync(filePath)) {
+        return res.sendFile(filePath);
+      }
+      res.status(404).json({ error: 'Archivo no encontrado' });
+    }
+  } catch (err: any) {
+    logger.error('Error serving upload', { service: 'API', error: err?.message });
+    res.status(500).json({ error: 'Error al servir archivo.' });
+  }
 });
 
 // ─── Image Proxy ───
