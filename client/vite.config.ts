@@ -9,114 +9,108 @@ export default defineConfig(() => {
     ? process.env.VITE_ALLOWED_HOSTS.split(',').map(s => s.trim())
     : true;
 
-  // Ruta secreta del admin: obligatoria via VITE_ADMIN_SECRET_PATH
+  // Ruta secreta del admin (solo para dev server, no requerida en build)
   const adminSecretPath = process.env.VITE_ADMIN_SECRET_PATH;
-  if (!adminSecretPath) {
-    throw new Error('Falta VITE_ADMIN_SECRET_PATH en .env. Defínela antes de arrancar.');
-  }
 
-  // IPs permitidas + MACs autorizadas
-  // ⚠️ Sincronizar con server/src/config/env.ts cuando se añadan IPs
-  // Vacío = sin restricción por IP/MAC (solo credenciales).
-  const allowedAdminIPs = (process.env.VITE_ALLOWED_ADMIN_IPS || '127.0.0.1,::1')
-    .split(',').map(s => s.trim());
-  const allowedMACs = new Set(
-    (process.env.VITE_ALLOWED_MAC_ADDRESSES || '')
-      .split(',').map(s => s.trim().toUpperCase()).filter(Boolean)
-  );
+  // Plugins base
+  const plugins: Plugin[] = [react(), tailwindcss()];
 
-  // Plugin que protege el admin en dev mode (solo local → import dinámico)
-  const adminSecretPlugin: Plugin = {
-    name: 'admin-secret-path',
-    configureServer(server) {
-      // Importar utilidades de verificación SÓLO cuando se configure el server
-      // (nunca durante el build, así evitamos dependencias del server en build)
-      server.middlewares.use(async (req, res, next) => {
-        try {
-          if (!req.url) { next(); return; }
+  // Solo agregar el plugin de protección admin si estamos en dev (tiene VITE_ADMIN_SECRET_PATH)
+  if (adminSecretPath) {
+    // IPs permitidas + MACs autorizadas
+    const allowedAdminIPs = (process.env.VITE_ALLOWED_ADMIN_IPS || '127.0.0.1,::1')
+      .split(',').map(s => s.trim());
+    const allowedMACs = new Set(
+      (process.env.VITE_ALLOWED_MAC_ADDRESSES || '')
+        .split(',').map(s => s.trim().toUpperCase()).filter(Boolean)
+    );
 
-          if (req.url === '/admin' || req.url.startsWith('/admin/')) {
-            res.statusCode = 301;
-            res.setHeader('Location', `/${adminSecretPath}`);
-            res.end();
-            return;
-          }
-          else if (req.url === '/admin.html') {
-            req.url = '/';
-          }
-          else if (req.url.startsWith(`/${adminSecretPath}`)) {
-            // Import dinámico — las funciones sólo se cargan aquí, en dev mode
-            const { isIPAllowed: checkIP, isMACAllowed: checkMAC, getMACFormHTML: macForm, getDeniedHTML: deniedHTML } = await import('../server/src/lib/verification.ts');
+    plugins.push({
+      name: 'admin-secret-path',
+      configureServer(server) {
+        server.middlewares.use(async (req, res, next) => {
+          try {
+            if (!req.url) { next(); return; }
 
-            function viteClientIP(r: any): string {
-              const forwarded = r.headers?.['x-forwarded-for'];
-              if (typeof forwarded === 'string') return forwarded.split(',')[0].trim();
-              if (Array.isArray(forwarded) && forwarded.length > 0) return forwarded[0].trim();
-              return r.socket?.remoteAddress || 'unknown';
+            if (req.url === '/admin' || req.url.startsWith('/admin/')) {
+              res.statusCode = 301;
+              res.setHeader('Location', `/${adminSecretPath}`);
+              res.end();
+              return;
             }
+            else if (req.url === '/admin.html') {
+              req.url = '/';
+            }
+            else if (req.url.startsWith(`/${adminSecretPath}`)) {
+              const { isIPAllowed: checkIP, isMACAllowed: checkMAC, getMACFormHTML: macForm, getDeniedHTML: deniedHTML } = await import('../server/src/lib/verification.ts');
 
-            function viteGetMAC(r: any): string | null {
-              const cookie = r.headers?.cookie;
-              if (cookie) {
-                const match = cookie.split(';').find((c: string) => c.trim().startsWith('maison_device_mac='));
-                if (match) {
-                  try {
-                    const val = match.split('=')[1].trim();
-                    return Buffer.from(decodeURIComponent(val), 'base64').toString('utf-8').toUpperCase();
-                  } catch {}
-                }
+              function viteClientIP(r: any): string {
+                const forwarded = r.headers?.['x-forwarded-for'];
+                if (typeof forwarded === 'string') return forwarded.split(',')[0].trim();
+                if (Array.isArray(forwarded) && forwarded.length > 0) return forwarded[0].trim();
+                return r.socket?.remoteAddress || 'unknown';
               }
-              const header = r.headers?.['x-device-mac'];
-              if (typeof header === 'string') return header.trim().toUpperCase();
-              return null;
-            }
 
-            // ═══ PRIMERO: Manejar POST de verificación MAC ═══
-            if (req.method === 'POST' && req.headers?.['x-device-mac']) {
-              const mac = (req.headers['x-device-mac'] as string).trim().toUpperCase();
-              if (checkMAC(mac, allowedMACs)) {
-                const encoded = Buffer.from(mac).toString('base64');
-                res.setHeader('Set-Cookie', `maison_device_mac=${encodeURIComponent(encoded)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${30*24*60*60}`);
-                res.statusCode = 200;
+              function viteGetMAC(r: any): string | null {
+                const cookie = r.headers?.cookie;
+                if (cookie) {
+                  const match = cookie.split(';').find((c: string) => c.trim().startsWith('maison_device_mac='));
+                  if (match) {
+                    try {
+                      const val = match.split('=')[1].trim();
+                      return Buffer.from(decodeURIComponent(val), 'base64').toString('utf-8').toUpperCase();
+                    } catch {}
+                  }
+                }
+                const header = r.headers?.['x-device-mac'];
+                if (typeof header === 'string') return header.trim().toUpperCase();
+                return null;
+              }
+
+              if (req.method === 'POST' && req.headers?.['x-device-mac']) {
+                const mac = (req.headers['x-device-mac'] as string).trim().toUpperCase();
+                if (checkMAC(mac, allowedMACs)) {
+                  const encoded = Buffer.from(mac).toString('base64');
+                  res.setHeader('Set-Cookie', `maison_device_mac=${encodeURIComponent(encoded)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${30*24*60*60}`);
+                  res.statusCode = 200;
+                  res.setHeader('Content-Type', 'application/json');
+                  res.end(JSON.stringify({ success: true }));
+                  return;
+                }
+                res.statusCode = 401;
                 res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ success: true }));
+                res.end(JSON.stringify({ error: 'MAC no autorizada' }));
                 return;
               }
-              res.statusCode = 401;
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ error: 'MAC no autorizada' }));
-              return;
-            }
 
-            const clientIP = viteClientIP(req);
-            // CONDICIÓN 1: IP
-            if (!checkIP(clientIP, allowedAdminIPs)) {
-              res.statusCode = 403;
-              res.setHeader('Content-Type', 'text/html; charset=utf-8');
-              res.end(deniedHTML(clientIP));
-              return;
+              const clientIP = viteClientIP(req);
+              if (!checkIP(clientIP, allowedAdminIPs)) {
+                res.statusCode = 403;
+                res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                res.end(deniedHTML(clientIP));
+                return;
+              }
+              const deviceMAC = viteGetMAC(req);
+              if (!checkMAC(deviceMAC, allowedMACs)) {
+                res.statusCode = 401;
+                res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                res.end(macForm());
+                return;
+              }
+              req.url = '/admin.html';
             }
-            // CONDICIÓN 2: MAC (desde cookie o header)
-            const deviceMAC = viteGetMAC(req);
-            if (!checkMAC(deviceMAC, allowedMACs)) {
-              res.statusCode = 401;
-              res.setHeader('Content-Type', 'text/html; charset=utf-8');
-              res.end(macForm());
-              return;
-            }
-            req.url = '/admin.html';
+            next();
+          } catch (err) {
+            console.error('[AdminSecretPath] Error:', err);
+            next();
           }
-          next();
-        } catch (err) {
-          console.error('[AdminSecretPath] Error en middleware:', err);
-          next();
-        }
-      });
-    },
-  };
+        });
+      },
+    } as Plugin);
+  }
 
   return {
-    plugins: [react(), tailwindcss(), adminSecretPlugin],
+    plugins,
     define: {
       'process.env.GOOGLE_MAPS_PLATFORM_KEY': JSON.stringify(process.env.GOOGLE_MAPS_PLATFORM_KEY || '')
     },
