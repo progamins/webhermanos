@@ -11,7 +11,7 @@
 export function getLocalImageUrl(url: string): string {
   if (!url) return url;
   // Ya es local → no tocar
-  if (url.startsWith('/uploads/') || url.startsWith('data:')) return url;
+  if (url.startsWith('/uploads/') || url.startsWith('/api/uploads/') || url.startsWith('data:')) return url;
   // Ya está en el mismo origen → no tocar
   if (typeof window !== 'undefined' && url.startsWith(window.location.origin)) return url;
   // URL externa → proxy local
