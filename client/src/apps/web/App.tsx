@@ -295,25 +295,60 @@ export default function App() {
     }
   }, []);
 
+
+
   const loadPublicData = async () => {
     try {
       await seedDatabaseIfNeeded();
-      const [fetchedProducts, fetchedReviews, fetchedGallery, fetchedConfig] = await Promise.all([
+
+      // 📌 Promise.allSettled: cada API falla individualmente sin romper las demás
+      const results = await Promise.allSettled([
         dbService.getProducts(),
         dbService.getReviews(),
         dbService.getGallery(),
         dbService.getConfig(),
       ]);
-      setProducts(fetchedProducts);
-      setReviews(fetchedReviews);
-      setGalleryItems(fetchedGallery);
-      setConfig(fetchedConfig);
-      preloadAllImages(fetchedProducts, fetchedGallery, fetchedConfig);
 
-      if (fetchedConfig?.maintenanceMode) {
+      const [productsResult, reviewsResult, galleryResult, configResult] = results;
+
+      if (productsResult.status === 'fulfilled') {
+        setProducts(productsResult.value);
+      } else {
+        console.warn('[API] Error al cargar productos, sección oculta:', productsResult.reason);
+      }
+
+      if (reviewsResult.status === 'fulfilled') {
+        setReviews(reviewsResult.value);
+      } else {
+        console.warn('[API] Error al cargar reseñas, sección oculta:', reviewsResult.reason);
+      }
+
+      if (galleryResult.status === 'fulfilled') {
+        setGalleryItems(galleryResult.value);
+      } else {
+        console.warn('[API] Error al cargar galería, sección oculta:', galleryResult.reason);
+      }
+
+      let loadedConfig: AppConfig | null = null;
+      if (configResult.status === 'fulfilled') {
+        loadedConfig = configResult.value;
+        setConfig(loadedConfig);
+      } else {
+        console.warn('[API] Error al cargar configuración:', configResult.reason);
+      }
+
+      // Precargar solo los datos que sí se cargaron
+      preloadAllImages(
+        productsResult.status === 'fulfilled' ? productsResult.value : [],
+        galleryResult.status === 'fulfilled' ? galleryResult.value : [],
+        loadedConfig
+      );
+
+      // Mantenimiento: solo si la config se cargó correctamente
+      if (loadedConfig?.maintenanceMode) {
         setMaintenanceMode(true);
-        if (fetchedConfig?.maintenanceEndTime) {
-          const end = new Date(fetchedConfig.maintenanceEndTime).getTime();
+        if (loadedConfig?.maintenanceEndTime) {
+          const end = new Date(loadedConfig.maintenanceEndTime).getTime();
           const now = Date.now();
           if (end > now) {
             setCountdownActive(true);
@@ -322,9 +357,13 @@ export default function App() {
         }
       }
     } catch (error) {
-      console.error('Error al cargar datos del servidor:', error);
+      // Este catch solo atrapa errores fuera de las promesas (ej: seedDatabaseIfNeeded)
+      console.error('[API] Error crítico al cargar datos del servidor:', error);
     }
   };
+
+  // Exponer loadPublicData para reintento manual desde consola
+  (window as any).__reloadPublicData = loadPublicData;
 
   useEffect(() => {
     const handleLocationChange = () => {
