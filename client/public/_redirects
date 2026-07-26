@@ -1,10 +1,7 @@
 # ─────────────────────────────────────────────
 # MAISON ROSAS — SPA routing
 # ─────────────────────────────────────────────
-# Render Static Sites soporta el formato _redirects
-# Docs: https://render.com/docs/static-site-redirects
-#
-# En Vercel el routing se maneja via vercel.json
-
-# SPA: todas las rutas no-API sirven index.html
-/*    /index.html    200
+# ⚠️  NOTA: En Vercel el routing se maneja via vercel.json
+#    No agregar reglas /* → /index.html aquí porque anula
+#    la prioridad de archivos estáticos (JS chunks, CSS, etc.).
+#    El catch-all ya está definido en vercel.json correctamente.
