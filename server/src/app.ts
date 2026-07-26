@@ -190,18 +190,20 @@ export function createApp() {
       return res.status(403).send(getDeniedHTML(clientIP));
     }
 
-    // CONDICIÓN 2: MAC del dispositivo
-    const deviceMAC = getDeviceMAC(req);
-    if (!isMACAllowed(deviceMAC, allowedMACs)) {
-      // Si es una petición POST con MAC en el header, verificar
-      if (req.method === 'POST' && req.headers['x-device-mac']) {
-        const mac = (req.headers['x-device-mac'] as string).trim().toUpperCase();
-        if (isMACAllowed(mac, allowedMACs)) {
-          setMACCookie(res, mac);
-          return res.json({ success: true });
+    // CONDICIÓN 2: MAC del dispositivo (solo si hay MACs configuradas)
+    if (allowedMACs.size > 0) {
+      const deviceMAC = getDeviceMAC(req);
+      if (!isMACAllowed(deviceMAC, allowedMACs)) {
+        // Si es una petición POST con MAC en el header, verificar
+        if (req.method === 'POST' && req.headers['x-device-mac']) {
+          const mac = (req.headers['x-device-mac'] as string).trim().toUpperCase();
+          if (isMACAllowed(mac, allowedMACs)) {
+            setMACCookie(res, mac);
+            return res.json({ success: true });
+          }
         }
+        return res.status(401).send(getMACFormHTML());
       }
-      return res.status(401).send(getMACFormHTML());
     }
 
     next();
