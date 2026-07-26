@@ -70,7 +70,13 @@ export interface EnvConfig {
 function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value) {
-    console.error(`[ENV] ERROR FATAL: Falta la variable de entorno obligatoria "${name}". Definela en .env antes de arrancar el servidor.`);
+    const msg = `Falta variable de entorno obligatoria: "${name}". Defínela en .env o en las Environment Variables de Vercel.`;
+    // En Node.js standalone (no serverless), process.exit es apropiado.
+    // En Vercel serverless, lanzar Error permite un manejo graceful.
+    if (process.env.VERCEL === 'true') {
+      throw new Error(msg);
+    }
+    console.error(`[ENV] ERROR FATAL: ${msg}`);
     process.exit(1);
   }
   return value;

@@ -17,19 +17,43 @@
  * ═══════════════════════════════════════════════════════════════════════
  */
 
-import { createApp } from '../server/src/app.js';
+import express, { type Express, type Request, type Response } from 'express';
 
 // Señal para que el servidor sepa que corre en Vercel.
-// Esto permite saltar ciertas operaciones que no funcionan en serverless
-// (ej. servir archivos estáticos, usar sistema de archivos local).
 process.env.VERCEL = 'true';
 process.env.VERCEL_ENV = process.env.VERCEL_ENV || 'production';
-
-// En Vercel, el host siempre debe ser 0.0.0.0 y el puerto no importa
-// porque Vercel maneja el enrutamiento.
+process.env.NODE_ENV = process.env.NODE_ENV || 'production';
 process.env.HOST = '0.0.0.0';
 process.env.PORT = process.env.PORT || '3000';
 
-const app = createApp();
+/**
+ * Inicializa la app Express con manejo de errores graceful.
+ * Si faltan variables de entorno, devuelve un API que responde con
+ * errores JSON claros en vez de un crash genérico 500.
+ */
+let app: Express;
+try {
+  // Import dinámico con try-catch para atrapar errores de env vars faltantes
+  // Usamos await import() en vez de require() porque el server usa ESM ("type": "module")
+  const { createApp } = await import('../server/src/app.js');
+  app = createApp();
+} catch (err: any) {
+  console.error('[Vercel API] Error al iniciar la aplicación:', err?.message || err);
+
+  // Fallback: app mínima que informa qué falta con JSON descriptivo
+  app = express();
+  app.use('*', (_req: Request, res: Response) => {
+    const message = err?.message || 'Error desconocido al iniciar el servidor';
+    const isEnvVarMissing = message.includes('Falta variable de entorno obligatoria');
+
+    res.status(500).json({
+      error: isEnvVarMissing
+        ? 'Configuración incompleta: faltan variables de entorno'
+        : 'Error interno del servidor',
+      detail: isEnvVarMissing ? message : undefined,
+      hint: 'Revisa las Environment Variables en: https://vercel.com/dashboard',
+    });
+  });
+}
 
 export default app;
