@@ -1,5 +1,6 @@
 import logger from '../lib/logger.js';
 import { Router } from 'express';
+import bcrypt from 'bcryptjs';
 import { orderService } from '../services/OrderService.js';
 import { productService } from '../services/ProductService.js';
 import { reviewService } from '../services/ReviewService.js';
@@ -50,7 +51,7 @@ router.get('/status', async (req, res, next) => {
       results.env[key] = process.env[key] ? '✅ configurado' : '⚪ opcional';
     }
 
-    // ─── Database test ───
+    // ─── Database test + Admin Auth (una sola conexión) ───
     let conn: any = null;
     try {
       const { getPool } = await import('../config/db.js');
@@ -59,8 +60,9 @@ router.get('/status', async (req, res, next) => {
       await conn.ping();
       results.database.connected = true;
 
-      const safeTables = new Set(['products', 'reviews', 'gallery', 'orders', 'config', 'admin_auth', 'cake_stock', 'contact_messages']);
-      for (const table of safeTables) {
+      // ── Tablas ──
+      const tableNames = ['products', 'reviews', 'gallery', 'orders', 'config', 'admin_auth', 'cake_stock', 'contact_messages'];
+      for (const table of tableNames) {
         try {
           const [rows] = await conn.query(`SELECT COUNT(*) as count FROM \`${table}\``);
           results.database.tables[table] = (rows as any[])[0].count;
@@ -68,58 +70,54 @@ router.get('/status', async (req, res, next) => {
           results.database.tables[table] = '❌ no existe';
         }
       }
-    } catch (err: any) {
-      results.database.connected = false;
-      results.database.error = err?.message || 'Error desconocido al conectar a BD';
-    } finally {
-      if (conn) {
-        try { conn.release(); } catch { /* ignore release errors */ }
-      }
-    }
 
-    // ─── Admin Auth Test (verificar contraseñas contra BD) ───
-    results.auth = { roles: {}, summary: '' };
-    if (results.database.connected) {
-      const { default: bcrypt } = await import('bcryptjs');
+      // ── Admin Auth Test ──
+      results.auth = { roles: {} };
       const expectedPasswords: Record<string, string | undefined> = {
         admin: process.env.ADMIN_DEFAULT_PASSWORD,
         analyst: process.env.ANALYST_DEFAULT_PASSWORD,
         stock_manager: process.env.STOCK_MANAGER_DEFAULT_PASSWORD,
       };
-      let conn2: any = null;
-      try {
-        const { getPool } = await import('../config/db.js');
-        conn2 = await getPool().getConnection();
-        const [authRows] = await conn2.query('SELECT role, password_hash FROM admin_auth ORDER BY role');
-        for (const row of authRows as any[]) {
-          const role = row.role;
-          const hash = row.password_hash;
-          const expected = expectedPasswords[role];
-          if (!expected) {
-            results.auth.roles[role] = { status: '❌ no configurada', passwordSet: false };
-          } else if (!hash) {
-            results.auth.roles[role] = { status: '❌ sin hash en BD', passwordSet: true };
-          } else {
-            const match = bcrypt.compareSync(expected, hash);
-            results.auth.roles[role] = {
-              status: match ? '✅ contraseña coincide' : '❌ contraseña NO coincide',
-              passwordSet: true,
-              hashPresent: true,
-            };
-          }
+      const [authRows] = await conn.query('SELECT role, password_hash FROM admin_auth ORDER BY role');
+      const foundRoles = new Set<string>();
+      for (const row of authRows as any[]) {
+        foundRoles.add(row.role);
+        const role = row.role;
+        const hash = row.password_hash;
+        const expected = expectedPasswords[role];
+        if (!expected) {
+          results.auth.roles[role] = { status: '❌ contraseña no configurada en env vars', passwordSet: false, hashPresent: !!hash };
+        } else if (!hash) {
+          results.auth.roles[role] = { status: '❌ sin hash en BD', passwordSet: true, hashPresent: false };
+        } else {
+          const match = bcrypt.compareSync(expected, hash);
+          results.auth.roles[role] = {
+            status: match ? '✅ contraseña coincide' : '❌ contraseña NO coincide',
+            passwordSet: true,
+            hashPresent: true,
+          };
         }
-        // Check if any role has missing config
-        const allMatch = Object.values(results.auth.roles).every((r: any) => r.status?.startsWith('✅'));
-        results.auth.summary = allMatch
-          ? '✅ Todas las contraseñas de roles coinciden'
-          : '⚠️ Hay problemas con las contraseñas de roles';
-      } catch (err: any) {
-        results.auth.error = err?.message || 'Error al verificar autenticación';
-      } finally {
-        if (conn2) { try { conn2.release(); } catch {} }
       }
-    } else {
-      results.auth.summary = '⚠️ No se pudo verificar (BD no conectada)';
+      // Detectar roles esperados que no existen en BD
+      for (const [role] of Object.entries(expectedPasswords)) {
+        if (!foundRoles.has(role)) {
+          results.auth.roles[role] = { status: '❌ rol no encontrado en BD', passwordSet: !!expectedPasswords[role], hashPresent: false };
+        }
+      }
+      const allMatch = Object.values(results.auth.roles).every((r: any) => r.status?.startsWith('✅'));
+      results.auth.summary = allMatch
+        ? '✅ Todas las contraseñas de roles coinciden'
+        : '⚠️ Hay problemas con las contraseñas de roles';
+    } catch (err: any) {
+      results.database.connected = false;
+      results.database.error = err?.message || 'Error desconocido al conectar a BD';
+      if (!results.auth) {
+        results.auth = { roles: {}, summary: '⚠️ No se pudo verificar (BD no conectada)', error: err?.message };
+      }
+    } finally {
+      if (conn) {
+        try { conn.release(); } catch { /* ignore release errors */ }
+      }
     }
 
     // ─── Overall status ───
