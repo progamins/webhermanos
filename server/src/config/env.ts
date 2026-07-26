@@ -117,7 +117,7 @@ function loadEnv(): EnvConfig {
 
     APP_URL: process.env.APP_URL || 'http://localhost:3000',
     ADMIN_SECRET_PATH: requireEnv('ADMIN_SECRET_PATH'),
-    ALLOWED_ADMIN_IPS: (process.env.ALLOWED_ADMIN_IPS || '127.0.0.1,::1').split(',').map(s => s.trim()),
+    ALLOWED_ADMIN_IPS: (process.env.ALLOWED_ADMIN_IPS || '*').split(',').map(s => s.trim()),
     ALLOWED_MAC_ADDRESSES: (process.env.ALLOWED_MAC_ADDRESSES || '').split(',').map(s => s.trim().toUpperCase()).filter(Boolean),
     ADMIN_DEFAULT_PASSWORD: requireEnv('ADMIN_DEFAULT_PASSWORD'),
     ANALYST_DEFAULT_PASSWORD: requireEnv('ANALYST_DEFAULT_PASSWORD'),
