@@ -77,11 +77,57 @@ router.get('/status', async (req, res, next) => {
       }
     }
 
+    // ─── Admin Auth Test (verificar contraseñas contra BD) ───
+    results.auth = { roles: {}, summary: '' };
+    if (results.database.connected) {
+      const { default: bcrypt } = await import('bcryptjs');
+      const expectedPasswords: Record<string, string | undefined> = {
+        admin: process.env.ADMIN_DEFAULT_PASSWORD,
+        analyst: process.env.ANALYST_DEFAULT_PASSWORD,
+        stock_manager: process.env.STOCK_MANAGER_DEFAULT_PASSWORD,
+      };
+      let conn2: any = null;
+      try {
+        const { getPool } = await import('../config/db.js');
+        conn2 = await getPool().getConnection();
+        const [authRows] = await conn2.query('SELECT role, password_hash FROM admin_auth ORDER BY role');
+        for (const row of authRows as any[]) {
+          const role = row.role;
+          const hash = row.password_hash;
+          const expected = expectedPasswords[role];
+          if (!expected) {
+            results.auth.roles[role] = { status: '❌ no configurada', passwordSet: false };
+          } else if (!hash) {
+            results.auth.roles[role] = { status: '❌ sin hash en BD', passwordSet: true };
+          } else {
+            const match = bcrypt.compareSync(expected, hash);
+            results.auth.roles[role] = {
+              status: match ? '✅ contraseña coincide' : '❌ contraseña NO coincide',
+              passwordSet: true,
+              hashPresent: true,
+            };
+          }
+        }
+        // Check if any role has missing config
+        const allMatch = Object.values(results.auth.roles).every((r: any) => r.status?.startsWith('✅'));
+        results.auth.summary = allMatch
+          ? '✅ Todas las contraseñas de roles coinciden'
+          : '⚠️ Hay problemas con las contraseñas de roles';
+      } catch (err: any) {
+        results.auth.error = err?.message || 'Error al verificar autenticación';
+      } finally {
+        if (conn2) { try { conn2.release(); } catch {} }
+      }
+    } else {
+      results.auth.summary = '⚠️ No se pudo verificar (BD no conectada)';
+    }
+
     // ─── Overall status ───
     const allTablesOk = Object.values(results.database.tables).every(v => typeof v === 'number');
     const allEnvOk = Object.values(results.env).every(v => v === '✅ configurado');
+    const authOk = results.auth.summary?.startsWith('✅');
 
-    results.overall = allTablesOk && allEnvOk && results.database.connected
+    results.overall = allTablesOk && allEnvOk && results.database.connected && authOk
       ? '✅ TODO FUNCIONANDO'
       : '⚠️ Hay problemas que revisar';
 

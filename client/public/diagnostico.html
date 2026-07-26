@@ -254,6 +254,34 @@
               }).join('')}
             </div>` : ''}
           </div>
+
+          ${data.auth ? `
+          <div class="section">
+            <div class="section-title">👑 Autenticación Admin</div>
+            <div class="card" style="margin-bottom:10px">
+              <div class="card-label">Estado general</div>
+              <div class="card-value ${data.auth.summary?.startsWith('✅') ? 'ok' : 'warn'}">
+                ${data.auth.summary || '⚠️ Sin verificar'}
+              </div>
+              ${data.auth.error ? `<div class="db-error">${data.auth.error}</div>` : ''}
+            </div>
+            <div class="grid-3">
+              ${Object.entries(data.auth.roles || {}).map(([role, info]) => {
+                const r = info;
+                const isOk = r.status?.startsWith('✅');
+                const isWarn = r.status?.startsWith('⚠️');
+                return `<div class="card">
+                  <div class="card-label">${role}</div>
+                  <div class="card-value ${isOk ? 'ok' : isWarn ? 'warn' : 'err'}">${r.status || '❌ error'}</div>
+                  <div style="font-size:10px;color:#52525b;margin-top:2px">
+                    ${r.passwordSet ? '🔑 configurada' : '⚪ sin configurar'}
+                    ${r.hashPresent ? '· 💾 hash en BD' : ''}
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>
+          ` : ''}
         `;
       } catch (err) {
         loading.style.display = 'none';
