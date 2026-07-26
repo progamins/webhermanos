@@ -372,6 +372,13 @@ router.post('/csp-report', (req, res) => {
   res.status(204).end();
 });
 
+// Placeholder SVG para imágenes no encontradas
+const MISSING_IMAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#f4f4f5"/>
+  <text x="200" y="140" text-anchor="middle" fill="#a1a1aa" font-family="monospace" font-size="14">📷</text>
+  <text x="200" y="170" text-anchor="middle" fill="#a1a1aa" font-family="monospace" font-size="11">Imagen no disponible</text>
+</svg>`;
+
 // ─── Serve uploaded files (Vercel /tmp fallback) ───
 router.get('/uploads/:filename', async (req, res) => {
   try {
@@ -408,7 +415,10 @@ router.get('/uploads/:filename', async (req, res) => {
           return res.redirect(302, upload.url);
         }
       } catch { /* ignore */ }
-      return res.status(404).json({ error: 'Archivo no encontrado' });
+      // No encontrado en /tmp ni en BD → placeholder SVG
+      res.setHeader('Content-Type', 'image/svg+xml');
+      res.setHeader('Cache-Control', 'no-cache');
+      return res.send(MISSING_IMAGE_SVG);
     }
 
     // En local, usar env.UPLOAD_DIR (importado estáticamente)
@@ -417,7 +427,10 @@ router.get('/uploads/:filename', async (req, res) => {
     if (fs.existsSync(filePath)) {
       return res.sendFile(filePath);
     }
-    return res.status(404).json({ error: 'Archivo no encontrado' });
+    // Placeholder SVG para archivos locales no encontrados
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'no-cache');
+    return res.send(placeholder);
   } catch (err: any) {
     logger.error('Error serving upload', { service: 'API', error: err?.message });
     return res.status(500).json({ error: 'Error al servir archivo.' });
