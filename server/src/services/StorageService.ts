@@ -8,6 +8,16 @@ import { env } from '../config/env.js';
 import { UploadRepository } from '../repositories/index.js';
 
 const uploadRepo = new UploadRepository();
+const isVercel = process.env.VERCEL === 'true';
+
+// Lazy import Vercel Blob only when running on Vercel
+let vercelBlob: typeof import('@vercel/blob') | null = null;
+async function getVercelBlob() {
+  if (!vercelBlob) {
+    vercelBlob = await import('@vercel/blob');
+  }
+  return vercelBlob;
+}
 
 export interface FileInfo {
   name: string;
@@ -26,12 +36,19 @@ export class StorageService {
 
   constructor() {
     this.uploadDir = env.UPLOAD_DIR;
-    if (!fs.existsSync(this.uploadDir)) {
-      fs.mkdirSync(this.uploadDir, { recursive: true });
+    if (!isVercel) {
+      if (!fs.existsSync(this.uploadDir)) {
+        fs.mkdirSync(this.uploadDir, { recursive: true });
+      }
     }
   }
 
   async listFiles(): Promise<{ files: FileInfo[]; totalSize: number; totalFiles: number }> {
+    // En Vercel, listar archivos desde la BD (el sistema de archivos no es persistente)
+    if (isVercel) {
+      return this.listFilesFromDB();
+    }
+
     const files: FileInfo[] = [];
     let totalSize = 0;
 
@@ -94,6 +111,35 @@ export class StorageService {
     return { files, totalSize, totalFiles: files.length };
   }
 
+  /**
+   * Lista archivos desde la BD de MySQL (para Vercel, donde no hay FS persistente).
+   */
+  private async listFilesFromDB(): Promise<{ files: FileInfo[]; totalSize: number; totalFiles: number }> {
+    const files: FileInfo[] = [];
+    let totalSize = 0;
+
+    try {
+      const uploads = await uploadRepo.findAll();
+      for (const u of uploads) {
+        totalSize += u.size_bytes || 0;
+        files.push({
+          name: u.filename,
+          fullPath: u.url || `/uploads/${u.filename}`,
+          folder: 'uploads',
+          size: u.size_bytes || 0,
+          contentType: u.mime_type || 'application/octet-stream',
+          timeCreated: u.created_at || null,
+          updated: u.created_at || null,
+          downloadUrl: u.url || `/uploads/${u.filename}`,
+        });
+      }
+    } catch (err) {
+      logger.error('Error listing files from DB', { service: 'StorageService', error: (err as Error)?.message });
+    }
+
+    return { files, totalSize, totalFiles: files.length };
+  }
+
   /** Computa SHA256 hash de un buffer */
   computeHash(buffer: Buffer): string {
     return crypto.createHash('sha256').update(buffer).digest('hex');
@@ -121,21 +167,35 @@ export class StorageService {
 
     const ext = path.extname(originalName) || '.jpg';
     const filename = `${uuidv4()}${ext}`;
-    const filePath = path.join(this.uploadDir, filename);
 
-    // Attempt to make the directory group-writable before writing.
-    // In production the dir may be owned by www-data while PM2 runs as edwin.
-    // This is best-effort — if chmod fails, writeFile will also fail with EACCES.
-    try { await fs.promises.chmod(this.uploadDir, 0o775); } catch { /* best-effort */ }
+    // ═══════════════════════════════════════════════════════════════
+    // 🌀 VERCEL: Usar Vercel Blob para almacenar archivos
+    // ═══════════════════════════════════════════════════════════════
+    let url: string;
+    if (isVercel) {
+      try {
+        const { put } = await getVercelBlob();
+        const blobResult = await put(filename, buffer, {
+          contentType: mimeType,
+          access: 'public',
+          addRandomSuffix: true,
+        });
+        url = blobResult.url;
+        logger.info('Archivo subido a Vercel Blob', { service: 'StorageService', url, filename });
+      } catch (blobErr) {
+        logger.error('Error al subir a Vercel Blob', { service: 'StorageService', error: (blobErr as Error)?.message });
+        throw new Error(`Error al subir archivo a Vercel Blob: ${(blobErr as Error)?.message}`);
+      }
+    } else {
+      // ── LOCAL: Usar sistema de archivos local ──
+      const filePath = path.join(this.uploadDir, filename);
+      try { await fs.promises.chmod(this.uploadDir, 0o775); } catch { /* best-effort */ }
+      await fs.promises.writeFile(filePath, buffer);
+      try { await fs.promises.chmod(filePath, 0o644); } catch { /* best-effort */ }
+      url = `/uploads/${filename}`;
+    }
 
-    await fs.promises.writeFile(filePath, buffer);
-
-    // Ensure the file is world-readable so Express static middleware can serve it
-    // regardless of the process umask.
-    try { await fs.promises.chmod(filePath, 0o644); } catch { /* best-effort */ }
-
-    const url = `/uploads/${filename}`;
-
+    // ── Registrar en la BD ──
     try {
       const upload = await uploadRepo.create(
         uploadToRow({
@@ -151,9 +211,9 @@ export class StorageService {
       return { url, filename, id: upload.id };
     } catch (createErr: any) {
       // ER_DUP_ENTRY (1062) = UNIQUE INDEX violation — race condition
-      // Delete the file we just wrote and return the existing record
       if (createErr?.errno === 1062) {
-        try { await fs.promises.unlink(filePath); } catch { /* best-effort */ }
+        // En Vercel no podemos borrar el blob facilmente, pero el duplicado
+        // está manejado por el find existente antes del write.
         try {
           const existing = await uploadRepo.findByHash(contentHash);
           if (existing) {
@@ -161,11 +221,8 @@ export class StorageService {
             return { url: existing.url, filename: existing.filename, id: existing.id, duplicateReused: true };
           }
         } catch { /* fall through */ }
-        // Could not recover — file was deleted but existing record not found.
-        // Throw with a clearer message.
-        throw new Error(`ER_DUP_ENTRY no recuperable: hash=${contentHash.slice(0, 12)}…, archivo=${filename} eliminado`);
+        throw new Error(`ER_DUP_ENTRY no recuperable: hash=${contentHash.slice(0, 12)}…`);
       }
-      // Re-throw if we couldn't recover
       throw createErr;
     }
   }
@@ -181,9 +238,20 @@ export class StorageService {
   }
 
   async deleteFile(url: string): Promise<boolean> {
+    if (isVercel) {
+      // En Vercel, eliminar el blob
+      try {
+        const { del } = await getVercelBlob();
+        await del(url);
+        return true;
+      } catch (err) {
+        logger.error('Error al eliminar blob de Vercel', { service: 'StorageService', error: (err as Error)?.message });
+        return false;
+      }
+    }
+
     const filename = path.basename(url);
     const filePath = path.join(this.uploadDir, filename);
-
     try {
       await fs.promises.unlink(filePath);
       return true;
@@ -193,6 +261,18 @@ export class StorageService {
   }
 
   async deleteByFilename(filename: string): Promise<boolean> {
+    // En Vercel, se necesita la URL completa; intentar construirla desde la BD
+    if (isVercel) {
+      try {
+        const uploads = await uploadRepo.findAll();
+        const upload = uploads.find((u: any) => u.filename === filename);
+        if (upload?.url) {
+          return this.deleteFile(upload.url);
+        }
+      } catch { /* ignore */ }
+      return false;
+    }
+
     const filePath = path.join(this.uploadDir, filename);
     try {
       await fs.promises.unlink(filePath);
@@ -203,6 +283,14 @@ export class StorageService {
   }
 
   async getFileUrl(filename: string): Promise<string> {
+    if (isVercel) {
+      // En Vercel, obtener la URL real del blob desde la BD
+      try {
+        const uploads = await uploadRepo.findAll();
+        const upload = uploads.find((u: any) => u.filename === filename);
+        if (upload?.url) return upload.url;
+      } catch { /* ignore */ }
+    }
     return `/uploads/${filename}`;
   }
 }

@@ -5,10 +5,32 @@ dotenv.config();
 import { env } from './config/env.js';
 import { testConnection } from './config/db.js';
 import { createApp } from './app.js';
+import { readFileSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+/** Read version from the root package.json (workspace) at runtime. */
+function getServerVersion(): string {
+  try {
+    const pkgPath = resolve(__dirname, '../../package.json');
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+    return pkg.version || '0.0.0';
+  } catch (err) {
+    logger.warn(`Could not read version from package.json, falling back to 0.0.0`, {
+      service: 'Server',
+      error: (err as Error)?.message,
+    });
+    return '0.0.0';
+  }
+}
+
+const SERVER_VERSION = getServerVersion();
 
 async function bootstrap() {
   logger.info('══════════════════════════════════════════════', { service: 'Server' });
-  logger.info('  MAISON ROSAS — Server v1.0 (MySQL)', { service: 'Server' });
+  logger.info(`  MAISON ROSAS — Server v${SERVER_VERSION} (MySQL)`, { service: 'Server' });
   logger.info('══════════════════════════════════════════════', { service: 'Server' });
   logger.info(`Mode: ${env.NODE_ENV}`, { service: 'Server' });
   logger.info(`Port: ${env.PORT}`, { service: 'Server' });

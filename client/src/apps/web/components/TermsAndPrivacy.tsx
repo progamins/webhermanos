@@ -1,16 +1,6 @@
-import { useState, useEffect } from 'react';
-import { FileText, Shield } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from '../../../shared/components/ui';
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { FileText, Shield, X } from 'lucide-react';
 
 interface TermsAndPrivacyProps {
   isOpen: boolean;
@@ -102,83 +92,154 @@ export default function TermsAndPrivacy({ isOpen, onClose, initialTab = 'terms' 
     setActiveTab(initialTab);
   }, [initialTab]);
 
+  // Cerrar con Escape
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') onClose();
+  }, [onClose]);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [isOpen, handleKeyDown]);
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent
-        className="max-w-3xl max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl border"
-        style={{
-          backgroundColor: 'var(--theme-surface)',
-          borderColor: 'var(--theme-border)',
-        }}
-        showCloseButton={false}
-      >
-        <DialogHeader className="px-6 py-5 border-b shrink-0" style={{ borderColor: 'var(--theme-border)', backgroundColor: 'var(--theme-surface)' }}>
-          <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-xl" style={{ backgroundColor: 'var(--theme-bg-alt)' }}>
-              <FileText className="h-5 w-5" style={{ color: 'var(--theme-brand-primary)' }} aria-hidden="true" />
-            </div>
-            <div>
-              <DialogTitle className="font-serif font-bold text-lg" style={{ color: 'var(--theme-text)' }}>
-                Información Legal
-              </DialogTitle>
-              <DialogDescription className="text-[10px] font-mono uppercase tracking-wider mt-0.5" style={{ color: 'var(--theme-text-muted)' }}>
-                Maison Rosas &bull; Pastelería de Autor
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
-
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'terms' | 'privacy')} className="flex-1 flex flex-col min-h-0">
-          <div className="px-6 py-0 shrink-0" style={{ backgroundColor: 'var(--theme-bg-alt)' }}>
-            <TabsList className="w-full justify-start rounded-none bg-transparent p-0 gap-0">
-              <TabsTrigger
-                value="terms"
-                className="flex items-center gap-2 px-4 py-3 text-xs font-mono font-bold uppercase tracking-wider rounded-none border-b-2 data-active:border-brand-500 data-active:bg-transparent data-active:text-foreground border-transparent bg-transparent"
-                style={{ color: 'var(--theme-text-muted)' }}
-              >
-                <FileText className="h-4 w-4" aria-hidden="true" />
-                Términos de Servicio
-              </TabsTrigger>
-              <TabsTrigger
-                value="privacy"
-                className="flex items-center gap-2 px-4 py-3 text-xs font-mono font-bold uppercase tracking-wider rounded-none border-b-2 data-active:border-brand-500 data-active:bg-transparent data-active:text-foreground border-transparent bg-transparent"
-                style={{ color: 'var(--theme-text-muted)' }}
-              >
-                <Shield className="h-4 w-4" aria-hidden="true" />
-                Políticas de Privacidad
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="p-5 rounded-2xl border mb-6" style={{ backgroundColor: 'var(--theme-bg-alt)', borderColor: 'var(--theme-border)' }}>
-              <h4 className="font-serif font-bold text-lg" style={{ color: 'var(--theme-text)' }}>
-                {activeTab === 'terms' ? 'Términos de Servicio' : 'Políticas de Privacidad'}
-              </h4>
-              <p className="text-[11px] mt-1" style={{ color: 'var(--theme-text-muted)' }}>Última actualización: Julio 2026</p>
-            </div>
-
-            <TabsContent value="terms" className="mt-0">
-              <TermsContent />
-            </TabsContent>
-            <TabsContent value="privacy" className="mt-0">
-              <PrivacyContent />
-            </TabsContent>
-          </div>
-        </Tabs>
-
-        <div className="px-6 py-4 flex items-center justify-between shrink-0 border-t" style={{ borderColor: 'var(--theme-border)', backgroundColor: 'var(--theme-bg-alt)' }}>
-          <span className="text-[10px] font-mono" style={{ color: 'var(--theme-text-muted)' }}>
-            &copy; {new Date().getFullYear()} Maison Rosas
-          </span>
-          <button
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
             onClick={onClose}
-            className="px-5 py-2 rounded-full bg-brand-500 hover:bg-brand-600 text-white text-[10px] font-bold uppercase tracking-widest transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm cursor-pointer"
+          />
+
+          {/* Modal panel */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 10 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="relative w-full max-w-3xl max-h-[90dvh] sm:max-h-[85dvh] flex flex-col rounded-2xl border shadow-2xl overflow-hidden mx-0 sm:mx-4"
+            style={{
+              backgroundColor: 'var(--theme-surface)',
+              borderColor: 'var(--theme-border)',
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Información Legal"
           >
-            Cerrar
-          </button>
+            {/* ─── Close button ─── */}
+            <button
+              onClick={onClose}
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 p-1.5 rounded-full transition-all duration-200 hover:scale-105 cursor-pointer"
+              style={{
+                backgroundColor: 'var(--theme-bg-alt)',
+                color: 'var(--theme-text-muted)',
+              }}
+              aria-label="Cerrar"
+            >
+              <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            </button>
+
+            {/* ─── Fixed header ─── */}
+            <div className="shrink-0 px-4 sm:px-6 py-3 sm:py-5 border-b" style={{ borderColor: 'var(--theme-border)', backgroundColor: 'var(--theme-surface)' }}>
+              <div className="flex items-center space-x-2.5 sm:space-x-3 pr-8">
+                <div className="p-1.5 sm:p-2 rounded-xl shrink-0" style={{ backgroundColor: 'var(--theme-bg-alt)' }}>
+                  <FileText className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: 'var(--theme-brand-primary)' }} aria-hidden="true" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-serif font-bold text-base sm:text-lg truncate" style={{ color: 'var(--theme-text)' }}>
+                    Información Legal
+                  </h3>
+                  <p className="text-[9px] sm:text-[10px] font-mono uppercase tracking-wider mt-0.5 truncate" style={{ color: 'var(--theme-text-muted)' }}>
+                    Maison Rosas &bull; Pastelería de Autor
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* ─── Tab buttons (scroll horizontal en mobile) ─── */}
+            <div className="shrink-0 overflow-x-auto scrollbar-none" style={{ backgroundColor: 'var(--theme-bg-alt)' }}>
+              <div className="px-4 sm:px-6 min-w-fit">
+                <div className="flex gap-0 border-b" style={{ borderColor: 'var(--theme-border)' }}>
+                  <button
+                    onClick={() => setActiveTab('terms')}
+                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider border-b-2 transition-all duration-200 whitespace-nowrap ${
+                      activeTab === 'terms'
+                        ? 'border-brand-500 text-foreground'
+                        : 'border-transparent text-muted-foreground hover:text-foreground'
+                    }`}
+                    style={{ color: activeTab === 'terms' ? 'var(--theme-text)' : 'var(--theme-text-muted)' }}
+                    role="tab"
+                    aria-selected={activeTab === 'terms'}
+                  >
+                    <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" aria-hidden="true" />
+                    Términos
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('privacy')}
+                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider border-b-2 transition-all duration-200 whitespace-nowrap ${
+                      activeTab === 'privacy'
+                        ? 'border-brand-500 text-foreground'
+                        : 'border-transparent text-muted-foreground hover:text-foreground'
+                    }`}
+                    style={{ color: activeTab === 'privacy' ? 'var(--theme-text)' : 'var(--theme-text-muted)' }}
+                    role="tab"
+                    aria-selected={activeTab === 'privacy'}
+                  >
+                    <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" aria-hidden="true" />
+                    Privacidad
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* ─── Tab content (scrollable) ─── */}
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+              {activeTab === 'terms' && (
+                <div className="p-4 sm:p-6">
+                  <div className="p-4 sm:p-5 rounded-2xl border mb-5 sm:mb-6" style={{ backgroundColor: 'var(--theme-bg-alt)', borderColor: 'var(--theme-border)' }}>
+                    <h4 className="font-serif font-bold text-base sm:text-lg" style={{ color: 'var(--theme-text)' }}>Términos de Servicio</h4>
+                    <p className="text-[10px] sm:text-[11px] mt-1" style={{ color: 'var(--theme-text-muted)' }}>Última actualización: Julio 2026</p>
+                  </div>
+                  <TermsContent />
+                </div>
+              )}
+              {activeTab === 'privacy' && (
+                <div className="p-4 sm:p-6">
+                  <div className="p-4 sm:p-5 rounded-2xl border mb-5 sm:mb-6" style={{ backgroundColor: 'var(--theme-bg-alt)', borderColor: 'var(--theme-border)' }}>
+                    <h4 className="font-serif font-bold text-base sm:text-lg" style={{ color: 'var(--theme-text)' }}>Políticas de Privacidad</h4>
+                    <p className="text-[10px] sm:text-[11px] mt-1" style={{ color: 'var(--theme-text-muted)' }}>Última actualización: Julio 2026</p>
+                  </div>
+                  <PrivacyContent />
+                </div>
+              )}
+            </div>
+
+            {/* ─── Fixed footer ─── */}
+            <div className="shrink-0 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between border-t" style={{ borderColor: 'var(--theme-border)', backgroundColor: 'var(--theme-bg-alt)' }}>
+              <span className="text-[9px] sm:text-[10px] font-mono" style={{ color: 'var(--theme-text-muted)' }}>
+                &copy; {new Date().getFullYear()} Maison Rosas
+              </span>
+              <button
+                onClick={onClose}
+                className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-brand-500 hover:bg-brand-600 text-white text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 cursor-pointer active:scale-95"
+              >
+                Cerrar
+              </button>
+            </div>
+          </motion.div>
         </div>
-      </DialogContent>
-    </Dialog>
+      )}
+    </AnimatePresence>
   );
 }

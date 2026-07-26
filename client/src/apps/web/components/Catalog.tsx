@@ -1,7 +1,7 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { useReducedMotion } from '../../../shared/hooks';
-import { Search, Clock, CheckCircle2, ChevronRight, SlidersHorizontal, Images, X } from 'lucide-react';
+import { Search, Clock, CheckCircle2, ChevronRight, ChevronLeft, SlidersHorizontal, Images, X } from 'lucide-react';
 import type { Product } from '../../../shared/types';
 import { optimizeImageUrl } from '../../../shared/utils/images';
 import { lazyImportPrewarm } from '../../../shared/utils/lazyImportPrewarm';
@@ -18,9 +18,8 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselPrevious,
-  CarouselNext,
 } from '../../../shared/components/ui';
+import type { CarouselApi } from '../../../shared/components/ui';
 
 interface CatalogProps {
   products: Product[];
@@ -50,6 +49,7 @@ export default function Catalog({ products, onSelectCustomize, loading = false }
   const [carouselProduct, setCarouselProduct] = useState<Product | null>(null);
   const [carouselStartIndex, setCarouselStartIndex] = useState(0);
   const [carouselCurrentIndex, setCarouselCurrentIndex] = useState(0);
+  const carouselApiRef = useRef<CarouselApi | null>(null);
 
   // Prewarm el chunk del Customizer en idle: al hacer clic en "Personalizar Pedido"
   // el modal ya está en caché y aparece sin delay de red.
@@ -197,65 +197,69 @@ export default function Catalog({ products, onSelectCustomize, loading = false }
               >
                 <div className="flex flex-col h-full">
                   <div
-                    onClick={() => product.stock && onSelectCustomize(product)}
-                  className="relative aspect-[4/3] overflow-hidden bg-zinc-100 dark:bg-zinc-900 cursor-pointer group/img"
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`Personalizar ${product.name}`}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && product.stock) onSelectCustomize(product); }}
+                  className="relative aspect-[4/3] overflow-hidden bg-zinc-100 dark:bg-zinc-900 group/img"
                 >
-                  <CachedImage
-                    src={product.images?.[galleryProductId === product.id ? galleryImageIndex : 0]}
-                    width={600}
-                    alt={product.name}
-                    wrapperClassName="w-full h-full"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    id={`catalog-img-${product.id}`}
-                  />
+                  {/* Imagen principal — clic abre galería */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCarouselProduct(product);
+                      setCarouselStartIndex(galleryProductId === product.id ? galleryImageIndex : 0);
+                      setCarouselOpen(true);
+                    }}
+                    className="w-full h-full block"
+                    aria-label={`Ver imágenes de ${product.name}`}
+                    type="button"
+                  >
+                    <CachedImage
+                      src={product.images?.[galleryProductId === product.id ? galleryImageIndex : 0]}
+                      width={600}
+                      alt={product.name}
+                      wrapperClassName="w-full h-full"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      id={`catalog-img-${product.id}`}
+                    />
+                  </button>
 
-                  {product.images && product.images.length > 1 && (
-                    <div className="absolute bottom-4 right-4 flex items-center space-x-1 bg-black/50 backdrop-blur-sm text-white text-[9px] font-mono font-bold px-2 py-1 rounded-full border border-white/10">
+                  {/* Contador de imágenes — siempre visible */}
+                  {product.images && product.images.length > 0 && (
+                    <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm text-white text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border border-white/15 shadow-md z-10">
+                      <Images className="h-3 w-3" aria-hidden="true" />
                       <span>{(galleryProductId === product.id ? galleryImageIndex : 0) + 1}/{product.images.length}</span>
                     </div>
                   )}
 
-                  {product.images && product.images.length > 1 && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCarouselProduct(product);
-                        setCarouselStartIndex(galleryProductId === product.id ? galleryImageIndex : 0);
-                        setCarouselOpen(true);
-                      }}
-                      className="absolute bottom-4 left-4 opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 px-3 py-1.5 bg-black/50 backdrop-blur-sm text-white text-[9px] font-mono font-bold rounded-full border border-white/10 flex items-center gap-1.5 hover:bg-black/60"
-                      aria-label="Ver galería completa"
-                    >
-                      <Images className="h-3 w-3" aria-hidden="true" />
-                      <span>Ver galería</span>
-                    </button>
-                  )}
+                  {/* Botón "Ver galería" — visible siempre en mobile, hover en desktop */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCarouselProduct(product);
+                      setCarouselStartIndex(galleryProductId === product.id ? galleryImageIndex : 0);
+                      setCarouselOpen(true);
+                    }}
+                    className="absolute bottom-3 left-3 opacity-100 sm:opacity-0 sm:group-hover/img:opacity-100 transition-opacity duration-300 px-3 py-1.5 bg-black/60 backdrop-blur-sm text-white text-[10px] font-mono font-bold rounded-full border border-white/15 flex items-center gap-1.5 hover:bg-black/70 shadow-md z-10"
+                    aria-label="Ver galería de imágenes"
+                    type="button"
+                  >
+                    <Images className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span>{product.images && product.images.length > 1 ? 'Ver galería' : 'Ver imagen'}</span>
+                  </button>
 
+                  {/* Hover overlay — solo en desktop */}
                   {product.stock && (
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-4 text-white">
-                      <div className="self-end p-2 bg-white/20 backdrop-blur-md rounded-full border border-white/20">
-                        <Images className="h-4 w-4" aria-hidden="true" />
-                      </div>
-                      <div>
-                        <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-brand-200 block font-bold">Mesa de Diseño</span>
-                        <span className="text-[11px] font-sans font-medium block mt-0.5">Diseñar & Previsualizar</span>
-                      </div>
-                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 sm:group-hover/img:opacity-100 transition-opacity duration-300 pointer-events-none" />
                   )}
 
+                  {/* Categoría badge */}
                   <span
-                    className="absolute top-4 left-4 px-3 py-1 text-[9px] font-mono font-bold uppercase tracking-widest shadow-sm rounded-full"
+                    className="absolute top-3 left-3 px-3 py-1 text-[9px] font-mono font-bold uppercase tracking-widest shadow-sm rounded-full z-10"
                     style={{ backgroundColor: 'var(--theme-surface)', color: 'var(--theme-text)' }}
                   >
                     {product.category}
                   </span>
 
                   {!product.stock && (
-                    <span className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 text-[9px] font-mono font-bold uppercase tracking-widest shadow-sm rounded-full">
+                    <span className="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 text-[9px] font-mono font-bold uppercase tracking-widest shadow-sm rounded-full z-10">
                       Agotado
                     </span>
                   )}
@@ -337,33 +341,79 @@ export default function Catalog({ products, onSelectCustomize, loading = false }
             <Carousel
               opts={{
                 startIndex: carouselStartIndex,
-                loop: true,
               }}
               className="w-full"
               setApi={(api) => {
-                api?.on('select', () => setCarouselCurrentIndex(api.selectedScrollSnap()));
+                carouselApiRef.current = api;
+                api?.on('select', () => {
+                  setCarouselCurrentIndex(api.selectedScrollSnap());
+                });
               }}
             >
               <CarouselContent>
                 {carouselProduct.images.map((img, imgIdx) => (
                   <CarouselItem key={imgIdx}>
-                    <div className="flex items-center justify-center h-[70vh] sm:h-[80vh] p-2">
-                      <img
-                        src={optimizeImageUrl(img, 1200)}
-                        alt={`${carouselProduct.name} - Imagen ${imgIdx + 1}`}
-                        className="w-full h-full object-contain rounded-lg"
-                      />
+                    <div className="flex items-center justify-center w-full h-[60vh] sm:h-[75vh] lg:h-[80vh] p-2 sm:p-4">
+                      <div className="relative w-full h-full flex items-center justify-center">
+                        <img
+                          src={optimizeImageUrl(img, 1200)}
+                          alt={`${carouselProduct.name} - Imagen ${imgIdx + 1}`}
+                          loading={imgIdx === 0 ? 'eager' : 'lazy'}
+                          draggable={false}
+                          className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg select-none"
+                          style={{
+                            boxShadow: '0 4px 30px rgba(0,0,0,0.3)',
+                            backfaceVisibility: 'hidden',
+                            WebkitBackfaceVisibility: 'hidden',
+                          }}
+                        />
+                      </div>
                     </div>
                   </CarouselItem>
                 ))}
               </CarouselContent>
 
-              <CarouselPrevious className="left-4 text-white border-white/20 bg-black/40 hover:bg-black/60 hover:text-white" />
-              <CarouselNext className="right-4 text-white border-white/20 bg-black/40 hover:bg-black/60 hover:text-white" />
+              {/* Botón anterior — si es la primera imagen, va a la última instantáneamente */}
+              <button
+                onClick={() => {
+                  const api = carouselApiRef.current;
+                  if (!api) return;
+                  if (api.canScrollPrev()) {
+                    api.scrollPrev();
+                  } else {
+                    // Salto instantáneo a la última imagen (sin animación de loop)
+                    api.scrollTo(carouselProduct.images.length - 1, true);
+                  }
+                }}
+                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-40 p-2 sm:p-2.5 rounded-full text-white border border-white/20 bg-black/50 hover:bg-black/70 hover:text-white transition-all backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white cursor-pointer"
+                aria-label="Imagen anterior"
+                type="button"
+              >
+                <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+              </button>
 
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-black/50 backdrop-blur-sm text-white text-xs font-mono border border-white/10">
+              {/* Botón siguiente — si es la última imagen, va a la primera instantáneamente */}
+              <button
+                onClick={() => {
+                  const api = carouselApiRef.current;
+                  if (!api) return;
+                  if (api.canScrollNext()) {
+                    api.scrollNext();
+                  } else {
+                    // Salto instantáneo a la primera imagen (sin animación de loop)
+                    api.scrollTo(0, true);
+                  }
+                }}
+                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-40 p-2 sm:p-2.5 rounded-full text-white border border-white/20 bg-black/50 hover:bg-black/70 hover:text-white transition-all backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white cursor-pointer"
+                aria-label="Imagen siguiente"
+                type="button"
+              >
+                <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+              </button>
+
+              <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-black/60 backdrop-blur-sm text-white text-[11px] sm:text-xs font-mono border border-white/10 whitespace-nowrap pointer-events-none">
                 {carouselProduct.name} &mdash;{' '}
-                <span className="text-brand-300">
+                <span className="text-brand-300 font-bold">
                   {carouselCurrentIndex + 1}/{carouselProduct.images.length}
                 </span>
               </div>

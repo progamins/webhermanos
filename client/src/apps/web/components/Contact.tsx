@@ -1,17 +1,24 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import {
   MapPin, Clock, Phone, Mail, Facebook, Instagram,
-  Send, CheckCircle, Copy, ExternalLink
+  Send, CheckCircle, Copy, ExternalLink, Navigation,
+  AlertTriangle, Sparkles
 } from 'lucide-react';
 import type { AppConfig } from '../../../shared/types';
 import Button from '../../../shared/components/ui/Button';
 import Input from '../../../shared/components/ui/Input';
 import { useReducedMotion } from '../../../shared/hooks';
+import { cn } from '../../../shared/lib/utils';
 
 interface ContactProps {
   config?: AppConfig | null;
 }
+
+const MAP_EMBED_SRC = 'https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d702.7191172591132!2d-80.6874225605329!3d-4.909588994423905!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1ses!2spe!4v1785003151526!5m2!1ses!2spe';
+const MAP_LINK = 'https://maps.app.goo.gl/qMp7JX9D1N44TSAfA';
+const WHATSAPP_NUMBER = '51902568187';
 
 export default function Contact({ config }: ContactProps) {
   const [name, setName] = useState('');
@@ -20,7 +27,22 @@ export default function Contact({ config }: ContactProps) {
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapError, setMapError] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const reducedMotion = useReducedMotion();
+
+  // Safety timeout: if the iframe hasn't loaded after 12s, show the fallback UI
+  useEffect(() => {
+    if (mapLoaded) return;
+    const timer = setTimeout(() => {
+      if (!mapLoaded) {
+        setMapError(true);
+        setMapLoaded(true);
+      }
+    }, 12000);
+    return () => clearTimeout(timer);
+  }, [mapLoaded]);
 
   const addressText = config?.address || 'Av. Ricardo Palma 213, Sánchez Cerro, Sullana, Piura, Perú';
 
@@ -57,6 +79,20 @@ export default function Contact({ config }: ContactProps) {
     }
   }, [name, email, message]);
 
+  const handleMapLoad = useCallback(() => {
+    setMapLoaded(true);
+    setMapError(false);
+  }, []);
+
+  const handleMapError = useCallback(() => {
+    setMapError(true);
+    setMapLoaded(true);
+  }, []);
+
+  const handleOpenInMaps = useCallback(() => {
+    window.open(MAP_LINK, '_blank', 'noopener,noreferrer');
+  }, []);
+
   const containerVariants = reducedMotion
     ? { hidden: { opacity: 1 }, show: { opacity: 1 } }
     : {
@@ -74,7 +110,7 @@ export default function Contact({ config }: ContactProps) {
   const infoCards = [
     { icon: MapPin, title: 'Dirección de Entrega / Recojo', value: config?.address || addressText },
     { icon: Clock, title: 'Horario de Atención Familiar', value: config?.openingHours || 'Lunes a Sábado: 9:00 AM - 7:00 PM | Domingos: 10:00 AM - 2:00 PM' },
-    { icon: Phone, title: 'WhatsApp de Edwin Rosas', value: `+${config?.whatsappNumber || '51902568187'}` },
+    { icon: Phone, title: 'WhatsApp de Edwin Rosas', value: `+${config?.whatsappNumber || WHATSAPP_NUMBER}` },
     { icon: Mail, title: 'Correo Electrónico', value: config?.email || 'edwinraulrosasalbines@gmail.com' },
   ];
 
@@ -113,21 +149,21 @@ export default function Contact({ config }: ContactProps) {
         >
           <div className="lg:col-span-5 flex flex-col justify-between space-y-8">
             <div className="space-y-4">
-              {infoCards.map((card) => {
+              {infoCards.map((card, idx) => {
                 const Icon = card.icon;
                 return (
                   <motion.div
                     key={card.title}
                     variants={itemVariants}
-                    className="group flex items-start space-x-4 p-4 rounded-2xl border shadow-sm backdrop-blur-sm transition-all duration-300"
+                    className="group flex items-start space-x-4 p-4 rounded-2xl border shadow-sm backdrop-blur-sm transition-all duration-300 hover:scale-[1.01] hover:shadow-md gold-glow-hover"
                     style={{ backgroundColor: 'var(--theme-surface-glass)', borderColor: 'var(--theme-border)' }}
                   >
-                    <div className="p-3 rounded-xl shrink-0 transition-colors duration-300" style={{ backgroundColor: 'var(--theme-bg-alt)', color: 'var(--theme-brand-primary)' }}>
+                    <div className="p-3 rounded-xl shrink-0 transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-0.5" style={{ backgroundColor: 'var(--theme-bg-alt)', color: 'var(--theme-brand-primary)' }}>
                       <Icon className="h-5 w-5" aria-hidden="true" />
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <h4 className="text-sm font-serif font-semibold" style={{ color: 'var(--theme-text)' }}>{card.title}</h4>
-                      <p className="text-xs font-light mt-1 leading-normal" style={{ color: 'var(--theme-text-secondary)' }}>{card.value}</p>
+                      <p className="text-xs font-light mt-1 leading-normal break-words" style={{ color: 'var(--theme-text-secondary)' }}>{card.value}</p>
                     </div>
                   </motion.div>
                 );
@@ -136,43 +172,105 @@ export default function Contact({ config }: ContactProps) {
 
             <motion.div
               variants={itemVariants}
-              className="relative rounded-[24px] border shadow-sm overflow-hidden flex flex-col backdrop-blur-md p-3.5 space-y-3.5"
+              className="relative rounded-[24px] border shadow-sm overflow-hidden flex flex-col backdrop-blur-md"
               style={{ backgroundColor: 'var(--theme-surface-glass)', borderColor: 'var(--theme-border)' }}
               id="map-container"
             >
-              <div className="relative h-64 rounded-2xl overflow-hidden border" style={{ borderColor: 'var(--theme-border)' }} id="google-map-iframe-wrapper">
+              {/* Map area */}
+              <div className="relative h-64 sm:h-72 overflow-hidden" id="google-map-iframe-wrapper">
+                {/* Skeleton loader */}
+                {!mapLoaded && !mapError && (
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--theme-bg-alt)' }}>
+                    <div className="skeleton-shimmer w-10 h-10 rounded-full mb-3" />
+                    <div className="skeleton-shimmer h-3 w-32 rounded-md" />
+                  </div>
+                )}
+
+                {/* Error fallback */}
+                {mapError && (
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 p-6" style={{ backgroundColor: 'var(--theme-bg-alt)' }}>
+                    <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-900/30">
+                      <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <p className="text-xs font-medium text-center" style={{ color: 'var(--theme-text-secondary)' }}>
+                      No se pudo cargar el mapa. Ver en Google Maps directamente.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleOpenInMaps}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-500 text-white rounded-full text-xs font-mono font-bold hover:bg-brand-600 transition-colors shadow-md"
+                    >
+                      <Navigation className="h-3.5 w-3.5" />
+                      <span>Abrir en Google Maps</span>
+                    </button>
+                  </div>
+                )}
+
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1987.5922687315956!2d-80.68788103194943!3d-4.908764583474027!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1ses!2spe!4v1783983457270!5m2!1ses!2spe"
-                  className="w-full h-full border-0 absolute inset-0"
+                  ref={iframeRef}
+                  src={MAP_EMBED_SRC}
+                  className={cn(
+                    'w-full h-full border-0 transition-opacity duration-500',
+                    mapLoaded && !mapError ? 'opacity-100' : 'opacity-0 absolute inset-0'
+                  )}
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                  title="Ubicación de Maison Rosas"
+                  title="Ubicación de Maison Rosas — Sullana, Piura"
+                  onLoad={handleMapLoad}
+                  onError={handleMapError}
                 />
-                <div className="absolute bottom-3 left-3 backdrop-blur-sm py-1.5 px-3 rounded-lg border shadow-md pointer-events-none z-10 max-w-[85%]"
-                  style={{ backgroundColor: 'var(--theme-surface-glass)', borderColor: 'var(--theme-border)' }}>
-                  <span className="text-[10px] font-mono font-bold block" style={{ color: 'var(--theme-text)' }}>Maison Rosas</span>
-                  <span className="text-[8px] font-sans" style={{ color: 'var(--theme-text-secondary)' }}>{addressText}</span>
+
+                {/* Address badge overlay on map */}
+                <div
+                  className={cn(
+                    'absolute bottom-3 left-3 backdrop-blur-sm py-1.5 px-3 rounded-lg border shadow-md pointer-events-none z-20 max-w-[85%] transition-all duration-500',
+                    mapError ? 'hidden' : ''
+                  )}
+                  style={{ backgroundColor: 'var(--theme-surface-glass)', borderColor: 'var(--theme-border)' }}
+                >
+                  <span className="text-[10px] font-mono font-bold block leading-tight" style={{ color: 'var(--theme-text)' }}>Maison Rosas</span>
+                  <span className="text-[8px] font-sans leading-tight mt-0.5 block" style={{ color: 'var(--theme-text-secondary)' }}>{addressText}</span>
+                </div>
+
+                {/* Floating ping dot on map */}
+                <div className={cn('absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-20', mapError ? 'hidden' : '')}>
+                  <span className="relative flex h-4 w-4">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400/50 dark:bg-brand-300/30" />
+                    <span className="relative inline-flex rounded-full h-4 w-4 bg-brand-500 dark:bg-brand-400" />
+                  </span>
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-2.5" id="map-actions">
+              {/* Map actions bar */}
+              <div className="flex flex-col sm:flex-row gap-2.5 p-3.5" id="map-actions">
                 <button
                   type="button"
                   onClick={handleCopyAddress}
-                  className="flex-1 inline-flex items-center justify-center space-x-2 px-4 py-3 border rounded-xl text-xs font-mono font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-                  style={{ backgroundColor: 'var(--theme-surface)', borderColor: 'var(--theme-border)', color: 'var(--theme-text)' }}
+                  className={cn(
+                    'flex-1 inline-flex items-center justify-center space-x-2 px-4 py-3 border rounded-xl text-xs font-mono font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
+                    copied ? 'border-green-400/50 text-green-600 dark:text-green-400' : ''
+                  )}
+                  style={{
+                    backgroundColor: copied ? 'rgba(34,197,94,0.08)' : 'var(--theme-surface)',
+                    borderColor: copied ? 'rgba(34,197,94,0.3)' : 'var(--theme-border)',
+                    color: copied ? '#16a34a' : 'var(--theme-text)',
+                  }}
                 >
-                  <Copy className="h-4 w-4" aria-hidden="true" />
+                  {copied ? (
+                    <CheckCircle className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    <Copy className="h-4 w-4" aria-hidden="true" />
+                  )}
                   <span>{copied ? '¡Dirección Copiada!' : 'Copiar Dirección'}</span>
                 </button>
                 <a
-                  href="https://maps.app.goo.gl/qMp7JX9D1N44TSAfA"
+                  href={MAP_LINK}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 inline-flex items-center justify-center space-x-2 px-4 py-3 bg-brand-500 text-white rounded-xl text-xs font-mono font-bold hover:bg-brand-600 transition-all shadow-md"
+                  className="flex-1 inline-flex items-center justify-center space-x-2 px-4 py-3 bg-brand-500 text-white rounded-xl text-xs font-mono font-bold hover:bg-brand-600 active:bg-brand-700 transition-all shadow-md hover:shadow-lg active:scale-[0.97]"
                 >
-                  <MapPin className="h-4 w-4" aria-hidden="true" />
+                  <Navigation className="h-4 w-4" aria-hidden="true" />
                   <span>Cómo llegar (Maps)</span>
                   <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden="true" />
                 </a>
@@ -182,11 +280,36 @@ export default function Contact({ config }: ContactProps) {
 
           <motion.div
             variants={itemVariants}
-            className="lg:col-span-7 p-8 rounded-[32px] border shadow-sm backdrop-blur-md"
+            className="lg:col-span-7 p-6 sm:p-8 rounded-[32px] border shadow-sm backdrop-blur-md relative overflow-hidden"
             style={{ backgroundColor: 'var(--theme-surface-glass)', borderColor: 'var(--theme-border)' }}
           >
-            <div className="space-y-4">
-              <span className="text-[10px] font-mono uppercase tracking-widest font-bold" style={{ color: 'var(--theme-brand-primary)' }}>
+            {/* Decorative Lottie — cake animation floating subtly in the background */}
+            {!reducedMotion && (
+              <div className="absolute -top-8 -right-8 w-40 h-40 sm:w-48 sm:h-48 opacity-[0.08] dark:opacity-[0.06] pointer-events-none select-none z-0" aria-hidden="true">
+                <DotLottieReact
+                  src="/cake.lottie"
+                  autoplay
+                  loop
+                  style={{ width: '100%', height: '100%', transform: 'scaleX(-1)' }}
+                />
+              </div>
+            )}
+
+            {/* Sparkle corner accent */}
+            <div className="absolute top-0 right-0 w-24 h-24 overflow-hidden pointer-events-none z-0" aria-hidden="true">
+              <div className="absolute top-3 right-3">
+                <Sparkles className="h-4 w-4 text-brand-300/30 dark:text-brand-400/20" />
+              </div>
+              <div
+                className="absolute top-0 right-0 w-16 h-16 rounded-full opacity-[0.04] dark:opacity-[0.03]"
+                style={{
+                  background: 'radial-gradient(circle at top right, #D4A373 0%, transparent 70%)',
+                }}
+              />
+            </div>
+
+            <div className="relative z-10 space-y-4">
+              <span className="text-[10px] font-mono uppercase tracking-widest font-bold text-brand-500 dark:text-brand-300">
                 ESCRÍBENOS
               </span>
               <h3 className="text-2xl font-serif font-light italic" style={{ color: 'var(--theme-text)' }}>
@@ -263,21 +386,21 @@ export default function Contact({ config }: ContactProps) {
                 href={config?.facebookUrl || 'https://www.facebook.com/edwinraul.rosasalbines'}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center space-x-1.5 text-xs font-mono font-medium transition-colors hover:text-brand-500 dark:hover:text-brand-300"
+                className="group flex items-center space-x-1.5 text-xs font-mono font-medium transition-all hover:scale-105"
                 style={{ color: 'var(--theme-text-muted)' }}
               >
-                <Facebook className="h-4 w-4" aria-hidden="true" />
-                <span>Facebook</span>
+                <Facebook className="h-4 w-4 transition-transform group-hover:scale-110" aria-hidden="true" />
+                <span className="group-hover:text-brand-500 dark:group-hover:text-brand-300 transition-colors">Facebook</span>
               </a>
               <a
                 href={config?.instagramUrl || 'https://www.instagram.com/edwinraulrosas741/'}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center space-x-1.5 text-xs font-mono font-medium transition-colors hover:text-brand-500 dark:hover:text-brand-300"
+                className="group flex items-center space-x-1.5 text-xs font-mono font-medium transition-all hover:scale-105"
                 style={{ color: 'var(--theme-text-muted)' }}
               >
-                <Instagram className="h-4 w-4" aria-hidden="true" />
-                <span>Instagram</span>
+                <Instagram className="h-4 w-4 transition-transform group-hover:scale-110" aria-hidden="true" />
+                <span className="group-hover:text-brand-500 dark:group-hover:text-brand-300 transition-colors">Instagram</span>
               </a>
             </div>
           </motion.div>

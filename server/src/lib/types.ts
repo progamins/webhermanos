@@ -115,6 +115,10 @@ export interface OrderCreateInput {
   selectedDecoration?: string;
   customColor?: string;
   totalPrice?: number;
+  /** Modificador de precio según el tamaño seleccionado (enviado por el cliente) */
+  sizeModifier?: number;
+  /** Precio adicional del relleno seleccionado (enviado por el cliente) */
+  fillingPrice?: number;
   deliveryDate?: string;
   deliveryTime?: string;
   deliveryAddress?: string;

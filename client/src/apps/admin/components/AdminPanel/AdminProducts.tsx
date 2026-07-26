@@ -38,8 +38,16 @@ export default function AdminProducts({ products, onRefreshData, showToast }: Ad
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!prodName || !prodPrice) {
-      showToast('Por favor, ingresa el nombre y el precio base.', 'warning', 'Formulario incompleto');
+    if (!prodName) {
+      showToast('Por favor, ingresa el nombre del pastel.', 'warning', 'Formulario incompleto');
+      return;
+    }
+    // 🔒 Validación estricta: el precio base NUNCA puede ser 0 o negativo.
+    //    Un producto sin precio base (S/. 0) causa que el Customizer muestre
+    //    "Monto Estimado: S/. 0", lo que confunde a los clientes. El precio
+    //    mínimo debe ser al menos S/. 1.
+    if (!prodPrice || prodPrice <= 0) {
+      showToast('El precio base debe ser mayor a S/. 0. Ingresa un precio válido (mínimo S/. 1).', 'warning', 'Precio inválido');
       return;
     }
 
@@ -140,8 +148,15 @@ export default function AdminProducts({ products, onRefreshData, showToast }: Ad
             </div>
             <div>
               <label className="block text-[10px] font-mono uppercase text-zinc-400 mb-1">Precio Base (S/.)</label>
-              <input type="number" required value={prodPrice} onChange={(e) => setProdPrice(Number(e.target.value))}
-                className="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-brand-500 text-zinc-800 dark:text-white" />
+              <input type="number" required min="1" step="1" value={prodPrice} onChange={(e) => setProdPrice(Number(e.target.value))}
+                className={`w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border rounded-xl text-xs placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-brand-500 text-zinc-800 dark:text-white ${
+                  prodPrice <= 0 ? 'border-red-400 ring-1 ring-red-400/30' : 'border-zinc-200 dark:border-zinc-800'
+                }`} />
+              {prodPrice <= 0 && (
+                <p className="text-[10px] text-red-500 mt-1 flex items-center gap-1">
+                  <span>⚠️ El precio base debe ser mayor a S/. 0. Los clientes verían "S/. 0" en el personalizador.</span>
+                </p>
+              )}
             </div>
           </div>
           <div>

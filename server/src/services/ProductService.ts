@@ -43,12 +43,27 @@ export class ProductService {
     return row ? parseProduct(row) : null;
   }
 
+  /**
+   * 🔒 Validación de precio base: NUNCA puede ser 0 o negativo.
+   *    Se llama desde create() y update() antes de persistir.
+   */
+  private validateBasePrice(data: { basePrice?: number }): void {
+    if (data.basePrice !== undefined && (data.basePrice === null || Number(data.basePrice) <= 0)) {
+      throw new Error(
+        `El precio base del producto debe ser mayor a S/. 0. ` +
+        `Recibido: S/. ${data.basePrice}. No se permite S/. 0 ni valores negativos.`
+      );
+    }
+  }
+
   async create(data: ProductCreateInput): Promise<Product> {
+    this.validateBasePrice(data);
     const row = await productRepo.create(productCreateToRow(data, data.id));
     return parseProduct(row);
   }
 
   async update(id: string, data: ProductUpdateInput): Promise<boolean> {
+    this.validateBasePrice(data);
     return productRepo.update(id, productUpdateToRow(data));
   }
 

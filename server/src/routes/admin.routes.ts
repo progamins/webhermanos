@@ -7,7 +7,8 @@ import { verifyAdminSession, requireRole } from '../middleware/auth.js';
 // crash the server and cause Apache to return 502 Bad Gateway.
 const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) =>
   (req: Request, res: Response, next: NextFunction) => fn(req, res, next).catch(next);
-import { loginLimiter } from '../middleware/rateLimit.js';
+import { loginLimiter, adminLimiter } from '../middleware/rateLimit.js';
+import { validatePassword } from '../middleware/validate.js';
 import { upload, uploadVoucher } from '../middleware/upload.js';
 import { authService } from '../services/AuthService.js';
 import { productService } from '../services/ProductService.js';
@@ -42,8 +43,19 @@ router.post('/logout', asyncHandler(async (req, res) => {
   res.json({ success: true });
 }));
 
-router.post('/change-admin-password', verifyAdminSession, asyncHandler(async (req, res) => {
+router.post('/change-admin-password', verifyAdminSession, adminLimiter, asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
+  
+  // Validate new password strength
+  if (!newPassword || typeof newPassword !== 'string') {
+    return res.status(400).json({ success: false, error: 'Se requiere una nueva contraseña.' });
+  }
+  
+  const validation = validatePassword(newPassword);
+  if (!validation.valid) {
+    return res.status(400).json({ success: false, error: validation.error });
+  }
+
   const role = (req as any).adminRole || 'admin';
   const result = await authService.changePassword(role, currentPassword, newPassword);
   res.json(result);
@@ -54,8 +66,20 @@ router.get('/role-passwords', verifyAdminSession, asyncHandler(async (req, res) 
   res.json(result);
 }));
 
-router.post('/role-passwords', verifyAdminSession, asyncHandler(async (req, res) => {
+router.post('/role-passwords', verifyAdminSession, adminLimiter, asyncHandler(async (req, res) => {
   const { analystPassword, stockManagerPassword } = req.body;
+  
+  // Validate both passwords
+  const analystValidation = analystPassword ? validatePassword(analystPassword) : { valid: true };
+  const stockValidation = stockManagerPassword ? validatePassword(stockManagerPassword) : { valid: true };
+  
+  if (!analystValidation.valid) {
+    return res.status(400).json({ success: false, error: `Analista: ${analystValidation.error}` });
+  }
+  if (!stockValidation.valid) {
+    return res.status(400).json({ success: false, error: `Gestor de Stock: ${stockValidation.error}` });
+  }
+
   const result = await authService.saveRolePasswords(analystPassword, stockManagerPassword);
   res.json(result);
 }));
@@ -88,6 +112,17 @@ router.get('/products', verifyAdminSession, asyncHandler(async (req, res) => {
 router.post('/products', verifyAdminSession, async (req, res) => {
   try {
     const data = req.body.product;
+    
+    // 🔒 Validación de precio base: NUNCA puede ser 0 o negativo.
+    //    Históricamente esto causó que productos aparecieran con "S/. 0"
+    //    en el Customizer, confundiendo a los clientes.
+    if (data.basePrice === undefined || data.basePrice === null || Number(data.basePrice) <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'El precio base del producto debe ser mayor a S/. 0. No se permite S/. 0 ni valores negativos.'
+      });
+    }
+    
     // Upsert: if product already exists, update it; otherwise create new
     const existing = await productService.getById(data.id);
     let product;

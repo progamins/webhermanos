@@ -73,9 +73,12 @@ async function runMigrations() {
         await conn.query(stmt);
         successCount++;
       } catch (err: any) {
-        // ER_DUP_KEYNAME (1061) = index already exists — safe to skip
-        if (err?.errno === 1061) {
-          console.log(`  ⚠️  Index already exists, skipping: ${stmt.slice(0, 60)}...`);
+        // ER_DUP_KEYNAME (1061) = index already exists
+        // ER_DUP_FIELDNAME (1060) = column already exists
+        // Both are safe to skip on re-runs
+        if (err?.errno === 1061 || err?.errno === 1060) {
+          const label = err?.errno === 1061 ? 'Index' : 'Column';
+          console.log(`  ⚠️  ${label} already exists, skipping: ${stmt.slice(0, 60)}...`);
           skippedCount++;
         } else {
           throw err;

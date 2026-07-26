@@ -71,6 +71,9 @@ export interface Order {
   fulfilledFromStock?: boolean;
   assignedStockId?: string;
 
+  sizeModifier?: number;
+  fillingPrice?: number;
+
   // Progress photos (added by Carol during preparation)
   progressPhotos?: {
     id: string;

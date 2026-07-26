@@ -1,10 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { securityHeaders } from './middleware/security.js';
 import { errorHandler, notFoundHandler } from './middleware/error.js';
 import { apiLimiter, adminLimiter } from './middleware/rateLimit.js';
+import { requestTimeout } from './middleware/timeout.js';
+import { requireJson } from './middleware/validate.js';
 import { env } from './config/env.js';
 import adminRoutes from './routes/admin.routes.js';
 import apiRoutes from './routes/api.routes.js';
@@ -17,8 +20,14 @@ import {
 } from './lib/verification.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const MAC_COOKIE = 'maison_device_mac';
-const MAC_COOKIE_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 días
+
+// 🔒 El prefijo __Host- solo se usa en producción porque requiere Secure flag.
+//    En desarrollo (HTTP local), los navegadores rechazan cookies __Host-
+//    sin Secure. Usamos 'maison_device_mac' en dev para que funcione.
+const MAC_COOKIE = env.NODE_ENV === 'production'
+  ? '__Host-maison_device_mac'
+  : 'maison_device_mac';
+const MAC_COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 días
 
 export function createApp() {
   const app = express();
@@ -52,32 +61,70 @@ export function createApp() {
   app.use('/api', apiLimiter);
   app.use('/api/admin', adminLimiter);
 
-  // Static files
-  const uploadsDir = path.resolve(env.UPLOAD_DIR);
-  app.use('/uploads', express.static(uploadsDir, {
-    maxAge: '7d', immutable: true, etag: true, lastModified: true,
-    setHeaders: (res) => {
-      res.setHeader('Accept-Ranges', 'bytes');
-      res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
-    },
-  }));
+  // Request timeout for all API routes (30s)
+  app.use('/api', requestTimeout);
 
-  const clientDist = path.resolve(__dirname, '../../client/dist');
+  // Enforce Content-Type: application/json on POST/PUT to API
+  app.use('/api', requireJson);
 
-  // Bloquear /admin.html directo y redirect /admin → ruta secreta
-  app.use((req, res, next) => {
-    if (req.path === '/admin.html') {
-      return res.sendFile(path.resolve(clientDist, 'index.html'), (err) => {
-        if (err) res.redirect('/');
+  // ═══════════════════════════════════════════════════════════
+  // 🌀 VERCEL: En modo serverless, NUNCA servir archivos estáticos
+  //    (Vercel CDN lo hace por nosotros). Tampoco usar sistema de
+  //    archivos local para uploads (usar Vercel Blob en su lugar).
+  // ═══════════════════════════════════════════════════════════
+  const isVercel = process.env.VERCEL === 'true';
+
+  if (!isVercel) {
+    // ─── Static files: uploads ───
+    // Ensure the upload directory exists before mounting express.static
+    // to prevent silent 404 or 500 errors on first load.
+    const uploadsDir = path.resolve(env.UPLOAD_DIR);
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    // Wrap express.static in a try/catch so any error (e.g. permission denied)
+    // gracefully returns a 404 instead of an unhandled 500.
+    app.use('/uploads', (req, res, next) => {
+      // Establecer headers de caché antes de que express.static los sobreescriba
+      express.static(uploadsDir, {
+        maxAge: '7d',
+        immutable: true,
+        etag: true,
+        lastModified: true,
+        setHeaders: (res) => {
+          res.setHeader('Accept-Ranges', 'bytes');
+          res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+        },
+      })(req, res, (err?: any) => {
+        if (err) {
+          // If express.static threw (e.g. permission error), log and 404
+          console.error('[StaticFiles] Error sirviendo archivo:', req.path, err?.message);
+          return res.status(404).end();
+        }
+        next();
       });
-    }
-    if (req.path === '/admin' || req.path.startsWith('/admin/')) {
-      return res.redirect(301, `/${env.ADMIN_SECRET_PATH}`);
-    }
-    next();
-  });
+    });
+  }
 
-  app.use(express.static(clientDist));
+  const clientDist = !isVercel ? path.resolve(__dirname, '../../client/dist') : '';
+
+  if (!isVercel) {
+    // Bloquear /admin.html directo y redirect /admin → ruta secreta
+    app.use((req, res, next) => {
+      if (req.path === '/admin.html') {
+        return res.sendFile(path.resolve(clientDist, 'index.html'), (err) => {
+          if (err) res.redirect('/');
+        });
+      }
+      if (req.path === '/admin' || req.path.startsWith('/admin/')) {
+        return res.redirect(301, `/${env.ADMIN_SECRET_PATH}`);
+      }
+      next();
+    });
+
+    app.use(express.static(clientDist));
+  }
 
   // ─── Utilidades IP / MAC ───
   const allowedMACs = new Set(env.ALLOWED_MAC_ADDRESSES);
@@ -89,15 +136,18 @@ export function createApp() {
   }
 
   function getDeviceMAC(req: express.Request): string | null {
-    // Intentar leer de cookie primero, luego de header
-    const cookie = req.headers.cookie?.split(';').find(c => c.trim().startsWith(`${MAC_COOKIE}=`));
-    if (cookie) {
-      try {
-        const val = cookie.split('=')[1].trim();
-        const decoded = Buffer.from(decodeURIComponent(val), 'base64').toString('utf-8').toUpperCase();
-        if (env.NODE_ENV !== 'production') console.log('[DEBUG-MAC] Express | MAC desde cookie:', decoded);
-        return decoded;
-      } catch { /* ignore */ }
+    // Intentar leer de cookie primero (con el prefijo __Host-), luego de header
+    const macCookies = [MAC_COOKIE, 'maison_device_mac']; // soportar ambas por migración
+    for (const cookieName of macCookies) {
+      const cookie = req.headers.cookie?.split(';').find(c => c.trim().startsWith(`${cookieName}=`));
+      if (cookie) {
+        try {
+          const val = cookie.split('=')[1].trim();
+          const decoded = Buffer.from(decodeURIComponent(val), 'base64').toString('utf-8').toUpperCase();
+          if (env.NODE_ENV !== 'production') console.log('[DEBUG-MAC] Express | MAC desde cookie:', cookieName, decoded);
+          return decoded;
+        } catch { /* ignore */ }
+      }
     }
     const header = req.headers['x-device-mac'];
     if (typeof header === 'string') {
@@ -109,7 +159,8 @@ export function createApp() {
 
   function setMACCookie(res: express.Response, mac: string): void {
     const encoded = Buffer.from(mac).toString('base64');
-    res.setHeader('Set-Cookie', `${MAC_COOKIE}=${encodeURIComponent(encoded)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${MAC_COOKIE_MAX_AGE / 1000}`);
+    const secure = env.NODE_ENV === 'production' ? '; Secure' : '';
+    res.setHeader('Set-Cookie', `${MAC_COOKIE}=${encodeURIComponent(encoded)}; Path=/; HttpOnly; SameSite=Strict${secure}; Max-Age=${MAC_COOKIE_MAX_AGE / 1000}`);
   }
 
   // ─── Middleware IP + MAC combinado ───
@@ -119,6 +170,15 @@ export function createApp() {
     // ⚠️ Si el POST handler ya respondió (seteó cookie y devolvió JSON),
     // no continuar o intentar enviar otra respuesta (headers already sent).
     if (res.headersSent) return;
+
+    // 🔒 En desarrollo, NO se aplican filtros de IP ni MAC para permitir
+    //    acceso desde la red local (la IP vista por Express puede ser la
+    //    del proxy, no la IP local del usuario).
+    //    El panel admin ya está protegido por contraseña y token de sesión.
+    //    En producción se aplican ambos filtros (IP + MAC).
+    if (env.NODE_ENV !== 'production') {
+      return next();
+    }
 
     const clientIP = getClientIP(req);
 
@@ -132,41 +192,33 @@ export function createApp() {
 
     // CONDICIÓN 2: MAC del dispositivo
     const deviceMAC = getDeviceMAC(req);
-    if (env.NODE_ENV !== 'production') console.log('[DEBUG-MAC] Express | path:', req.path, '| method:', req.method, '| MAC:', deviceMAC, '| MACs permitidas:', env.ALLOWED_MAC_ADDRESSES);
     if (!isMACAllowed(deviceMAC, allowedMACs)) {
       // Si es una petición POST con MAC en el header, verificar
       if (req.method === 'POST' && req.headers['x-device-mac']) {
         const mac = (req.headers['x-device-mac'] as string).trim().toUpperCase();
-        if (env.NODE_ENV !== 'production') console.log('[DEBUG-MAC] Express | POST con MAC:', mac, '| coincide?', isMACAllowed(mac, allowedMACs));
         if (isMACAllowed(mac, allowedMACs)) {
-          if (env.NODE_ENV !== 'production') console.log('[DEBUG-MAC] ✅ Express | MAC autorizada vía POST, cookie seteada');
           setMACCookie(res, mac);
           return res.json({ success: true });
         }
       }
-      // Mostrar formulario para ingresar MAC
-      if (env.NODE_ENV !== 'production') console.log('[DEBUG-MAC] 📋 Express | Mostrando formulario MAC (no hay cookie válida)');
       return res.status(401).send(getMACFormHTML());
-    } else {
-      if (env.NODE_ENV !== 'production') console.log('[DEBUG-MAC] ✅ Express | MAC permitida, pasando...');
     }
 
     next();
   };
 
   // ─── Aplicar filtros a admin page + admin API ───
-  // Manejar POST para verificación MAC (llega antes que los GET)
-  app.post(adminPrefix, express.json(), (req, res, next) => {
-    const mac = req.headers['x-device-mac'] as string;
-    if (env.NODE_ENV !== 'production') console.log('[DEBUG-MAC] Express | POST handler | MAC recibida:', mac, '| permitida?', mac ? isMACAllowed(mac.trim().toUpperCase(), allowedMACs) : 'no hay MAC');
-    if (mac && isMACAllowed(mac.trim().toUpperCase(), allowedMACs)) {
-      if (env.NODE_ENV !== 'production') console.log('[DEBUG-MAC] ✅ Express | POST handler | MAC válida, seteando cookie');
-      setMACCookie(res, mac.trim().toUpperCase());
-      return res.json({ success: true });
-    }
-    if (env.NODE_ENV !== 'production') console.log('[DEBUG-MAC] ❌ Express | POST handler | MAC no autorizada');
-    res.status(401).json({ error: 'MAC no autorizada' });
-  });
+  // Manejar POST para verificación MAC (solo producción)
+  if (env.NODE_ENV === 'production') {
+    app.post(adminPrefix, express.json(), (req, res, next) => {
+      const mac = req.headers['x-device-mac'] as string;
+      if (mac && isMACAllowed(mac.trim().toUpperCase(), allowedMACs)) {
+        setMACCookie(res, mac.trim().toUpperCase());
+        return res.json({ success: true });
+      }
+      res.status(401).json({ error: 'MAC no autorizada' });
+    });
+  }
 
   app.use(adminPrefix, adminAccessFilter);
   app.use('/api/admin', adminAccessFilter);
@@ -181,53 +233,55 @@ export function createApp() {
     res.sendFile(adminPath, (err) => { if (err) res.redirect('/'); });
   });
 
-  // ─── Config cache ───
-  let cachedCriticalUrls: { heroImage?: string; logoUrl?: string; faviconUrl?: string } = {};
-  let configCacheTimestamp = 0;
-  const CONFIG_CACHE_TTL = 30_000;
+  // ─── Config cache (solo fuera de Vercel — Vercel sirve estáticos directo) ───
+  if (!isVercel) {
+    let cachedCriticalUrls: { heroImage?: string; logoUrl?: string; faviconUrl?: string } = {};
+    let configCacheTimestamp = 0;
+    const CONFIG_CACHE_TTL = 30_000;
 
-  async function refreshConfigCache() {
-    try {
-      const { configService } = await import('./services/ConfigService.js');
-      const config = await configService.getAppConfig();
-      cachedCriticalUrls = {
-        heroImage: config.heroImage || undefined,
-        logoUrl: config.logoUrl || undefined,
-        faviconUrl: config.faviconUrl || undefined,
+    async function refreshConfigCache() {
+      try {
+        const { configService } = await import('./services/ConfigService.js');
+        const config = await configService.getAppConfig();
+        cachedCriticalUrls = {
+          heroImage: config.heroImage || undefined,
+          logoUrl: config.logoUrl || undefined,
+          faviconUrl: config.faviconUrl || undefined,
+        };
+      } catch { /* ignore */ }
+    }
+
+    async function getCriticalUrls() {
+      const now = Date.now();
+      if (now - configCacheTimestamp > CONFIG_CACHE_TTL) { configCacheTimestamp = now; await refreshConfigCache(); }
+      return cachedCriticalUrls;
+    }
+
+    function generatePreloadLinksHtml(config: any): string {
+      const links: string[] = [];
+      const urls = [
+        { url: config.heroImage, label: 'hero' },
+        { url: config.logoUrl, label: 'logo' },
+        { url: config.faviconUrl, label: 'favicon' },
+      ];
+      for (const { url } of urls) { if (url && url.length > 10 && !url.startsWith('data:')) links.push(`    <link rel="preload" as="image" href="${url}" fetchpriority="high" />`); }
+      return links.join('\n');
+    }
+
+    refreshConfigCache().catch(() => {});
+
+    app.use((req, res, next) => {
+      const originalSend = res.send.bind(res);
+      res.send = function (body: any) {
+        if (typeof body === 'string' && body.includes('SERVER_PRELOAD_IMAGES')) {
+          const preloadHtml = generatePreloadLinksHtml(cachedCriticalUrls);
+          if (preloadHtml) body = body.replace('<!-- SERVER_PRELOAD_IMAGES -->', preloadHtml);
+        }
+        return originalSend(body);
       };
-    } catch { /* ignore */ }
+      next();
+    });
   }
-
-  async function getCriticalUrls() {
-    const now = Date.now();
-    if (now - configCacheTimestamp > CONFIG_CACHE_TTL) { configCacheTimestamp = now; await refreshConfigCache(); }
-    return cachedCriticalUrls;
-  }
-
-  function generatePreloadLinksHtml(config: any): string {
-    const links: string[] = [];
-    const urls = [
-      { url: config.heroImage, label: 'hero' },
-      { url: config.logoUrl, label: 'logo' },
-      { url: config.faviconUrl, label: 'favicon' },
-    ];
-    for (const { url } of urls) { if (url && url.length > 10 && !url.startsWith('data:')) links.push(`    <link rel="preload" as="image" href="${url}" fetchpriority="high" />`); }
-    return links.join('\n');
-  }
-
-  refreshConfigCache().catch(() => {});
-
-  app.use((req, res, next) => {
-    const originalSend = res.send.bind(res);
-    res.send = function (body: any) {
-      if (typeof body === 'string' && body.includes('SERVER_PRELOAD_IMAGES')) {
-        const preloadHtml = generatePreloadLinksHtml(cachedCriticalUrls);
-        if (preloadHtml) body = body.replace('<!-- SERVER_PRELOAD_IMAGES -->', preloadHtml);
-      }
-      return originalSend(body);
-    };
-    next();
-  });
 
   // ─── API Routes ───
   app.use('/api', apiRoutes);
@@ -235,13 +289,15 @@ export function createApp() {
   app.use('/api/upload', uploadRoutes);
 
   // ─── SPA fallback ───
-  app.get('*', (req, res) => {
-    if (req.path.startsWith('/api/')) return notFoundHandler(req, res);
-    const indexPath = path.resolve(clientDist, 'index.html');
-    res.sendFile(indexPath, (err) => {
-      if (err) res.status(200).send(`<!doctype html><html><head><title>Maison Rosas</title></head><body><div id="root"></div><script>console.log('Client build not found. Run: cd client && npm run build')</script></body></html>`);
+  if (!isVercel) {
+    app.get('*', (req, res) => {
+      if (req.path.startsWith('/api/')) return notFoundHandler(req, res);
+      const indexPath = path.resolve(clientDist, 'index.html');
+      res.sendFile(indexPath, (err) => {
+        if (err) res.status(200).send(`<!doctype html><html><head><title>Maison Rosas</title></head><body><div id="root"></div><script>console.log('Client build not found. Run: cd client && npm run build')</script></body></html>`);
+      });
     });
-  });
+  }
 
   app.use(errorHandler);
   return app;

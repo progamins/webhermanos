@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Product, Order } from '../../../shared/types';
 import { dbService } from '../../../shared/services/dbService';
+import { SIZE_TIERS, PREMIUM_FILLINGS } from '../../../shared/constants/pricing';
 import confetti from 'canvas-confetti';
 
 interface CustomizerProps {
@@ -43,26 +44,13 @@ const COLOR_PALETTE = [
   { name: 'Blanco Nieve Puro (Chantilly de Queso Crema)', value: '#FFFFFF', texture: 'Brillante' },
 ];
 
-// Gourmet Fillings (Rellenos de Autor)
-const PREMIUM_FILLINGS = [
-  { name: 'Manjarblanco Artesanal de Olla (Tradicional)', price: 0, desc: 'Leche caramelizada por horas a fuego lento.' },
-  { name: 'Fudge de Cacao Belga al 70% (Premium)', price: 10, desc: 'Ganache espeso e intenso de chocolate gourmet.' },
-  { name: 'Jalea Artesanal de Frutos del Bosque (Premium)', price: 12, desc: 'Reducción de fresas, frambuesas y arándanos frescos.' },
-  { name: 'Crema de Lúcuma Premium Sullana (Especial)', price: 15, desc: 'Mousse concentrado de lúcuma selecta de la región.' },
-  { name: 'Crema Sabor Nutella & Avellanas (Gourmet)', price: 15, desc: 'Crema untuosa de avellanas con chocolate crujiente.' },
-];
-
-const SIZES = [
-  { name: 'Petit (12-15 Porciones)', modifier: -15, label: 'S/. -15', diameter: '16 cm', tiers: 1, height: 'Extra Alto (12cm)' },
-  { name: 'Estándar (20-25 Porciones)', modifier: 0, label: 'Precio Base', diameter: '22 cm', tiers: 1, height: 'Estándar (10cm)' },
-  { name: 'Doble Piso (30-35 Porciones)', modifier: 45, label: 'S/. +45', diameter: '24 cm + 16 cm', tiers: 2, height: '2 Pisos Escalonados' },
-  { name: 'Gala Imperial (45-50 Porciones)', modifier: 95, label: 'S/. +95', diameter: '28 cm + 20 cm + 14 cm', tiers: 3, height: '3 Pisos Escalonados' },
-];
+// 🔒 SIZE_TIERS importado desde shared/constants/pricing.ts
+//    (fuente única de verdad — NUNCA duplicar estos datos)
 
 export default function Customizer({ product, onClose, whatsappNumber }: CustomizerProps) {
   // Navigation & Form State
   const [activeStep, setActiveStep] = useState(1); // Steps 1 to 4
-  const [size, setSize] = useState(SIZES[1]); // Default Estándar
+  const [size, setSize] = useState(SIZE_TIERS[0]); // Default Petit
   const [selectedFlavor, setSelectedFlavor] = useState((product.flavors && product.flavors[0]) || 'Vainilla Francesa');
   const [selectedFilling, setSelectedFilling] = useState(PREMIUM_FILLINGS[0]); // Default Manjarblanco
   const [selectedDecoration, setSelectedDecoration] = useState((product.decorations && product.decorations[0]) || 'Flores de Estación');
@@ -92,14 +80,23 @@ export default function Customizer({ product, onClose, whatsappNumber }: Customi
 
   // Validation feedback
   const [validationError, setValidationError] = useState<string | null>(null);
+  
+  // 🔒 Advertencia de precio: si el producto tiene basePrice 0 o inválido,
+  //    mostramos un mensaje claro en lugar de un precio confuso.
+  const basePriceInvalid = !product.basePrice || Number(product.basePrice) <= 0;
 
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successOrder, setSuccessOrder] = useState<any | null>(null);
-  const [totalPrice, setTotalPrice] = useState(Number(product.basePrice));
+  const [totalPrice, setTotalPrice] = useState(basePriceInvalid ? 0 : Number(product.basePrice));
 
   useEffect(() => {
-    setTotalPrice(Number(product.basePrice) + size.modifier + selectedFilling.price);
+    // 🔒 El precio NUNCA puede ser menor al precio base.
+    //    Los modifiers de tamaño siempre son >= 0 (Petit es Precio Base),
+    //    y los rellenos siempre tienen precio >= 0. Este Math.max es un
+    //    safety net adicional para evitar errores de lógica futuros.
+    const calculated = Number(product.basePrice) + size.modifier + selectedFilling.price;
+    setTotalPrice(Math.max(Number(product.basePrice), calculated));
   }, [product.basePrice, size, selectedFilling]);
 
   // Validates a step before moving forward
@@ -168,6 +165,8 @@ export default function Customizer({ product, onClose, whatsappNumber }: Customi
         selectedDecoration: selectedDecoration,
         customColor: customColor.name,
         totalPrice: totalPrice,
+        sizeModifier: size.modifier,
+        fillingPrice: selectedFilling.price,
         status: 'Pendiente',
         date: new Date().toISOString().split('T')[0],
       };
@@ -352,6 +351,11 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                   <span className="text-base sm:text-lg font-mono font-bold text-brand-primary dark:text-brand-300">
                     S/. {Math.round(totalPrice)}
                   </span>
+                  {basePriceInvalid && (
+                    <p className="text-[8px] text-red-500 mt-1 leading-tight max-w-[140px] text-right">
+                      ⚠️ Este producto no tiene precio base configurado. Contacta al administrador.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -547,7 +551,7 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                           </p>
                           
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {SIZES.map((sz) => (
+                            {SIZE_TIERS.map((sz) => (
                               <button
                                 key={sz.name}
                                 type="button"

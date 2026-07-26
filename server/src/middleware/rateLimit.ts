@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -6,6 +6,10 @@ export const loginLimiter = rateLimit({
   message: { success: false, error: 'Demasiados intentos de inicio de sesión. Intenta de nuevo en 15 minutos.' },
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req, _res) => {
+    const forwarded = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim();
+    return ipKeyGenerator(forwarded || req.ip || '127.0.0.1');
+  },
 });
 
 const limiterBase = {
@@ -13,9 +17,9 @@ const limiterBase = {
   message: { success: false, error: 'Demasiadas solicitudes. Intenta de nuevo en un minuto.' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req: any) => {
-    const forwarded = req.headers['x-forwarded-for'];
-    return typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : req.ip || 'unknown';
+  keyGenerator: (req: any, _res: any) => {
+    const forwarded = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim();
+    return ipKeyGenerator(forwarded || req.ip || '127.0.0.1');
   },
 };
 
@@ -35,4 +39,8 @@ export const contactLimiter = rateLimit({
   message: { success: false, error: 'Demasiados mensajes de contacto. Intenta de nuevo en una hora.' },
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req, _res) => {
+    const forwarded = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim();
+    return ipKeyGenerator(forwarded || req.ip || '127.0.0.1');
+  },
 });

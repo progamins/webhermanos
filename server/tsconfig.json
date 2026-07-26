@@ -3,9 +3,10 @@
   "compilerOptions": {
     "lib": ["ES2022"],
     "outDir": "dist",
-    "rootDir": "src",
-    "noEmit": true
+    "rootDir": "..",
+    "noEmit": true,
+    "allowImportingTsExtensions": true
   },
-  "include": ["src"],
+  "include": ["src", "../client/src/shared/constants/pricing.ts"],
   "references": []
 }

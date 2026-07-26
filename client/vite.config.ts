@@ -2,15 +2,9 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig, type Plugin } from 'vite';
-import {
-  isIPAllowed,
-  isMACAllowed,
-  getMACFormHTML,
-  getDeniedHTML,
-} from '../server/src/lib/verification.ts';
 
 export default defineConfig(() => {
-  // Hosts permitidos en dev (ngrok, etc.) — separados por coma via env
+  // Hosts permitidos en dev — separados por coma via env
   const allowedHosts = process.env.VITE_ALLOWED_HOSTS
     ? process.env.VITE_ALLOWED_HOSTS.split(',').map(s => s.trim())
     : true;
@@ -31,94 +25,92 @@ export default defineConfig(() => {
       .split(',').map(s => s.trim().toUpperCase()).filter(Boolean)
   );
 
-  function viteClientIP(req: any): string {
-    const forwarded = req.headers?.['x-forwarded-for'];
-    if (typeof forwarded === 'string') return forwarded.split(',')[0].trim();
-    if (Array.isArray(forwarded) && forwarded.length > 0) return forwarded[0].trim();
-    return req.socket?.remoteAddress || 'unknown';
-  }
-
-  function viteGetMAC(req: any): string | null {
-    const cookie = req.headers?.cookie;
-    if (cookie) {
-      const match = cookie.split(';').find((c: string) => c.trim().startsWith('maison_device_mac='));
-      if (match) {
-        try {
-          const val = match.split('=')[1].trim();
-          return Buffer.from(decodeURIComponent(val), 'base64').toString('utf-8').toUpperCase();
-        } catch {}
-      }
-    }
-    const header = req.headers?.['x-device-mac'];
-    if (typeof header === 'string') return header.trim().toUpperCase();
-    return null;
-  }
-
-  // Plugin que protege el admin en dev mode
+  // Plugin que protege el admin en dev mode (solo local → import dinámico)
   const adminSecretPlugin: Plugin = {
     name: 'admin-secret-path',
     configureServer(server) {
-      server.middlewares.use((req, res, next) => {
-        if (!req.url) { next(); return; }
+      // Importar utilidades de verificación SÓLO cuando se configure el server
+      // (nunca durante el build, así evitamos dependencias del server en build)
+      server.middlewares.use(async (req, res, next) => {
+        try {
+          if (!req.url) { next(); return; }
 
-        if (req.url === '/admin' || req.url.startsWith('/admin/')) {
-          res.statusCode = 301;
-          res.setHeader('Location', `/${adminSecretPath}`);
-          res.end();
-          return;
-        }
-        else if (req.url === '/admin.html') {
-          req.url = '/';
-        }
-        else if (req.url.startsWith(`/${adminSecretPath}`)) {
-          // ═══ PRIMERO: Manejar POST de verificación MAC ═══
-          // Esto DEBE ir antes de leer la MAC con viteGetMAC() porque:
-          //   viteGetMAC() lee la MAC del header x-device-mac y, como ya está
-          //   en la lista permitida, NO entra al bloque !isMACAllowed, y por
-          //   tanto NUNCA setea la cookie — en vez de eso rewritea a admin.html
-          //   y falla al servir un POST como página estática.
-          if (req.method === 'POST' && req.headers?.['x-device-mac']) {
-            const mac = (req.headers['x-device-mac'] as string).trim().toUpperCase();
-            if (process.env.NODE_ENV !== 'production') console.log('[DEBUG-MAC] Vite | POST verificación MAC:', mac, '| permitida?', isMACAllowed(mac, allowedMACs));
-            if (isMACAllowed(mac, allowedMACs)) {
-              const encoded = Buffer.from(mac).toString('base64');
-              if (process.env.NODE_ENV !== 'production') console.log('[DEBUG-MAC] ✅ Vite | MAC autorizada, cookie seteada');
-              res.setHeader('Set-Cookie', `maison_device_mac=${encodeURIComponent(encoded)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${30*24*60*60}`);
-              res.statusCode = 200;
+          if (req.url === '/admin' || req.url.startsWith('/admin/')) {
+            res.statusCode = 301;
+            res.setHeader('Location', `/${adminSecretPath}`);
+            res.end();
+            return;
+          }
+          else if (req.url === '/admin.html') {
+            req.url = '/';
+          }
+          else if (req.url.startsWith(`/${adminSecretPath}`)) {
+            // Import dinámico — las funciones sólo se cargan aquí, en dev mode
+            const { isIPAllowed: checkIP, isMACAllowed: checkMAC, getMACFormHTML: macForm, getDeniedHTML: deniedHTML } = await import('../server/src/lib/verification.ts');
+
+            function viteClientIP(r: any): string {
+              const forwarded = r.headers?.['x-forwarded-for'];
+              if (typeof forwarded === 'string') return forwarded.split(',')[0].trim();
+              if (Array.isArray(forwarded) && forwarded.length > 0) return forwarded[0].trim();
+              return r.socket?.remoteAddress || 'unknown';
+            }
+
+            function viteGetMAC(r: any): string | null {
+              const cookie = r.headers?.cookie;
+              if (cookie) {
+                const match = cookie.split(';').find((c: string) => c.trim().startsWith('maison_device_mac='));
+                if (match) {
+                  try {
+                    const val = match.split('=')[1].trim();
+                    return Buffer.from(decodeURIComponent(val), 'base64').toString('utf-8').toUpperCase();
+                  } catch {}
+                }
+              }
+              const header = r.headers?.['x-device-mac'];
+              if (typeof header === 'string') return header.trim().toUpperCase();
+              return null;
+            }
+
+            // ═══ PRIMERO: Manejar POST de verificación MAC ═══
+            if (req.method === 'POST' && req.headers?.['x-device-mac']) {
+              const mac = (req.headers['x-device-mac'] as string).trim().toUpperCase();
+              if (checkMAC(mac, allowedMACs)) {
+                const encoded = Buffer.from(mac).toString('base64');
+                res.setHeader('Set-Cookie', `maison_device_mac=${encodeURIComponent(encoded)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${30*24*60*60}`);
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ success: true }));
+                return;
+              }
+              res.statusCode = 401;
               res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ success: true }));
+              res.end(JSON.stringify({ error: 'MAC no autorizada' }));
               return;
             }
-            if (process.env.NODE_ENV !== 'production') console.log('[DEBUG-MAC] ❌ Vite | MAC no autorizada en POST');
-            res.statusCode = 401;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ error: 'MAC no autorizada' }));
-            return;
-          }
 
-          const clientIP = viteClientIP(req);
-          // CONDICIÓN 1: IP
-          if (!isIPAllowed(clientIP, allowedAdminIPs)) {
-            if (process.env.NODE_ENV !== 'production') console.log('[DEBUG-MAC] 🚫 IP denegada:', clientIP, '| IPs permitidas:', allowedAdminIPs);
-            res.statusCode = 403;
-            res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            res.end(getDeniedHTML(clientIP));
-            return;
+            const clientIP = viteClientIP(req);
+            // CONDICIÓN 1: IP
+            if (!checkIP(clientIP, allowedAdminIPs)) {
+              res.statusCode = 403;
+              res.setHeader('Content-Type', 'text/html; charset=utf-8');
+              res.end(deniedHTML(clientIP));
+              return;
+            }
+            // CONDICIÓN 2: MAC (desde cookie o header)
+            const deviceMAC = viteGetMAC(req);
+            if (!checkMAC(deviceMAC, allowedMACs)) {
+              res.statusCode = 401;
+              res.setHeader('Content-Type', 'text/html; charset=utf-8');
+              res.end(macForm());
+              return;
+            }
+            req.url = '/admin.html';
           }
-          // CONDICIÓN 2: MAC (desde cookie o header)
-          const deviceMAC = viteGetMAC(req);
-          if (process.env.NODE_ENV !== 'production') console.log('[DEBUG-MAC] Vite | path:', req.url, '| method:', req.method, '| MAC leída:', deviceMAC, '| MACs permitidas:', [...allowedMACs]);
-          if (!isMACAllowed(deviceMAC, allowedMACs)) {
-            if (process.env.NODE_ENV !== 'production') console.log('[DEBUG-MAC] 📋 Vite | Mostrando formulario MAC (no hay cookie ni header válido)');
-            res.statusCode = 401;
-            res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            res.end(getMACFormHTML());
-            return;
-          }
-          if (process.env.NODE_ENV !== 'production') console.log('[DEBUG-MAC] ✅ Vite | MAC permitida, sirviendo admin.html');
-          req.url = '/admin.html';
+          next();
+        } catch (err) {
+          console.error('[AdminSecretPath] Error en middleware:', err);
+          next();
         }
-        next();
       });
     },
   };

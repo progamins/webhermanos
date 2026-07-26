@@ -4,7 +4,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -18,9 +17,9 @@
 @import "./animations.css";
 
 @theme {
-  --font-serif: "Playfair Display", Georgia, serif;
-  --font-sans: "Inter", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
   --color-brand-bg: #FFF9F5;
   --color-brand-primary: #C4847D;
@@ -40,7 +39,7 @@
 
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: 'Geist Variable', sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -106,8 +105,14 @@ html, body {
 }
 
 /* Interactive elements */
+/* Interactive elements - transición más corta en mobile para ahorrar GPU */
 input, textarea, select, button, a, label, summary {
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+}
+@media (max-width: 640px) {
+  input, textarea, select, button, a, label, summary {
+    transition-duration: 0.1s !important;
+  }
 }
 
 /* ============= ACCESSIBILITY ============= */
@@ -135,11 +140,14 @@ input, textarea, select, button, a, label, summary {
 }
 
 /* Content-visibility for below-fold sections speeds up initial render.
-   Solo se aplica en viewports lo suficientemente anchos como para garantizar
-   altura útil; en mobile muy angosto puede causar layout shift al hacer scroll. */
+   En mobile también se aplica con un tamaño intrínseco menor para evitar
+   layout shift en pantallas chicas. */
+section[id]:not(#inicio):not(#tracking), footer {
+  content-visibility: auto;
+  contain-intrinsic-size: 400px;
+}
 @media (min-width: 768px) {
   section[id]:not(#inicio):not(#tracking), footer {
-    content-visibility: auto;
     contain-intrinsic-size: 600px;
   }
 }
@@ -404,25 +412,35 @@ input, textarea, select, button, a, label, summary {
 }
 
 /* ============= MOBILE PERFORMANCE ============= */
+/* En dispositivos gama baja: reducimos drásticamente la carga visual */
 @media (max-width: 640px) {
-  [class*=" blur-"], [class^="blur-"] { opacity: 0.5; }
+  /* Desactivar animaciones decorativas costosas (orbes, blobs) */
   .animate-orb-slow, .animate-orb-slow-reverse, .animate-orb-drift, .animate-light-sweep,
-  .animate-blob-1, .animate-blob-2, .animate-blob-3 {
-    animation-duration: 60s !important;
-    animation-iteration-count: 1 !important;
-  }
+  .animate-blob-1, .animate-blob-2, .animate-blob-3,
+  [class*=" animate-orb-"], [class^="animate-orb-"] { display: none !important; }
+  
   .entrance-bounce { animation-duration: 4s !important; }
   .mobile-hidden-particle { display: none; }
-  .backdrop-blur-xl, .backdrop-blur-lg { backdrop-filter: blur(6px) !important; -webkit-backdrop-filter: blur(6px) !important; }
-  .backdrop-blur-md, .backdrop-blur-sm { backdrop-filter: blur(3px) !important; -webkit-backdrop-filter: blur(3px) !important; }
+  
+  /* Reducir blur al mínimo para ahorrar GPU en móviles entry-level */
+  .backdrop-blur-xl, .backdrop-blur-lg,
+  .glass-card, .glass-panel, .premium-glass-card,
+  .liquid-glass { backdrop-filter: blur(4px) saturate(110%) !important; -webkit-backdrop-filter: blur(4px) saturate(110%) !important; }
+  .backdrop-blur-md, .backdrop-blur-sm,
+  .liquid-glass-input { backdrop-filter: blur(2px) !important; -webkit-backdrop-filter: blur(2px) !important; }
+  
+  /* Quitar will-change en mobile (consume memoria GPU innecesariamente) */
+  .will-change-transform, .will-change-opacity,
+  [class*="will-change"] { will-change: auto !important; }
+  
+  /* GPU acceleration solo para elementos fixed/sticky */
   .fixed, [class*="sticky"] { transform: translateZ(0); }
+  
+  /* Animaciones gradient desactivadas */
   .animate-gradient-shift { animation: none; }
-  section[id]:not(#inicio):not(#tracking), footer { content-visibility: auto; contain-intrinsic-size: 400px; }
-}
-
-/* Móviles muy angostos: desactivar totalmente los orbes/blobs animados
-   (su blur grande es costoso en GPUs móviles entry-level). */
-@media (max-width: 380px) {
-  [class*=" animate-orb-"], [class^="animate-orb-"], .animate-light-sweep,
-  .animate-blob-1, .animate-blob-2, .animate-blob-3 { display: none !important; }
+  
+  /* Transiciones reducidas */
+  *, *::before, *::after {
+    transition-duration: 0.15s !important;
+  }
 }

@@ -1,4 +1,3 @@
-import logger from '../lib/logger.js';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -60,9 +59,21 @@ export interface EnvConfig {
   ANALYST_DEFAULT_PASSWORD: string;
   STOCK_MANAGER_DEFAULT_PASSWORD: string;
 
+  // Vercel Blob
+  BLOB_READ_WRITE_TOKEN: string;
+
   // Upload
   UPLOAD_DIR: string;
   MAX_FILE_SIZE: number;
+}
+
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    console.error(`[ENV] ERROR FATAL: Falta la variable de entorno obligatoria "${name}". Definela en .env antes de arrancar el servidor.`);
+    process.exit(1);
+  }
+  return value;
 }
 
 function loadEnv(): EnvConfig {
@@ -70,7 +81,7 @@ function loadEnv(): EnvConfig {
 
   const missing = requiredVars.filter(v => !process.env[v]);
   if (missing.length > 0) {
-    logger.warn('Variables faltantes, usando valores por defecto', { service: 'ENV', missing: missing.join(', ') });
+    console.warn('[ENV] Variables faltantes, usando valores por defecto:', missing.join(', '));
   }
 
   return {
@@ -99,12 +110,14 @@ function loadEnv(): EnvConfig {
     GA_MEASUREMENT_ID: process.env.VITE_GA_MEASUREMENT_ID || '',
 
     APP_URL: process.env.APP_URL || 'http://localhost:3000',
-    ADMIN_SECRET_PATH: process.env.ADMIN_SECRET_PATH || (() => { logger.error('ADMIN_SECRET_PATH no definido en .env'); process.exit(1); })(),
+    ADMIN_SECRET_PATH: requireEnv('ADMIN_SECRET_PATH'),
     ALLOWED_ADMIN_IPS: (process.env.ALLOWED_ADMIN_IPS || '127.0.0.1,::1').split(',').map(s => s.trim()),
     ALLOWED_MAC_ADDRESSES: (process.env.ALLOWED_MAC_ADDRESSES || '').split(',').map(s => s.trim().toUpperCase()).filter(Boolean),
-    ADMIN_DEFAULT_PASSWORD: process.env.ADMIN_DEFAULT_PASSWORD || (() => { logger.error('ADMIN_DEFAULT_PASSWORD no definido en .env'); process.exit(1); })(),
-    ANALYST_DEFAULT_PASSWORD: process.env.ANALYST_DEFAULT_PASSWORD || (() => { logger.error('ANALYST_DEFAULT_PASSWORD no definido en .env'); process.exit(1); })(),
-    STOCK_MANAGER_DEFAULT_PASSWORD: process.env.STOCK_MANAGER_DEFAULT_PASSWORD || (() => { logger.error('STOCK_MANAGER_DEFAULT_PASSWORD no definido en .env'); process.exit(1); })(),
+    ADMIN_DEFAULT_PASSWORD: requireEnv('ADMIN_DEFAULT_PASSWORD'),
+    ANALYST_DEFAULT_PASSWORD: requireEnv('ANALYST_DEFAULT_PASSWORD'),
+    STOCK_MANAGER_DEFAULT_PASSWORD: requireEnv('STOCK_MANAGER_DEFAULT_PASSWORD'),
+
+    BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN || '',
 
     UPLOAD_DIR: process.env.UPLOAD_DIR || path.resolve(process.cwd(), 'uploads'),
     MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE || '3145728', 10), // 3MB

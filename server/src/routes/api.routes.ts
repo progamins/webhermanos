@@ -7,9 +7,10 @@ import { galleryService } from '../services/GalleryService.js';
 import { configService } from '../services/ConfigService.js';
 import { emailService } from '../services/EmailService.js';
 import { otpService } from '../services/OtpService.js';
-import { contactLimiter } from '../middleware/rateLimit.js';
+import { contactLimiter, apiLimiter } from '../middleware/rateLimit.js';
+import { isValidEmail, escapeHtml, isAllowedImageUrl } from '../middleware/security.js';
 import { RealtimeService } from '../services/RealtimeService.js';
-
+import { calculatePrice } from '../services/PricingService.js';
 const router = Router();
 
 // ─── Health ───
@@ -105,11 +106,58 @@ router.post('/orders', async (req, res) => {
       return res.status(400).json({ error: 'Datos del pedido incompletos.' });
     }
 
-    const result = await orderService.create(order);
+    if (!isValidEmail(order.customerEmail)) {
+      return res.status(400).json({ error: 'Email del cliente inválido.' });
+    }
+
+    // ─── Calcular el precio final desde el servidor ───
+    // El servidor SIEMPRE tiene la última palabra sobre el precio.
+    // Usa el PricingService que replica la lógica del cliente (tamaño + relleno).
+    const priceResult = await calculatePrice({
+      productId: order.productId,
+      size: order.size,
+      flavor: order.flavor,
+      sizeModifier: order.sizeModifier,
+      fillingPrice: order.fillingPrice,
+    });
+
+    const totalPrice = priceResult.totalPrice;
+
+    if (priceResult.source !== 'client') {
+      logger.info('Precio calculado por servidor', {
+        service: 'API',
+        source: priceResult.source,
+        basePrice: priceResult.basePrice,
+        sizeModifier: priceResult.sizeModifier,
+        fillingPrice: priceResult.fillingPrice,
+        totalPrice,
+        productId: order.productId,
+      });
+    }
+
+    const sanitizedOrder = {
+      ...order,
+      customerName: escapeHtml(order.customerName),
+      customerEmail: order.customerEmail.trim().toLowerCase(),
+      totalPrice, // precio validado
+      // Sanitizar campos de texto
+      theme: order.theme ? escapeHtml(order.theme) : order.theme,
+      specialNotes: order.specialNotes ? escapeHtml(order.specialNotes) : order.specialNotes,
+      message: order.message ? escapeHtml(order.message) : order.message,
+      celebratedName: order.celebratedName ? escapeHtml(order.celebratedName) : order.celebratedName,
+      selectedDecoration: order.selectedDecoration ? escapeHtml(order.selectedDecoration) : order.selectedDecoration,
+      customColor: order.customColor ? escapeHtml(order.customColor) : order.customColor,
+      flavor: order.flavor ? escapeHtml(order.flavor) : order.flavor,
+      productName: order.productName ? escapeHtml(order.productName) : order.productName,
+      // Sanitizar campos numéricos
+      customerAge: order.customerAge ? Number(order.customerAge) : undefined,
+    };
+
+    const result = await orderService.create(sanitizedOrder);
 
     // Send confirmation email (non-blocking)
     emailService.sendOrderConfirmation({
-      ...order,
+      ...sanitizedOrder,
       id: result.id,
       trackingCode: result.trackingCode,
     }).catch(() => {});
@@ -124,12 +172,16 @@ router.post('/orders', async (req, res) => {
   }
 });
 
-// ─── OTP ───
-router.post('/otp/send', async (req, res) => {
+// ─── OTP (con rate limiting específico) ───
+// OTP send limited to 3 attempts per IP per 15 minutes to prevent brute force
+router.post('/otp/send', apiLimiter, async (req, res) => {
   try {
     const { email, customerName } = req.body;
     if (!email || !customerName) {
       return res.status(400).json({ error: 'Email y nombre requeridos.' });
+    }
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: 'Email inválido.' });
     }
     const orders = await orderService.getByEmail(email);
     const result = await otpService.generateAndSend(email, customerName, orders);
@@ -140,11 +192,16 @@ router.post('/otp/send', async (req, res) => {
   }
 });
 
-router.post('/otp/verify', async (req, res) => {
+// OTP verify also rate limited to prevent brute force
+router.post('/otp/verify', apiLimiter, async (req, res) => {
   try {
     const { email, code } = req.body;
     if (!email || !code) {
       return res.status(400).json({ error: 'Email y código requeridos.' });
+    }
+    // Validate code format: must be exactly 6 digits
+    if (!/^\d{6}$/.test(code)) {
+      return res.status(400).json({ error: 'El código debe tener exactamente 6 dígitos.' });
     }
     const result = await otpService.verify(email, code);
     res.json(result);
@@ -161,9 +218,17 @@ router.post('/contact', contactLimiter, async (req, res) => {
     if (!name || !message) {
       return res.status(400).json({ error: 'Nombre y mensaje requeridos.' });
     }
+    if (email && !isValidEmail(email)) {
+      return res.status(400).json({ error: 'Email inválido.' });
+    }
+
+      // Sanitize input before processing
+    const sanitizedName = escapeHtml(name.trim());
+    const sanitizedMessage = escapeHtml(message.trim());
+    const sanitizedEmail = email ? email.trim().toLowerCase() : '';
 
     // Send notification email
-    await emailService.sendContactNotification(name, email, message).catch(() => {});
+    await emailService.sendContactNotification(sanitizedName, sanitizedEmail, sanitizedMessage).catch(() => {});
 
     res.json({ success: true, message: 'Mensaje enviado correctamente.' });
   } catch (err: any) {
@@ -172,14 +237,26 @@ router.post('/contact', contactLimiter, async (req, res) => {
   }
 });
 
+// ─── CSP Report endpoint (POST only, no auth required) ───
+router.post('/csp-report', (req, res) => {
+  // Log CSP violations for monitoring
+  const report = req.body?.['csp-report'] || req.body;
+  logger.warn('CSP Violation', {
+    service: 'CSP',
+    'blocked-uri': report?.['blocked-uri'],
+    'violated-directive': report?.['violated-directive'],
+    'source-file': report?.['source-file'],
+    'line-number': report?.['line-number'],
+  });
+  res.status(204).end();
+});
+
 // ─── Image Proxy ───
 router.get('/image-proxy', async (req, res) => {
   const url = req.query.url as string;
   if (!url) return res.status(400).json({ error: 'URL requerida.' });
 
   try {
-    const parsed = new URL(url);
-    const { isAllowedImageUrl } = await import('../middleware/security.js');
     if (!isAllowedImageUrl(url)) {
       return res.status(403).json({ error: 'Dominio no permitido.' });
     }

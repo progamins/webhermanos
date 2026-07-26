@@ -31,20 +31,19 @@ nul
 # ZCode local
 .zcode/
 
+# Freebuff AI (dev tooling - solo local)
+.freebuff/
+
+# Vercel
+.vercel
+.vercelenv
+
 # DuckDNS (contiene token real)
 duckdns/duck.sh
 duckdns/duckdns.service
 duckdns/duckdns.timer
 duckdns/auth.sh
 duckdns/cleanup.sh
-
-# ngrok — config local + tokens, NO commitear
-.ngrok/
-ngrok.yml
-
-# Túneles locales (contienen ngrok auth token y admin path real)
-tunnel.ps1
-tunnel.sh
 
 # Skills de IA (dev tooling - solo local)
 .agents/
