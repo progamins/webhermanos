@@ -271,5 +271,38 @@ export const api = {
         body: formData,
       });
     },
+
+    // ─── Kitchen ───
+    getKitchenOrders: () =>
+      request<{ success: boolean; orders: any[] }>('/admin/kitchen/orders'),
+
+    updateKitchenStatus: (orderId: string, status: string) =>
+      request<{ success: boolean }>('/admin/kitchen/update-status', {
+        method: 'POST',
+        body: JSON.stringify({ orderId, status }),
+      }),
+
+    updateKitchenNotes: (orderId: string, notes: string) =>
+      request<{ success: boolean }>('/admin/kitchen/notes', {
+        method: 'POST',
+        body: JSON.stringify({ orderId, notes }),
+      }),
+
+    resetOrderTimer: (orderId: string) =>
+      request<{ success: boolean }>('/admin/orders/reset-timer', {
+        method: 'POST',
+        body: JSON.stringify({ orderId }),
+      }),
+
+    // ─── Inline Voucher desde Planilla ───
+    inlineUploadVoucher: (orderId: string, file: File) => {
+      const formData = new FormData();
+      formData.append('orderId', orderId);
+      formData.append('voucher', file);
+      return request<{ success: boolean; voucherUrl?: string; voucherName?: string }>('/admin/orders/inline-voucher', {
+        method: 'POST',
+        body: formData,
+      });
+    },
   },
 };

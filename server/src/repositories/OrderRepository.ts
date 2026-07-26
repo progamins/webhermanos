@@ -35,6 +35,8 @@ export interface OrderRow {
   voucher_uploaded_at: string | null;
   fulfilled_from_stock: number;
   assigned_stock_id: string | null;
+  status_entered_at: string | null;
+  kitchen_notes: string | null;
   progress_photos: string;
   created_at: string;
   updated_at: string;
@@ -96,5 +98,20 @@ export class OrderRepository extends BaseRepository<OrderRow> {
       'SELECT * FROM orders ORDER BY created_at DESC LIMIT ?',
       [limit_num]
     );
+  }
+
+  // ─── Kitchen Methods ───
+  async getKitchenOrders(): Promise<OrderRow[]> {
+    return this.queryRaw<OrderRow[]>(
+      `SELECT * FROM orders 
+       WHERE status IN ('Pendiente','Confirmado','Preparando','Decoración','Listo')
+       ORDER BY 
+         FIELD(status, 'Listo', 'Decoración', 'Preparando', 'Confirmado', 'Pendiente'),
+         COALESCE(status_entered_at, created_at) ASC`
+    );
+  }
+
+  async updateStatusEnteredAt(id: string, timestamp: string): Promise<boolean> {
+    return this.update(id, { status_entered_at: timestamp } as Partial<OrderRow>);
   }
 }

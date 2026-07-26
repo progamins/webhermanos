@@ -44,6 +44,8 @@ function parseOrder(row: OrderRow) {
     voucherUploadedAt: row.voucher_uploaded_at,
     fulfilledFromStock: !!row.fulfilled_from_stock,
     assignedStockId: row.assigned_stock_id,
+    statusEnteredAt: row.status_entered_at,
+    kitchenNotes: row.kitchen_notes,
     progressPhotos: safeParseJson(row.progress_photos, []),
     whatsappMessage: row.whatsapp_message,
   };
@@ -110,6 +112,29 @@ export class OrderService {
 
   async update(id: string, data: OrderUpdateInput): Promise<boolean> {
     return orderRepo.update(id, orderUpdateToRow(data));
+  }
+
+  async getKitchenOrders(): Promise<Order[]> {
+    const rows = await orderRepo.getKitchenOrders();
+    return rows.map(parseOrder);
+  }
+
+  async updateStatusWithTimestamp(id: string, status: string, changedBy: string = 'admin', cancelReason?: string): Promise<boolean> {
+    const order = await orderRepo.findById(id);
+    if (!order) return false;
+
+    await orderRepo.updateStatus(id, status, cancelReason);
+    await orderRepo.updateStatusEnteredAt(id, new Date().toISOString().slice(0, 19).replace('T', ' '));
+
+    await timelineRepo.create(timelineCreateToRow(uuidv4(), id, order.status, status, changedBy, cancelReason));
+
+    await ActivityLogService.log(
+      'Estado de cocina actualizado',
+      `Pedido ${id}: ${order.status} → ${status}${cancelReason ? ` (Motivo: ${cancelReason})` : ''}`,
+      changedBy
+    );
+
+    return true;
   }
 
   async delete(id: string): Promise<boolean> {

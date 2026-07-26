@@ -110,6 +110,39 @@ export default function AdminOrders({ orders, setOrders, onRefreshData, showToas
     }
   };
 
+  // ── Voucher Inline State ──
+  const [voucherUploadingId, setVoucherUploadingId] = useState<string | null>(null);
+
+  const handleInlineVoucherUpload = async (orderId: string, file: File) => {
+    setVoucherUploadingId(orderId);
+    try {
+      const result = await dbService.inlineUploadVoucher(orderId, file);
+      if (setOrders) {
+        setOrders(prev => prev.map(o => o.id === orderId ? {
+          ...o, voucherUrl: result.voucherUrl, voucherName: result.voucherName,
+        } : o));
+      }
+      showToast('Comprobante subido correctamente.', 'success', '📎 Voucher');
+    } catch (err: any) {
+      showToast(err.message || 'Error al subir comprobante.', 'error', 'Error');
+    } finally {
+      setVoucherUploadingId(null);
+    }
+  };
+
+  const handleDeleteInlineVoucher = async (ord: Order) => {
+    if (!confirm(`¿Eliminar comprobante de ${ord.customerName}?`)) return;
+    try {
+      await dbService.deleteVoucher(ord.id, ord.voucherUrl);
+      if (setOrders) {
+        setOrders(prev => prev.map(o => o.id === ord.id ? { ...o, voucherUrl: undefined, voucherName: undefined } : o));
+      }
+      showToast('Comprobante eliminado.', 'info', 'Eliminado');
+    } catch {
+      showToast('Error al eliminar comprobante.', 'error', 'Error');
+    }
+  };
+
   // ── Progress Photos State ──
   const [photoUploadingId, setPhotoUploadingId] = useState<string | null>(null);
   const [photoCaption, setPhotoCaption] = useState('');
@@ -471,21 +504,77 @@ export default function AdminOrders({ orders, setOrders, onRefreshData, showToas
                       )}
                     </td>
 
-                    {/* Pago */}
+                    {/* Pago + Voucher Inline */}
                     <td className="px-3 py-3 border-r border-zinc-100 dark:border-zinc-800/50">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-bold border ${
-                        ord.paymentStatus === 'confirmado'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : ord.paymentStatus === 'rechazado'
-                            ? 'bg-red-50 text-red-700 border-red-200'
-                            : 'bg-amber-50 text-amber-700 border-amber-200'
-                      }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${
-                          ord.paymentStatus === 'confirmado' ? 'bg-emerald-500' :
-                          ord.paymentStatus === 'rechazado' ? 'bg-red-500' : 'bg-amber-400'
-                        }`} />
-                        {ord.paymentStatus === 'confirmado' ? 'Pagado' : ord.paymentStatus === 'rechazado' ? 'Rechazado' : 'Pendiente'}
-                      </span>
+                      <div className="flex flex-col gap-1.5">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-bold border ${
+                          ord.paymentStatus === 'confirmado'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : ord.paymentStatus === 'rechazado'
+                              ? 'bg-red-50 text-red-700 border-red-200'
+                              : 'bg-amber-50 text-amber-700 border-amber-200'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            ord.paymentStatus === 'confirmado' ? 'bg-emerald-500' :
+                            ord.paymentStatus === 'rechazado' ? 'bg-red-500' : 'bg-amber-400'
+                          }`} />
+                          {ord.paymentStatus === 'confirmado' ? 'Pagado' : ord.paymentStatus === 'rechazado' ? 'Rechazado' : 'Pendiente'}
+                        </span>
+
+                        {/* Voucher inline */}
+                        <div className="flex items-center gap-1">
+                          {ord.voucherUrl ? (
+                            <>
+                              <a
+                                href={ord.voucherUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-md text-[8px] font-mono font-bold hover:bg-emerald-100 transition-all cursor-pointer"
+                                title="Ver comprobante"
+                              >
+                                📎 Ver
+                              </a>
+                              <button
+                                onClick={() => handleDeleteInlineVoucher(ord)}
+                                className="p-0.5 text-red-400 hover:text-red-600 transition-colors cursor-pointer"
+                                title="Eliminar comprobante"
+                              >
+                                <X className="h-2.5 w-2.5" />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <input
+                                id={`voucher-input-${ord.id}`}
+                                type="file"
+                                accept="image/*,application/pdf"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleInlineVoucherUpload(ord.id, file);
+                                  e.target.value = '';
+                                }}
+                              />
+                              <button
+                                onClick={() => {
+                                  const input = document.getElementById(`voucher-input-${ord.id}`) as HTMLInputElement;
+                                  if (input) input.click();
+                                }}
+                                disabled={voucherUploadingId === ord.id}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-md text-[8px] font-mono font-bold hover:bg-amber-100 transition-all cursor-pointer disabled:opacity-50"
+                                title="Subir comprobante de pago"
+                              >
+                                {voucherUploadingId === ord.id ? (
+                                  <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                ) : (
+                                  <Upload className="h-2.5 w-2.5" />
+                                )}
+                                <span>Voucher</span>
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </td>
 
                     {/* Acciones */}

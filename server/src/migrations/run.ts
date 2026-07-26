@@ -40,7 +40,7 @@ async function runMigrations() {
   });
 
   // Execute all migration files in order
-  const migrationFiles = ['001_init.sql', '002_optimize.sql', '003_deduplication.sql', '004_unique_hash.sql'];
+  const migrationFiles = ['001_init.sql', '002_optimize.sql', '003_deduplication.sql', '004_unique_hash.sql', '005_kitchen.sql'];
 
   for (const file of migrationFiles) {
     const filePath = path.join(__dirname, file);

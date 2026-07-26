@@ -250,6 +250,55 @@ router.post('/orders/delete-progress-photo', verifyAdminSession, asyncHandler(as
   res.json({ success: true });
 }));
 
+// ─── KITCHEN ───
+router.get('/kitchen/orders', verifyAdminSession, asyncHandler(async (req, res) => {
+  const orders = await orderService.getKitchenOrders();
+  res.json({ success: true, orders });
+}));
+
+router.post('/kitchen/update-status', verifyAdminSession, asyncHandler(async (req, res) => {
+  const { orderId, status, cancelReason } = req.body;
+  const success = await orderService.updateStatusWithTimestamp(
+    orderId, status, (req as any).adminRole || 'cocina', cancelReason
+  );
+  if (success) {
+    res.json({ success: true });
+  } else {
+    res.status(404).json({ success: false, error: 'Pedido no encontrado.' });
+  }
+}));
+
+router.post('/kitchen/notes', verifyAdminSession, asyncHandler(async (req, res) => {
+  const { orderId, notes } = req.body;
+  await orderService.update(orderId, { kitchenNotes: notes });
+  res.json({ success: true });
+}));
+
+router.post('/orders/reset-timer', verifyAdminSession, asyncHandler(async (req, res) => {
+  const { orderId } = req.body;
+  const order = await orderService.getById(orderId);
+  if (!order) return res.status(404).json({ success: false, error: 'Pedido no encontrado.' });
+  await orderService.update(orderId, { statusEnteredAt: new Date().toISOString().slice(0, 19).replace('T', ' ') });
+  res.json({ success: true });
+}));
+
+// ─── KITCHEN VOUCHER (inline desde planilla) ───
+router.post('/orders/inline-voucher', verifyAdminSession, uploadVoucher.single('voucher'), async (req, res) => {
+  try {
+    const { orderId } = req.body;
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No se recibió el archivo.' });
+    }
+    const result = await storageService.saveFile(
+      req.file.buffer, req.file.originalname, req.file.mimetype, (req as any).adminRole
+    );
+    await orderService.update(orderId, { voucherUrl: result.url, voucherName: req.file.originalname });
+    res.json({ success: true, voucherUrl: result.url, voucherName: req.file.originalname });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Error al subir comprobante.' });
+  }
+});
+
 // ─── GALLERY ───
 router.post('/gallery', verifyAdminSession, asyncHandler(async (req, res) => {
   const data = req.body.item;

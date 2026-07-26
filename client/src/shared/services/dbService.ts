@@ -218,6 +218,29 @@ export const dbService = {
     await api.admin.deleteProgressPhoto(orderId, photoId);
   },
 
+  // ─── Kitchen ───
+  async getKitchenOrders(): Promise<Order[]> {
+    const result = await api.admin.getKitchenOrders();
+    return result.success ? result.orders : [];
+  },
+
+  async updateKitchenStatus(orderId: string, status: string): Promise<void> {
+    await api.admin.updateKitchenStatus(orderId, status);
+  },
+
+  async updateKitchenNotes(orderId: string, notes: string): Promise<void> {
+    await api.admin.updateKitchenNotes(orderId, notes);
+  },
+
+  async resetOrderTimer(orderId: string): Promise<void> {
+    await api.admin.resetOrderTimer(orderId);
+  },
+
+  // ─── Inline Voucher desde Planilla ───
+  async inlineUploadVoucher(orderId: string, file: File): Promise<any> {
+    return api.admin.inlineUploadVoucher(orderId, file);
+  },
+
   // Upload image through the server API
   async uploadImageToStorage(file: File): Promise<string> {
     let fileToUpload = file;

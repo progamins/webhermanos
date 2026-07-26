@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Toaster } from '../../../../shared/components/ui';
 import {
   LayoutDashboard, Cake, ShoppingBag, MessageSquare, Settings, RefreshCw,
-  Image, Layers, CreditCard, LogOut, Trash2, HardDrive, Search, X
+  Image, Layers, CreditCard, LogOut, Trash2, HardDrive, Search, X, ChefHat
 } from 'lucide-react';
 import type { Product, Order, Review, GalleryItem, AppConfig, AdminRole } from '../../../../shared/types';
 import { dbService } from '../../../../shared/services/dbService';
@@ -16,6 +16,7 @@ import AdminReviews from './AdminReviews';
 import AdminGallery from './AdminGallery';
 import AdminSettings from './AdminSettings';
 import AdminStock from './AdminStock';
+import AdminKitchen from './AdminKitchen';
 import AdminImageManager from './AdminImageManager';
 import AdminPaymentModal from './AdminPaymentModal';
 import VoucherModal from '../../../../shared/components/VoucherModal';
@@ -35,7 +36,7 @@ export interface AdminPanelProps {
   onLogout?: () => void;
 }
 
-type ActiveTab = 'dashboard' | 'products' | 'orders' | 'reviews' | 'settings' | 'images' | 'payments' | 'stock' | 'storage';
+type ActiveTab = 'dashboard' | 'products' | 'orders' | 'reviews' | 'settings' | 'images' | 'payments' | 'stock' | 'storage' | 'kitchen';
 
 const SIDEBAR_SECTIONS: { title: string; tabs: { id: ActiveTab; label: string; icon: React.ElementType }[] }[] = [
   {
@@ -46,6 +47,7 @@ const SIDEBAR_SECTIONS: { title: string; tabs: { id: ActiveTab; label: string; i
       { id: 'stock', label: 'Stock Físico', icon: Layers },
       { id: 'orders', label: 'Pedidos', icon: ShoppingBag },
       { id: 'payments', label: 'Pagos', icon: CreditCard },
+      { id: 'kitchen', label: 'Cocina 🍳', icon: ChefHat },
     ],
   },
   {
@@ -65,9 +67,9 @@ const SIDEBAR_SECTIONS: { title: string; tabs: { id: ActiveTab; label: string; i
 ];
 
 const ROLE_TABS: Record<AdminRole, ActiveTab[]> = {
-  admin: ['dashboard', 'products', 'stock', 'orders', 'payments', 'reviews', 'images', 'storage', 'settings'],
+  admin: ['dashboard', 'products', 'stock', 'orders', 'payments', 'kitchen', 'reviews', 'images', 'storage', 'settings'],
   analyst: ['dashboard', 'orders', 'payments', 'reviews'],
-  stock_manager: ['dashboard', 'stock', 'images'],
+  stock_manager: ['dashboard', 'stock', 'images', 'kitchen'],
 };
 
 const ROLE_CONFIG: Record<AdminRole, { label: string; color: string }> = {
@@ -303,6 +305,9 @@ export default function AdminPanel({
             )}
             {activeTab === 'stock' && (
               <AdminStock products={products} orders={orders} onRefreshData={onRefreshData} showToast={showToast} />
+            )}
+            {activeTab === 'kitchen' && (
+              <AdminKitchen showToast={showToast} />
             )}
             {activeTab === 'storage' && <AdminImageManager />}
           </div>
