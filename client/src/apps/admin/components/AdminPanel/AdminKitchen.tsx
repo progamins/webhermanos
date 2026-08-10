@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Clock, ChefHat, CheckCircle2, AlertCircle, Timer, Utensils, Sparkles,
-  CookingPot, Loader2, ChefHatIcon, ChevronRight,
+  CookingPot, Loader2, ChefHatIcon, ChevronRight, RefreshCw,
   MessageSquare, Plus, X, BellRing, BellOff
 } from 'lucide-react';
 import { Order } from '../../../../shared/types';
@@ -383,6 +383,9 @@ export default function AdminKitchen({ showToast }: AdminKitchenProps) {
   const [kitchenOrders, setKitchenOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [refreshing, setRefreshing] = useState(false);
+  const [nowTick, setNowTick] = useState(() => Date.now());
+  const lastLoadedAtRef = useRef(Date.now());
   const prevOrderIdsRef = useRef<Set<string>>(new Set());
   const { soundEnabled, toggleSound, playNotification } = useNewOrderSound();
 
@@ -402,6 +405,7 @@ export default function AdminKitchen({ showToast }: AdminKitchenProps) {
       }
       prevOrderIdsRef.current = newIds;
       setKitchenOrders(data);
+      lastLoadedAtRef.current = Date.now();
     } catch {
       showToast('Error al cargar pedidos de cocina', 'error', 'Cocina');
     } finally {
@@ -413,6 +417,31 @@ export default function AdminKitchen({ showToast }: AdminKitchenProps) {
     loadKitchenOrders();
     const interval = setInterval(loadKitchenOrders, 10000); // Refresh each 10s
     return () => clearInterval(interval);
+  }, [loadKitchenOrders]);
+
+  // Reloj en vivo: anima la cuenta regresiva de la próxima actualización
+  // y mantiene la hora / alertas de retraso sincronizadas.
+  useEffect(() => {
+    const t = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const secondsToRefresh = Math.max(0, Math.ceil(10 - (nowTick - lastLoadedAtRef.current) / 1000));
+
+  // Pedidos que llevan más de 30 min en su estado actual (posible retraso)
+  const urgentCount = useMemo(() => kitchenOrders.filter((o) => {
+    if (o.status === 'Listo' || o.status === 'Entregado' || o.status === 'Cancelado') return false;
+    const start = (o as any).statusEnteredAt ? new Date((o as any).statusEnteredAt).getTime() : new Date(o.date).getTime();
+    return (nowTick - start) / 60000 > 30;
+  }).length, [kitchenOrders, nowTick]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadKitchenOrders();
+    } finally {
+      setRefreshing(false);
+    }
   }, [loadKitchenOrders]);
 
   const handleUpdateStatus = async (orderId: string, status: string) => {
@@ -460,57 +489,105 @@ export default function AdminKitchen({ showToast }: AdminKitchenProps) {
   return (
     <div className="space-y-6">
       {/* ─── Header ─── */}
-      <div className="bg-gradient-to-br from-orange-50 to-amber-50/50 dark:from-zinc-900 dark:to-zinc-950 border border-orange-100 dark:border-zinc-800 rounded-2xl p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+      <div className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-amber-50/60 to-white dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950 border border-orange-100 dark:border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-sm">
+        {/* Ambiente decorativo */}
+        <div className="absolute -top-20 -right-16 w-56 h-56 rounded-full bg-orange-200/40 dark:bg-orange-500/10 blur-3xl pointer-events-none" aria-hidden="true" />
+        <div className="absolute -bottom-24 -left-16 w-48 h-48 rounded-full bg-amber-200/30 dark:bg-amber-500/5 blur-3xl pointer-events-none" aria-hidden="true" />
+
+        <div className="relative flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <div className="flex items-center gap-2 text-orange-600 mb-1">
-              <ChefHatIcon className="h-5 w-5" />
-              <span className="text-[10px] font-mono font-bold uppercase tracking-[0.15em]">Cocina · Live</span>
+            {/* Badge EN VIVO + alerta de retraso */}
+            <div className="flex items-center gap-2 flex-wrap mb-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border bg-orange-50/80 dark:bg-orange-500/10 border-orange-200 dark:border-orange-500/30">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                </span>
+                <ChefHatIcon className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
+                <span className="text-[10px] font-mono font-bold uppercase tracking-[0.15em] text-orange-700 dark:text-orange-300">
+                  Cocina en vivo
+                </span>
+              </span>
+
+              {urgentCount > 0 && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500 text-white text-[10px] font-mono font-bold uppercase tracking-wider shadow-sm shadow-red-200 animate-pulse">
+                  <AlertCircle className="h-3 w-3" />
+                  {urgentCount} con retraso
+                </span>
+              )}
             </div>
-            <h2 className="text-xl font-serif font-bold text-zinc-900 dark:text-white">
+
+            <h2 className="text-2xl font-serif font-bold text-zinc-900 dark:text-white">
               Panel de Cocina
             </h2>
-            <p className="text-[11px] text-zinc-500 mt-0.5">
-              {kitchenOrders.length} pedidos en flujo · Actualizado cada 10s
-            </p>
+
+            <div className="flex items-center gap-2.5 mt-1.5 text-[11px] text-zinc-500 dark:text-zinc-400 flex-wrap">
+              <span className="font-medium">{kitchenOrders.length} pedidos en flujo</span>
+              <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-600" aria-hidden="true" />
+              <span className="inline-flex items-center gap-1.5 font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
+                {refreshing ? 'Actualizando...' : `Actualización en ${secondsToRefresh}s`}
+              </span>
+              <span className="hidden sm:inline-flex items-center gap-1 text-zinc-400 font-mono">
+                🕐 {new Date(nowTick).toLocaleTimeString('es-PE')}
+              </span>
+            </div>
           </div>
+
           <div className="flex items-center gap-2">
             <button
               onClick={toggleSound}
-              className={`p-2 rounded-xl border transition-all cursor-pointer ${
+              className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
                 soundEnabled
-                  ? 'bg-orange-50 border-orange-200 text-orange-600 hover:bg-orange-100'
-                  : 'bg-zinc-50 border-zinc-200 text-zinc-400 hover:bg-zinc-100'
+                  ? 'bg-orange-50 border-orange-200 text-orange-600 hover:bg-orange-100 dark:bg-orange-500/10 dark:border-orange-500/30 dark:text-orange-300'
+                  : 'bg-zinc-50 border-zinc-200 text-zinc-400 hover:bg-zinc-100 dark:bg-zinc-800 dark:border-zinc-700'
               }`}
               title={soundEnabled ? 'Desactivar sonido' : 'Activar sonido'}
             >
               {soundEnabled ? <BellRing className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
             </button>
             <button
-              onClick={() => { setLoading(true); loadKitchenOrders(); }}
-              className="px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-[10px] font-mono font-bold tracking-wider text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 transition-all cursor-pointer"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-[10px] font-mono font-bold tracking-wider text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 disabled:opacity-60 transition-all cursor-pointer"
             >
-              ↻ Refrescar
+              {refreshing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              Refrescar
             </button>
           </div>
         </div>
 
-        {/* Stats summary */}
-        <div className="grid grid-cols-5 gap-2 mb-4">
+        {/* Resumen por estado — clic para filtrar */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-5">
           {KITCHEN_DISPLAY_ORDER.map(status => {
             const config = STATUS_CONFIG[status];
             const count = counts[status] || 0;
+            const Icon = config.icon;
+            const isActive = filterStatus === status;
             return (
-              <div key={status} className="text-center p-2 rounded-xl border" style={{ backgroundColor: config.bg + '80', borderColor: config.border }}>
-                <span className="block text-lg font-bold" style={{ color: config.color }}>{count}</span>
-                <span className="text-[7px] font-mono uppercase tracking-wider" style={{ color: config.textColor }}>{config.label.split(' ')[0]}</span>
-              </div>
+              <button
+                key={status}
+                onClick={() => setFilterStatus((s) => (s === status ? 'all' : status))}
+                className={`group text-center p-2.5 rounded-xl border transition-all duration-200 cursor-pointer ${
+                  isActive ? 'ring-2 ring-offset-1 ring-offset-white dark:ring-offset-zinc-900 scale-[1.03]' : 'hover:-translate-y-0.5 hover:shadow-md'
+                }`}
+                style={{
+                  backgroundColor: config.bg + '90',
+                  borderColor: isActive ? config.color : config.border,
+                }}
+                title={`Filtrar por ${config.label}`}
+                aria-pressed={isActive}
+              >
+                <Icon className="h-3.5 w-3.5 mx-auto mb-1 group-hover:scale-110 transition-transform" style={{ color: config.color }} />
+                <span className="block text-lg font-bold leading-none tabular-nums" style={{ color: config.color }}>{count}</span>
+                <span className="block text-[7px] font-mono uppercase tracking-wider mt-1" style={{ color: config.textColor }}>{config.label.split(' ')[0]}</span>
+              </button>
             );
           })}
         </div>
 
-        {/* Status filter chips */}
-        <div className="flex flex-wrap gap-2">
+        {/* Filtros por estado */}
+        <div className="flex flex-wrap gap-2 mt-4">
           <button
             onClick={() => setFilterStatus('all')}
             className={`px-3 py-1.5 rounded-full text-[10px] font-bold font-mono transition-all border cursor-pointer ${
@@ -588,7 +665,10 @@ export default function AdminKitchen({ showToast }: AdminKitchenProps) {
 
       {/* ─── Stats Bar ─── */}
       <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl p-3 text-[10px] font-mono text-zinc-400 flex items-center justify-between flex-wrap gap-2">
-        <span>🕐 {new Date().toLocaleTimeString('es-PE')}</span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
+          {new Date(nowTick).toLocaleTimeString('es-PE')} · en vivo
+        </span>
         <span className="text-zinc-500">⏱️ Tiempos desde que entró al estado actual</span>
         <span className="text-orange-500 font-semibold">
           {Object.values(counts).reduce((a, b) => a + b, 0)} pedidos activos
