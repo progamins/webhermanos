@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Plus, Edit3, Trash2, ToggleLeft, ToggleRight, X, Package } from 'lucide-react';
+import { Plus, Edit3, Trash2, ToggleLeft, ToggleRight, X, Package, Upload } from 'lucide-react';
 import { Product } from '../../../../shared/types';
 import { dbService } from '../../../../shared/services/dbService';
 import ImageUploader from './ImageUploader';
+import MultiImageUploader from './MultiImageUploader';
 import Barcode from '../../../../shared/components/Barcode';
 import { optimizeImageUrl } from '../../../../shared/utils/images';
 
@@ -196,48 +197,85 @@ export default function AdminProducts({ products, onRefreshData, showToast }: Ad
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-mono uppercase text-zinc-400 mb-1">Imágenes del Pastel ({prodImages.filter(u => u.trim()).length})</label>
-            <div className="space-y-2">
-              {prodImages.map((url, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <div className="flex-1">
-                    <ImageUploader
-                      value={url}
-                      onChange={(val) => {
-                        const next = [...prodImages];
-                        next[idx] = val;
-                        setProdImages(next);
-                      }}
-                      placeholder={`URL de imagen ${idx + 1}...`}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (prodImages.length <= 1) return;
-                      setProdImages(prodImages.filter((_, i) => i !== idx));
-                    }}
-                    disabled={prodImages.length <= 1}
-                    className="p-2 border border-red-200/50 rounded-xl text-red-400 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shrink-0"
-                    title="Eliminar imagen"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => setProdImages([...prodImages, ''])}
-                className="w-full py-2 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono text-zinc-400 hover:border-brand-300 hover:text-brand-500 transition-all cursor-pointer"
-              >
-                + Agregar otra imagen
-              </button>
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-[10px] font-mono uppercase text-zinc-400">
+                Imágenes del Pastel ({prodImages.filter(u => u.trim()).length})
+              </label>
+              <span className="text-[9px] font-mono text-zinc-400">
+                La primera es la portada
+              </span>
             </div>
-            {prodImages.filter(u => u.trim()).length > 1 && (
-              <p className="text-[9px] text-zinc-400 mt-1 font-mono">
-                La primera imagen se usará como portada en el catálogo.
-              </p>
+
+            {/* Grid de imágenes actuales */}
+            {prodImages.some(u => u.trim()) && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+                {prodImages.filter(u => u.trim()).map((url, idx) => (
+                  <div key={`img-${idx}`} className="group relative aspect-[4/3] rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950 shadow-sm">
+                    <img
+                      src={url}
+                      alt={`Imagen ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+
+                    {/* Badge de portada */}
+                    {idx === 0 && (
+                      <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-brand-500/90 backdrop-blur-sm rounded-md shadow-sm">
+                        <span className="text-[7px] font-mono font-bold text-white uppercase tracking-wider">★ Portada</span>
+                      </div>
+                    )}
+
+                    {/* Hover overlay con acciones */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200 flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProdImages(prev => prev.filter(u => u !== url));
+                        }}
+                        className="p-1.5 bg-white/95 hover:bg-red-50 rounded-lg transition-all cursor-pointer shadow-sm"
+                        title="Eliminar imagen"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                      </button>
+                      {idx > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const current = prodImages.filter(u => u.trim());
+                            [current[0], current[idx]] = [current[idx], current[0]];
+                            setProdImages(current);
+                          }}
+                          className="p-1.5 bg-white/95 hover:bg-brand-50 rounded-lg transition-all cursor-pointer shadow-sm"
+                          title="Poner como portada"
+                        >
+                          <Upload className="h-3.5 w-3.5 text-brand-500 -rotate-90" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
+
+            {/* Zona de subida múltiple */}
+            <MultiImageUploader
+              onUpload={(urls) => {
+                setProdImages(prev => {
+                  const existing = prev.filter(u => u.trim());
+                  return [...existing, ...urls];
+                });
+              }}
+            />
+
+            {/* Botón para agregar desde URL */}
+            <button
+              type="button"
+              onClick={() => setProdImages(prev => [...prev.filter(u => u.trim()), ''])}
+              className="w-full mt-2 py-2.5 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl text-[10px] font-mono text-zinc-400 hover:border-brand-300 hover:text-brand-500 transition-all cursor-pointer flex items-center justify-center space-x-1.5"
+            >
+              <Upload className="h-3.5 w-3.5" />
+              <span>+ Agregar desde URL o Galería</span>
+            </button>
           </div>
           <div className="flex justify-end space-x-2 pt-4">
             <button type="button" onClick={() => { setEditingProduct(null); setIsCreatingProduct(false); clearProductForm(); }}
