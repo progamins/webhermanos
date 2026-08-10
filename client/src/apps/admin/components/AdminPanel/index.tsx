@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Toaster } from '../../../../shared/components/ui';
 import {
   LayoutDashboard, Cake, ShoppingBag, MessageSquare, Settings, RefreshCw,
-  Image, Layers, CreditCard, LogOut, Trash2, HardDrive, Search, X, ChefHat
+  Image, Layers, CreditCard, LogOut, Trash2, Search, X, ChefHat
 } from 'lucide-react';
 import type { Product, Order, Review, GalleryItem, AppConfig, AdminRole } from '../../../../shared/types';
 import { dbService } from '../../../../shared/services/dbService';
@@ -13,7 +13,6 @@ import AdminProducts from './AdminProducts';
 import AdminOrders from './AdminOrders';
 import AdminPayments from './AdminPayments';
 import AdminReviews from './AdminReviews';
-import AdminGallery from './AdminGallery';
 import AdminSettings from './AdminSettings';
 import AdminStock from './AdminStock';
 import AdminKitchen from './AdminKitchen';

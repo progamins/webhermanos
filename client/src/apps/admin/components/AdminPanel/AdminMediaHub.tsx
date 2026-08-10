@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 import type { Product, GalleryItem, AppConfig } from '../../../../shared/types';
 import { dbService } from '../../../../shared/services/dbService';
-import { showToast } from '../../../../shared/utils/toast';
 import ImageUploader from './ImageUploader';
 import MultiImageUploader from './MultiImageUploader';
 import AdminGallery from './AdminGallery';
@@ -30,7 +29,7 @@ const MEDIA_TABS: { id: MediaTab; label: string; icon: React.ElementType; desc: 
   { id: 'storage', label: 'Almacenamiento', icon: HardDrive, desc: 'Archivos y herramientas' },
 ];
 
-export default function AdminMediaHub({ products, galleryItems, config, onRefreshData, showToast: _toast }: AdminMediaHubProps) {
+export default function AdminMediaHub({ products, galleryItems, config, onRefreshData, showToast }: AdminMediaHubProps) {
   const [activeTab, setActiveTab] = useState<MediaTab>('identity');
 
   // ── Identidad (logo + favicon) ──
@@ -50,9 +49,9 @@ export default function AdminMediaHub({ products, galleryItems, config, onRefres
       const newConfig: AppConfig = { ...config, logoUrl, faviconUrl };
       await dbService.saveConfig(newConfig);
       onRefreshData();
-      _toast('Logo e ícono actualizados correctamente.', 'success', '🎨 Identidad');
+      showToast('Logo e ícono actualizados correctamente.', 'success', '🎨 Identidad');
     } catch {
-      _toast('Ocurrió un error al guardar la identidad.', 'error', 'Error');
+      showToast('Ocurrió un error al guardar la identidad.', 'error', 'Error');
     } finally {
       setSavingIdentity(false);
     }
@@ -172,14 +171,14 @@ export default function AdminMediaHub({ products, galleryItems, config, onRefres
         {/* ── TAB: PORTADAS Y GALERÍA ── */}
         {activeTab === 'covers' && (
           <motion.div key="covers" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <AdminGallery galleryItems={galleryItems} config={config} onRefreshData={onRefreshData} showToast={_toast} />
+            <AdminGallery galleryItems={galleryItems} config={config} onRefreshData={onRefreshData} showToast={showToast} />
           </motion.div>
         )}
 
         {/* ── TAB: IMÁGENES DE MODELOS ── */}
         {activeTab === 'products' && (
           <motion.div key="products" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
-            <ProductImageManager products={products} onRefreshData={onRefreshData} showToast={_toast} />
+            <ProductImageManager products={products} onRefreshData={onRefreshData} showToast={showToast} />
           </motion.div>
         )}
 
@@ -220,8 +219,10 @@ function ProductImageManager({ products, onRefreshData, showToast }: {
     if (!editing) return;
     setSaving(true);
     const cleaned = images.filter(u => u.trim());
+    // Protección: si quedó vacío, conservar las imágenes originales
+    const finalImages = cleaned.length > 0 ? cleaned : (editing.images || []);
     try {
-      await dbService.saveProduct({ ...editing, images: cleaned });
+      await dbService.saveProduct({ ...editing, images: finalImages });
       onRefreshData();
       showToast(`Imágenes de "${editing.name}" actualizadas.`, 'success', '📸 Modelo');
       cancelEdit();
@@ -230,6 +231,11 @@ function ProductImageManager({ products, onRefreshData, showToast }: {
     } finally {
       setSaving(false);
     }
+  };
+
+  const isValidImage = (u: string) => {
+    const t = u.trim();
+    return t.startsWith('http') || t.startsWith('/') || t.startsWith('data:') || t.startsWith('blob:');
   };
 
   if (editing) {
@@ -255,9 +261,9 @@ function ProductImageManager({ products, onRefreshData, showToast }: {
             <span className="text-[9px] font-mono text-zinc-400">La primera es la portada</span>
           </div>
 
-          {images.some(u => u.trim()) && (
+          {images.some(isValidImage) && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {images.filter(u => u.trim()).map((url, idx) => (
+              {images.filter(isValidImage).map((url, idx) => (
                 <div key={`img-${idx}`} className="group relative aspect-[4/3] rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950 shadow-sm">
                   <img src={url} alt={`Imagen ${idx + 1}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   {idx === 0 && (
@@ -272,7 +278,7 @@ function ProductImageManager({ products, onRefreshData, showToast }: {
                     </button>
                     {idx > 0 && (
                       <button type="button" onClick={() => {
-                        const cur = images.filter(u => u.trim());
+                        const cur = images.filter(isValidImage);
                         [cur[0], cur[idx]] = [cur[idx], cur[0]];
                         setImages(cur);
                       }}
@@ -298,20 +304,20 @@ function ProductImageManager({ products, onRefreshData, showToast }: {
             <span>+ Agregar desde URL o Galería</span>
           </button>
 
-          {images.some(u => u.trim()) && (
+          {images.some(u => !isValidImage(u)) && (
             <div className="space-y-2">
               {images.map((url, idx) => (
-                url.trim() ? null : (
+                !isValidImage(url) ? (
                   <div key={`empty-${idx}`} className="flex items-center gap-2">
                     <div className="flex-1">
-                      <ImageUploader value="" onChange={(val) => {
+                      <ImageUploader value={images[idx]} onChange={(val) => {
                         const next = [...images];
                         next[idx] = val;
                         setImages(next);
-                      }} placeholder={`URL de imagen nueva...`} />
+                      }} placeholder="URL de imagen nueva..." />
                     </div>
                   </div>
-                )
+                ) : null
               ))}
             </div>
           )}
