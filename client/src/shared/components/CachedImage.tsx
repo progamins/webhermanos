@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { imageCache } from '../utils/imageCache';
 import { imageMemoryCache } from '../utils/imageMemoryCache';
-import { optimizeImageUrl, getLocalImageUrl } from '../utils/images';
+import { optimizeImageUrl, getLocalImageUrl, extractProxyTarget } from '../utils/images';
 import { ImageOff } from 'lucide-react';
 
 interface CachedImageProps extends Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'src' | 'onLoad' | 'onError'> {
@@ -46,35 +46,43 @@ function CachedImage({
   const [isMobileWidth] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   const effectiveWidth = priority && isMobileWidth ? Math.min(width, 320) : width;
 
+  // ═══ Estados de imagen (declarados antes de cualquier useMemo que los consuma) ═══
+  const [cachedSrc, setCachedSrc] = useState<string>('');
+  const [error, setError] = useState(false);
+  const [loadOrigin, setLoadOrigin] = useState<'memory' | 'network' | ''>('');
+  const mountedRef = useRef(true);
+  // Fallback: si el proxy falla, se reintenta con la URL directa (máx 1 vez)
+  const [triedDirectFallback, setTriedDirectFallback] = useState(false);
+  // URL de fallback directa (para que srcSet también se actualice)
+  const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
+
   // Convertir URL externa → local (proxy) → optimizada con el ancho efectivo
   const localUrl = getLocalImageUrl(src);
-  const directUrl = optimizeImageUrl(localUrl, effectiveWidth);
+
+  // URL efectiva para srcSet: si hay fallback directo, usar esa en lugar de la proxy
+  const srcSetUrl = fallbackUrl || localUrl;
 
   // srcSet responsive — 3 resoluciones: effectiveWidth, 2x, y 320px (mobile mínimo)
   const srcSet = useMemo(() => {
     if (!sizes || !src) return undefined;
     const resolutions = [
-      optimizeImageUrl(localUrl, Math.min(effectiveWidth, 320)),
-      optimizeImageUrl(localUrl, effectiveWidth),
-      optimizeImageUrl(localUrl, effectiveWidth * 2),
+      optimizeImageUrl(srcSetUrl, Math.min(effectiveWidth, 320)),
+      optimizeImageUrl(srcSetUrl, effectiveWidth),
+      optimizeImageUrl(srcSetUrl, effectiveWidth * 2),
     ];
     const widths: (string | null)[] = ['320w', effectiveWidth > 320 ? `${effectiveWidth}w` : null, `${effectiveWidth * 2}w`];
     return resolutions
       .map((url, i) => widths[i] ? `${url} ${widths[i]}` : null)
       .filter(Boolean)
       .join(', ');
-  }, [localUrl, effectiveWidth, sizes, src]);
-
-  // Estado de la imagen
-  const [cachedSrc, setCachedSrc] = useState<string>(directUrl);
-  const [error, setError] = useState(false);
-  const [loadOrigin, setLoadOrigin] = useState<'memory' | 'network' | ''>('');
-  const mountedRef = useRef(true);
+  }, [srcSetUrl, effectiveWidth, sizes, src]);
 
   // Verificar en background si está en MemoryCache o IndexedDB
   useEffect(() => {
     mountedRef.current = true;
     setError(false);
+    setTriedDirectFallback(false);
+    setFallbackUrl(null);
 
     const localSrc = getLocalImageUrl(src);
     const optimized = optimizeImageUrl(localSrc, effectiveWidth);
@@ -106,9 +114,23 @@ function CachedImage({
   // Callbacks estables con useCallback
   const handleImgError = useCallback(() => {
     if (!mountedRef.current) return;
+
+    // 🔁 Fallback inteligente: si la URL actual es el proxy y aún no se intentó,
+    // reintenta con la URL externa DIRECTA (el proxy puede fallar por red local,
+    // timeout del serverless o dominios no permitidos; el navegador a veces sí carga la directa).
+    if (!triedDirectFallback) {
+      const direct = extractProxyTarget(cachedSrc);
+      if (direct) {
+        setTriedDirectFallback(true);
+        setFallbackUrl(direct);
+        setCachedSrc(direct);
+        return; // no marcar error aún — esperar al reintento
+      }
+    }
+
     setError(true);
     onError?.();
-  }, [onError]);
+  }, [cachedSrc, triedDirectFallback, onError]);
 
   const handleImgLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     if (!mountedRef.current) return;

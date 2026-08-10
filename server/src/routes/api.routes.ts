@@ -448,26 +448,53 @@ router.get('/image-proxy', async (req, res) => {
   const url = req.query.url as string;
   if (!url) return res.status(400).json({ error: 'URL requerida.' });
 
+  // ✅ Rutas relativas (ej: /logo.png): el navegador las carga directo del
+  // mismo origen. El server NO puede hacer fetch de una ruta relativa
+  // (en Node fetch exige URL absoluta) → redirigir en vez de fallar.
+  if (url.startsWith('/')) {
+    return res.redirect(302, url);
+  }
+
   try {
     if (!isAllowedImageUrl(url)) {
       return res.status(403).json({ error: 'Dominio no permitido.' });
     }
 
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'MaisonRosas/1.0',
-        'Accept': 'image/*',
-      },
-    });
-    if (!response.ok) throw new Error('Fetch failed');
+    // AbortController con timeout: evita que un origen lento cuelgue
+    // la función serverless (máx 30s en Vercel) y consuma cuota.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        headers: {
+          'User-Agent': 'MaisonRosas/1.0',
+          'Accept': 'image/*',
+        },
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
 
     const buffer = Buffer.from(await response.arrayBuffer());
     const contentType = response.headers.get('content-type') || 'image/jpeg';
     res.setHeader('Content-Type', contentType);
-    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('Cache-Control', 'public, max-age=86400, immutable');
     res.send(buffer);
-  } catch {
-    res.status(400).json({ error: 'Error al obtener la imagen.' });
+  } catch (err: any) {
+    // ❗ Estado 502 (no 200): así el navegador dispara onError en el <img> y
+    // el cliente puede reintentar con la URL directa (fallback de CachedImage).
+    // Si devolviéramos 200 + SVG, onError nunca se ejecutaría y el fallback
+    // quedaría inerte. El body SVG sirve de contenido útil si alguien lo consume.
+    logger.warn('Image proxy error', { service: 'API', url, error: err?.message || String(err) });
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.status(502);
+    res.send(MISSING_IMAGE_SVG);
   }
 });
 

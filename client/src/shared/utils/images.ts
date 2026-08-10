@@ -14,14 +14,33 @@ export function getLocalImageUrl(url: string): string {
   if (url.startsWith('/api/uploads/') || url.startsWith('data:')) return url;
   // Redirigir URLs antiguas /uploads/ → /api/uploads/ (ruta que tiene handler en Vercel)
   if (url.startsWith('/uploads/')) return url.replace('/uploads/', '/api/uploads/');
+  // ✅ Ruta relativa del MISMO origen (ej: /logo.png, /favicon.svg, /img/...)
+  //    Se sirve directa — NO debe pasar por el proxy (el server no puede
+  //    hacer fetch de una ruta relativa → error 400).
+  if (url.startsWith('/')) return url;
   // Bare filename (sin prefijo ni ruta) → asumir que es /api/uploads/
-  if (!url.startsWith('/') && !url.startsWith('http://') && !url.startsWith('https://')) {
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
     return `/api/uploads/${url}`;
   }
   // Ya está en el mismo origen → no tocar
   if (typeof window !== 'undefined' && url.startsWith(window.location.origin)) return url;
   // URL externa → proxy local
   return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+}
+
+/**
+ * Extrae la URL original de una URL de proxy (/api/image-proxy?url=...).
+ * Útil para fallbacks: si el proxy falla, se puede intentar la URL directa.
+ */
+export function extractProxyTarget(url: string): string | null {
+  if (!url || !url.includes('/api/image-proxy')) return null;
+  try {
+    const parsed = new URL(url, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+    const target = parsed.searchParams.get('url');
+    return target && (target.startsWith('http://') || target.startsWith('https://')) ? target : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -63,6 +82,15 @@ export function optimizeImageUrl(url: string, width: number = 600): string {
   if (!url.startsWith('/') && !url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('data:')) {
     url = `/api/uploads/${url}`;
   }
+
+  // ✅ Rutas locales del mismo origen (incluyendo /api/uploads/ y /api/image-proxy):
+  //    ya son archivos optimizados (webp), no se tocan. IMPORTANTE: esto evita que
+  //    una URL de proxy (/api/image-proxy?url=...) que CONTENGA 'images.unsplash.com'
+  //    en el parámetro url= sea malinterpretada por el bloque de Unsplash de abajo
+  //    (encodeURIComponent NO codifica letras/puntos, así que la URL literalmente
+  //    contiene el dominio). Sin este guard, split('?')[0] devolvería '/api/image-proxy'
+  //    y se perdería el parámetro url=, causando un 400.
+  if (url.startsWith('/')) return url;
 
   const optimalWidth = getOptimalWidth(width);
   const quality = isMobileWidth() ? 60 : 80; // Lower quality on mobile = smaller files
