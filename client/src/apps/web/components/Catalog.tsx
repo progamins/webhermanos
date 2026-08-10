@@ -63,20 +63,28 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
     return () => clearTimeout(t);
   }, []);
 
+  /** Normaliza texto: minúsculas y sin acentos, para búsquedas tolerantes
+   *  (ej: "cumpleanos" encuentra "Cumpleaños", "bodas" encuentra "Bodas"). */
+  const normalize = useCallback((s: string) =>
+    (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(),
+  []);
+
   const filteredProducts = useMemo(
     () =>
       products.filter((product) => {
+        const q = normalize(searchTerm);
         const matchesSearch =
           !searchTerm ||
-          product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.tags?.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+          normalize(product.name).includes(q) ||
+          normalize(product.description).includes(q) ||
+          normalize(product.category).includes(q) ||
+          product.tags?.some((tag) => normalize(tag).includes(q));
         const matchesCategory =
           selectedCategory === 'Todos' ||
-          product.category?.trim().toLowerCase() === selectedCategory.trim().toLowerCase();
+          normalize(product.category) === normalize(selectedCategory);
         return matchesSearch && matchesCategory && product.active !== false;
       }),
-    [products, searchTerm, selectedCategory]
+    [products, searchTerm, selectedCategory, normalize]
   );
 
   const handleClearFilters = useCallback(() => {
@@ -152,8 +160,7 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
         ) : (
           <motion.div
             initial={reducedMotion ? false : 'hidden'}
-            whileInView={reducedMotion ? undefined : 'show'}
-            viewport={{ once: true, margin: '-80px' }}
+            animate={reducedMotion ? false : 'show'}
             variants={reducedMotion ? undefined : {
               hidden: { opacity: 0 },
               show: {
@@ -170,6 +177,9 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
             role="list"
             aria-label="Lista de productos"
           >
+            {/* Nota: se usa animate (no whileInView) para que la cuadrícula NUNCA
+                pueda quedar oculta esperando un evento de scroll. Los hijos con
+                variants animan solos al montar (stagger al filtrar). */}
             {filteredProducts.map((product) => (
               <motion.div
                 key={product.id}

@@ -95,10 +95,12 @@ function CachedImage({
       return;
     }
 
-    // 2. MemoryCache (base64) → swap instantáneo
+    // 2. MemoryCache (base64) → swap instantáneo. Solo si es una data URL
+    //    de imagen VÁLIDA: una entrada corrupta en IndexedDB no debe dejar
+    //    la tarjeta sin foto (se carga desde la red en su lugar).
     if (imageCache.has(optimized)) {
       imageCache.get(optimized).then((b64) => {
-        if (mountedRef.current && b64 && b64 !== optimized) {
+        if (mountedRef.current && b64 && b64.startsWith('data:image/') && b64 !== optimized) {
           setCachedSrc(b64);
           setLoadOrigin('memory');
         }
