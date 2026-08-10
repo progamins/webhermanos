@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { motion } from 'motion/react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { WifiOff, RefreshCw, Wifi, Cake, CheckCircle2, Database } from 'lucide-react';
@@ -9,16 +9,23 @@ import { criticalImageCache } from '../../../shared/utils/imageCache';
 /** Intervalo del auto-reintento silencioso (ms) — reconexión automática */
 const AUTO_RETRY_MS = 10_000;
 
+interface OfflineScreenProps {
+  /** Si se provee, muestra el botón para seguir navegando con contenido guardado */
+  onContinue?: () => void;
+}
+
 /**
  * Pantalla personalizada de "Sin conexión" — no es un mensaje genérico.
  * Muestra la identidad de la marca (lottie de pastel, serif, paleta), un badge
  * de señal, el estado de verificación y un botón de reintento. Cuando la red
  * vuelve, dispara el evento 'maison:network' y la app se restaura sola.
  */
-export default function OfflineScreen() {
+export default function OfflineScreen({ onContinue }: OfflineScreenProps) {
   const [retrying, setRetrying] = useState(false);
   const [checked, setChecked] = useState(false); // ya se intentó y sigue sin red
-  const [since, setSince] = useState(() => Date.now());
+  const [since] = useState(() => Date.now());
+  const [now, setNow] = useState(() => Date.now());
+  const busyRef = useRef(false);
   const reducedMotion = useReducedMotion();
 
   // Imágenes que ya visitó el usuario y siguen disponibles en caché
@@ -27,15 +34,21 @@ export default function OfflineScreen() {
     []
   );
 
-  /** Verifica la red: si el health responde OK, avisa a la app para restaurarse. */
+  /**
+   * Verifica la red: si el health responde OK, avisa a la app para restaurarse.
+   * El query param único (cache-busting) evita que el Service Worker devuelva
+   * un health 200 viejo desde su caché cuando en realidad no hay red (lo que
+   * causaría un bucle pantalla ↔ app).
+   */
   const checkConnection = useCallback(async () => {
-    if (retrying) return;
+    if (busyRef.current) return;
+    busyRef.current = true;
     setRetrying(true);
     setChecked(false);
     try {
       const ctrl = new AbortController();
       const timeout = setTimeout(() => ctrl.abort(), 8000);
-      const res = await fetch('/api/health', { cache: 'no-store', signal: ctrl.signal });
+      const res = await fetch(`/api/health?offline=${Date.now()}`, { cache: 'no-store', signal: ctrl.signal });
       clearTimeout(timeout);
       if (res.ok) {
         window.dispatchEvent(new CustomEvent('maison:network', { detail: { online: true } }));
@@ -45,15 +58,22 @@ export default function OfflineScreen() {
     } catch {
       setChecked(true); // timeout / sin red
     } finally {
+      busyRef.current = false;
       setRetrying(false);
     }
-  }, [retrying]);
+  }, []);
 
   // Auto-reconexión: mientras esté visible, reintentar cada N segundos.
   useEffect(() => {
     const timer = setInterval(() => checkConnection(), AUTO_RETRY_MS);
     return () => clearInterval(timer);
   }, [checkConnection]);
+
+  // Contador de segundos en vivo
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const containerVariants = reducedMotion
     ? { hidden: { opacity: 1 }, show: { opacity: 1 } }
@@ -184,30 +204,42 @@ export default function OfflineScreen() {
 
           {/* Estado silencioso de auto-reconexión */}
           <p className="text-[10px] font-mono flex items-center justify-center gap-1.5" style={{ color: 'var(--theme-text-muted)' }}>
-            {checked ? (
-              <span className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                Aún no hay señal — seguiremos intentando
+            <span className="flex items-center gap-1.5">
+              <Cake className="h-3.5 w-3.5" aria-hidden="true" />
+              Te reconectaremos automáticamente cuando vuelva la señal
+              <span className="inline-flex gap-0.5">
+                {[0, 1, 2].map((i) => (
+                  <span
+                    key={i}
+                    className="w-1 h-1 rounded-full bg-current animate-bounce"
+                    style={{ animationDelay: `${i * 150}ms`, animationDuration: '1.2s' }}
+                  />
+                ))}
               </span>
-            ) : (
-              <span className="flex items-center gap-1.5">
-                <Cake className="h-3.5 w-3.5" aria-hidden="true" />
-                Te reconectaremos automáticamente cuando vuelva la señal
-                <span className="inline-flex gap-0.5">
-                  {[0, 1, 2].map((i) => (
-                    <span
-                      key={i}
-                      className="w-1 h-1 rounded-full bg-current animate-bounce"
-                      style={{ animationDelay: `${i * 150}ms`, animationDuration: '1.2s' }}
-                    />
-                  ))}
-                </span>
-              </span>
-            )}
+            </span>
             <span className="hidden sm:inline text-[9px] opacity-60 ml-1 tabular-nums">
-              · {Math.max(0, Math.round((Date.now() - since) / 1000))}s
+              · {Math.max(0, Math.round((now - since) / 1000))}s
             </span>
           </p>
+
+          {checked && (
+            <p className="text-[10px] font-mono flex items-center justify-center gap-1.5 text-amber-600 dark:text-amber-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              Aún no hay señal — seguiremos intentando
+            </p>
+          )}
+
+          {onContinue && (
+            <button
+              type="button"
+              onClick={onContinue}
+              className="inline-flex items-center gap-2 px-5 py-2.5 border rounded-full text-[10px] font-mono font-bold uppercase tracking-wider transition-all duration-300 hover:scale-[1.02] cursor-pointer"
+              style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-text-secondary)' }}
+            >
+              <Database className="h-3.5 w-3.5" aria-hidden="true" />
+              Continuar con contenido guardado
+            </button>
+          )}
         </motion.div>
 
         {/* ─── Firma ─── */}

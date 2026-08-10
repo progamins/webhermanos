@@ -75,7 +75,7 @@ export function useOnline(): boolean {
     const goOnline = () => setOnline(true);
     const goOffline = () => setOnline(false);
     const onNetworkEvent = (e: Event) => {
-      const detail = (e as CustomEvent<{ online?: boolean }> | null)?.detail;
+      const detail = (e as CustomEvent<{ online?: boolean }>).detail;
       if (detail && typeof detail.online === 'boolean') setOnline(detail.online);
     };
 

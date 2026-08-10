@@ -88,6 +88,8 @@ export default function App() {
   // Estado de conexión — muestra la pantalla offline personalizada
   const online = useOnline();
   const wasOfflineRef = useRef(false);
+  // El usuario puede elegir seguir navegando con el contenido guardado en caché
+  const [bypassOffline, setBypassOffline] = useState(false);
 
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -530,14 +532,16 @@ export default function App() {
         loadPublicData();
       }
       wasOfflineRef.current = false;
+      setBypassOffline(false);
     } else {
       wasOfflineRef.current = true;
     }
   }, [online, loadPublicData]);
 
-  // Sin conexión → pantalla offline personalizada (se restaura sola al reconectar)
-  if (!online) {
-    return <OfflineScreen />;
+  // Sin conexión → pantalla offline personalizada (se restaura sola al reconectar).
+  // El usuario puede saltarla y seguir con el contenido guardado en caché.
+  if (!online && !bypassOffline) {
+    return <OfflineScreen onContinue={() => setBypassOffline(true)} />;
   }
 
   // Pantalla de Mantenimiento
@@ -682,6 +686,23 @@ export default function App() {
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-brand-500 focus:text-white focus:rounded-full focus:text-xs focus:font-bold focus:uppercase focus:tracking-wider">
         Saltar al contenido principal
       </a>
+
+      {/* Banner discreto al seguir navegando sin conexión */}
+      {!online && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-2.5 rounded-full shadow-lg backdrop-blur-md border text-[10px] font-mono font-semibold" style={{ backgroundColor: 'var(--theme-surface-glass)', borderColor: 'var(--theme-border)', color: 'var(--theme-text-secondary)' }}>
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            Sin conexión — mostrando contenido guardado
+          </span>
+          <button
+            type="button"
+            onClick={() => setBypassOffline(false)}
+            className="px-3 py-1 bg-brand-500 hover:bg-brand-600 text-white rounded-full text-[9px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
 
       <AnimatePresence>
         {showEntrance && currentView === 'inicio' && (

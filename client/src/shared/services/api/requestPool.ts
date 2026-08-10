@@ -170,8 +170,10 @@ class RequestPool {
         setTimeout(() => this.queue.unshift(task), delay);
         return; // no resolver aún
       }
-      // Se agotaron los reintentos: probablemente no hay conexión.
-      notifyNetwork(false);
+      // Se agotaron los reintentos. Solo reportamos OFFLINE si es un error real
+      // de red (no un 5xx del servidor — el usuario sí tiene internet y un error
+      // HTTP no debería disparar la pantalla offline).
+      if (this.isNetworkError(err)) notifyNetwork(false);
       task.reject(err);
     }
   }
@@ -184,6 +186,14 @@ class RequestPool {
       // 429 / 5xx
       const m = err.message.match(/^(\d{3})/);
       if (m) return RETRYABLE_STATUS.has(Number(m[1]));
+    }
+    return false;
+  }
+
+  /** True solo si es una pérdida real de red (no un error HTTP del servidor). */
+  private isNetworkError(err: unknown): boolean {
+    if (err instanceof Error) {
+      return /fetch failed|network|load failed|ECONN|failed to fetch/i.test(err.message);
     }
     return false;
   }
