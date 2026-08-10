@@ -478,15 +478,27 @@ async function main() {
   console.log(`  ${logsCreated} activity logs agregados.\n`);
 
   // ── 7. Contraseñas de roles ──────────────────────────────────
-  console.log('🔐 Paso 7/7 — Recalculando hashes de contraseñas de roles...');
+  console.log('🔐 Paso 7/7 — Sincronizando contraseñas de roles...');
+  // ⚠️ El rol admin puede tener una contraseña personalizada cambiada desde
+  // el panel (solo la conoce el dueño). Por eso SOLO se crea si no existe;
+  // NUNCA se sobrescribe. Analyst y stock_manager usan las documentadas.
   for (const [role, password] of Object.entries(PASSWORDS)) {
-    const salt = bcrypt.genSaltSync(10);
-    const hash = bcrypt.hashSync(password, salt);
-    await conn.query(
-      'INSERT INTO admin_auth (role, password_hash) VALUES (?, ?) ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash)',
-      [role, hash]
-    );
-    console.log(`  ✓ ${role}: contraseña sincronizada (documentada en .vercel.env.example)`);
+    const [existing] = await conn.query('SELECT id FROM admin_auth WHERE role = ?', [role]);
+    if (existing.length > 0) {
+      if (role === 'admin') {
+        console.log(`  🔒 ${role}: contraseña personalizada conservada (no se toca)`);
+      } else {
+        const salt = bcrypt.genSaltSync(10);
+        const hash = bcrypt.hashSync(password, salt);
+        await conn.query('UPDATE admin_auth SET password_hash = ? WHERE role = ?', [hash, role]);
+        console.log(`  ✓ ${role}: contraseña sincronizada (documentada)`);
+      }
+    } else {
+      const salt = bcrypt.genSaltSync(10);
+      const hash = bcrypt.hashSync(password, salt);
+      await conn.query('INSERT INTO admin_auth (role, password_hash) VALUES (?, ?)', [role, hash]);
+      console.log(`  ✓ ${role}: rol creado con contraseña documentada`);
+    }
   }
   console.log('');
 
