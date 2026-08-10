@@ -43,10 +43,13 @@ const DB_PASSWORD = process.env.DB_PASSWORD || 'XFJyuoGaKwBWgxXFjBeTBJYWRXUMQuSO
 const DB_NAME = process.env.DB_NAME || 'railway';
 
 // Contraseñas documentadas para Vercel (.vercel.env.example)
+// 🔒 IMPORTANTE: se fijan AQUÍ de forma determinista y NO se leen de
+// process.env para evitar que variables de entorno del shell (p.ej. las
+// de .env local) pisen las credenciales de producción.
 const PASSWORDS = {
-  admin: process.env.ADMIN_DEFAULT_PASSWORD || 'A4B234-551!',
-  analyst: process.env.ANALYST_DEFAULT_PASSWORD || '9C15D5-848!',
-  stock_manager: process.env.STOCK_MANAGER_DEFAULT_PASSWORD || '4DCA3A-619!',
+  admin: 'A4B234-551!',
+  analyst: '9C15D5-848!',
+  stock_manager: '4DCA3A-619!',
 };
 
 const UPLOADS_DIR = path.resolve(__dirname, '../server/uploads');
