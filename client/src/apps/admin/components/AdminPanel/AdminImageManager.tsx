@@ -123,6 +123,9 @@ export default function AdminImageManager() {
   // Backfill hashes state
   const [backfillHashesLoading, setBackfillHashesLoading] = useState(false);
 
+  // Advanced tools panel collapsed
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   const token = localStorage.getItem('maison_admin_token') || '';
 
   const fetchFiles = useCallback(async () => {
@@ -517,59 +520,6 @@ export default function AdminImageManager() {
           </div>
 
           <div className="flex items-center space-x-2">
-            {/* Diagnostics button */}
-            <button onClick={fetchDiagnostics}
-              className="px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-500 hover:text-brand-500 transition-all cursor-pointer flex items-center space-x-1.5 text-[10px] font-mono font-bold uppercase tracking-wider"
-              title="Diagnosticar archivos huérfanos">
-              <Database className="h-3.5 w-3.5" />
-              <span>Diagnóstico</span>
-            </button>
-            {/* Backfill button */}
-            <button onClick={handleBackfill} disabled={backfilling}
-              className="px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-500 hover:text-brand-500 transition-all cursor-pointer flex items-center space-x-1.5 disabled:opacity-50 text-[10px] font-mono font-bold uppercase tracking-wider"
-              title="Registrar archivos existentes en la BD">
-              {backfilling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UploadCloud className="h-3.5 w-3.5" />}
-              <span>Backfill</span>
-            </button>
-            {/* Backfill Hashes button */}
-            <button onClick={async () => {
-              setBackfillHashesLoading(true);
-              try {
-                const res = await fetch('/api/admin/storage/backfill-hashes', {
-                  method: 'POST',
-                  headers: { 'x-admin-token': token }
-                });
-                const json = await res.json();
-                if (json.success) {
-                  showToast(`${json.processed} hash(es) computados de archivos existentes.`, 'success', '🔐 Hashes');
-                } else {
-                  showToast(json.error || 'Error al computar hashes.', 'error', 'Hashes');
-                }
-              } catch {
-                showToast('Error de conexión.', 'error', 'Hashes');
-              } finally {
-                setBackfillHashesLoading(false);
-              }
-            }} disabled={backfillHashesLoading}
-              className="px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-500 hover:text-brand-500 transition-all cursor-pointer flex items-center space-x-1.5 disabled:opacity-50 text-[10px] font-mono font-bold uppercase tracking-wider"
-              title="Computar hashes SHA256 de archivos existentes para detectar duplicados">
-              {backfillHashesLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Database className="h-3.5 w-3.5" />}
-              <span>Hashes</span>
-            </button>
-            {/* Find Duplicates button */}
-            <button onClick={fetchDuplicates} disabled={duplicatesLoading}
-              className="px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-500 hover:text-brand-500 transition-all cursor-pointer flex items-center space-x-1.5 disabled:opacity-50 text-[10px] font-mono font-bold uppercase tracking-wider"
-              title="Encontrar imágenes duplicadas por contenido">
-              {duplicatesLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Copy className="h-3.5 w-3.5" />}
-              <span>Duplicados</span>
-            </button>
-            {/* URL Audit button */}
-            <button onClick={fetchAudit} disabled={auditLoading}
-              className="px-3 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-500 hover:text-brand-500 transition-all cursor-pointer flex items-center space-x-1.5 disabled:opacity-50 text-[10px] font-mono font-bold uppercase tracking-wider"
-              title="Auditar URLs almacenadas">
-              {auditLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldAlert className="h-3.5 w-3.5" />}
-              <span>Auditar URLs</span>
-            </button>
             {/* Migrate local files to remote storage */}
             {data && data.localFiles && data.localFiles.length > 0 && (
               <button onClick={handleMigrate} disabled={migrating}
@@ -595,15 +545,81 @@ export default function AdminImageManager() {
               </button>
             )}
             <button onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-              className="p-2 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-500 hover:text-brand-500 transition-all cursor-pointer">
+              className="p-2 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-500 hover:text-brand-500 transition-all cursor-pointer" title={viewMode === 'grid' ? 'Vista lista' : 'Vista cuadrícula'}>
               {viewMode === 'grid' ? <ChevronDown className="h-4 w-4" /> : <Image className="h-4 w-4" />}
             </button>
             <button onClick={fetchFiles} disabled={loading}
               className="p-2 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-500 hover:text-brand-500 transition-all cursor-pointer disabled:opacity-50">
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
+            {/* Advanced toggle */}
+            <button onClick={() => setShowAdvanced(!showAdvanced)}
+              className={`px-3 py-2 border rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider flex items-center space-x-1.5 transition-all cursor-pointer ${
+                showAdvanced
+                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 border-zinc-900 dark:border-white'
+                  : 'border-zinc-200 dark:border-zinc-800 text-zinc-400 hover:text-zinc-600'
+              }`}>
+              <Database className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Avanzado</span>
+              {showAdvanced ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            </button>
           </div>
         </div>
+
+        {/* Advanced tools collapsible */}
+        {showAdvanced && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="flex flex-wrap items-center gap-2 p-3 bg-zinc-50/50 dark:bg-zinc-950/50 rounded-2xl border border-zinc-100 dark:border-zinc-800"
+          >
+            <span className="text-[8px] font-mono font-bold uppercase tracking-wider text-zinc-400 mr-1">Herramientas:</span>
+            <button onClick={fetchDiagnostics}
+              className="px-2.5 py-1.5 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-500 hover:text-brand-500 transition-all cursor-pointer flex items-center space-x-1 text-[9px] font-mono font-bold">
+              <Database className="h-3 w-3" />
+              <span>Diagnóstico</span>
+            </button>
+            <button onClick={handleBackfill} disabled={backfilling}
+              className="px-2.5 py-1.5 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-500 hover:text-brand-500 transition-all cursor-pointer flex items-center space-x-1 disabled:opacity-50 text-[9px] font-mono font-bold">
+              {backfilling ? <Loader2 className="h-3 w-3 animate-spin" /> : <UploadCloud className="h-3 w-3" />}
+              <span>Backfill</span>
+            </button>
+            <button onClick={async () => {
+              setBackfillHashesLoading(true);
+              try {
+                const res = await fetch('/api/admin/storage/backfill-hashes', {
+                  method: 'POST',
+                  headers: { 'x-admin-token': token }
+                });
+                const json = await res.json();
+                if (json.success) {
+                  showToast(`${json.processed} hash(es) computados de archivos existentes.`, 'success', '🔐 Hashes');
+                } else {
+                  showToast(json.error || 'Error al computar hashes.', 'error', 'Hashes');
+                }
+              } catch {
+                showToast('Error de conexión.', 'error', 'Hashes');
+              } finally {
+                setBackfillHashesLoading(false);
+              }
+            }} disabled={backfillHashesLoading}
+              className="px-2.5 py-1.5 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-500 hover:text-brand-500 transition-all cursor-pointer flex items-center space-x-1 disabled:opacity-50 text-[9px] font-mono font-bold">
+              {backfillHashesLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldAlert className="h-3 w-3" />}
+              <span>Hashes</span>
+            </button>
+            <button onClick={fetchDuplicates} disabled={duplicatesLoading}
+              className="px-2.5 py-1.5 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-500 hover:text-brand-500 transition-all cursor-pointer flex items-center space-x-1 disabled:opacity-50 text-[9px] font-mono font-bold">
+              {duplicatesLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />}
+              <span>Duplicados</span>
+            </button>
+            <button onClick={fetchAudit} disabled={auditLoading}
+              className="px-2.5 py-1.5 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-500 hover:text-brand-500 transition-all cursor-pointer flex items-center space-x-1 disabled:opacity-50 text-[9px] font-mono font-bold">
+              {auditLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldAlert className="h-3 w-3" />}
+              <span>Auditar URLs</span>
+            </button>
+          </motion.div>
+        )}
 
         {/* Row 2: Search + Sort */}
         <div className="flex flex-col sm:flex-row gap-3">

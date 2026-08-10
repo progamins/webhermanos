@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Link } from 'lucide-react';
+import { Upload, Link, Image, X } from 'lucide-react';
 import { compressImage } from '../../../../shared/utils/images';
 import { showToast } from '../../../../shared/utils/toast';
+import ImagePickerModal from './ImagePickerModal';
 
 interface ImageUploaderProps {
   value: string;
@@ -20,6 +21,7 @@ export default function ImageUploader({ value, onChange, placeholder }: ImageUpl
   const [error, setError] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const [compressionStats, setCompressionStats] = useState<{ original: number; compressed: number } | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File) => {
@@ -36,7 +38,6 @@ export default function ImageUploader({ value, onChange, placeholder }: ImageUpl
     let compressedSize = file.size;
     let compressed: Blob | File = file;
     try {
-      // Comprimir imagen en el cliente antes de subir (~60-80% más pequeño)
       originalSize = file.size;
       compressed = await compressImage(file, { maxWidth: 1200 });
       compressedSize = compressed.size;
@@ -46,7 +47,6 @@ export default function ImageUploader({ value, onChange, placeholder }: ImageUpl
     }
 
     try {
-      // Mostrar indicador de compresión
       setCompressionStats({ original: originalSize, compressed: compressedSize });
 
       const ext = compressed.type === 'image/jpeg' ? '.jpg' : '.webp';
@@ -66,6 +66,7 @@ export default function ImageUploader({ value, onChange, placeholder }: ImageUpl
       const data = await res.json();
       if (res.ok && data.success) {
         onChange(data.imageUrl);
+        showToast('Imagen subida correctamente', 'success', '📤 Subida');
       } else {
         setError(data.error || 'Error subiendo archivo');
       }
@@ -82,7 +83,6 @@ export default function ImageUploader({ value, onChange, placeholder }: ImageUpl
     const file = e.target.files?.[0];
     if (!file) return;
     await handleFile(file);
-    // Reset input so the same file can be re-selected
     e.target.value = '';
   };
 
@@ -112,29 +112,60 @@ export default function ImageUploader({ value, onChange, placeholder }: ImageUpl
     fileInputRef.current?.click();
   };
 
+  const handlePickerSelect = (url: string) => {
+    onChange(url);
+    setError('');
+  };
+
+  const handleClear = () => {
+    onChange('');
+    setError('');
+  };
+
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center space-x-2">
+    <div className="space-y-2">
+      {/* URL Input Row */}
+      <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <input
             type="text"
             value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder || "https://images.unsplash.com/... o sube una"}
-            className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-800 dark:text-white font-mono pr-10"
+            onChange={(e) => { onChange(e.target.value); setError(''); }}
+            placeholder={placeholder || "https://... o sube una imagen"}
+            className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-800 dark:text-white font-mono pr-10 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
           />
           {!value && (
             <Link className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-300 dark:text-zinc-600 pointer-events-none" />
           )}
+          {value && (
+            <button
+              onClick={handleClear}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-lg transition-all cursor-pointer"
+              title="Limpiar"
+            >
+              <X className="h-3.5 w-3.5 text-zinc-400 hover:text-red-500" />
+            </button>
+          )}
         </div>
 
-        {/* Upload button triggers file input */}
+        {/* Gallery button */}
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          className="shrink-0 px-3 py-2.5 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-500 hover:text-brand-500 hover:border-brand-300 dark:hover:border-brand-700 transition-all cursor-pointer flex items-center space-x-1.5 text-[10px] font-mono font-bold uppercase tracking-wider"
+          title="Elegir de la galería"
+        >
+          <Image className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Galería</span>
+        </button>
+
+        {/* Upload button */}
         <label
           onClick={triggerFileInput}
-          className="cursor-pointer bg-brand-500 hover:bg-brand-600 text-white px-4 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider shrink-0 select-none flex items-center space-x-1 transition-all hover:scale-[1.02] active:scale-[0.98]"
+          className="shrink-0 cursor-pointer bg-brand-500 hover:bg-brand-600 text-white px-4 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider select-none flex items-center space-x-1.5 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm"
         >
           <Upload className="h-3.5 w-3.5" />
-          <span>{uploading ? 'Cargando...' : 'Subir'}</span>
+          <span>{uploading ? 'Subiendo...' : 'Subir'}</span>
         </label>
 
         <input
@@ -146,30 +177,31 @@ export default function ImageUploader({ value, onChange, placeholder }: ImageUpl
         />
       </div>
 
-      {/* Drag & Drop Zone */}
+      {/* Drag & Drop Zone + Preview */}
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        onClick={triggerFileInput}
+        onClick={!value && !uploading ? triggerFileInput : undefined}
         className={`
-          relative cursor-pointer rounded-2xl border-2 border-dashed p-5 text-center transition-all duration-200
+          relative rounded-2xl border-2 border-dashed transition-all duration-200 overflow-hidden
           ${isDragOver
             ? 'border-brand-500 bg-brand-50/60 dark:bg-brand-950/30 scale-[1.01]'
             : value
               ? 'border-emerald-300/50 dark:border-emerald-800/30 bg-emerald-50/30 dark:bg-emerald-950/10'
-              : 'border-zinc-200 dark:border-zinc-800 hover:border-brand-300 dark:hover:border-brand-700 bg-zinc-50/50 dark:bg-zinc-950/30'
+              : 'border-zinc-200 dark:border-zinc-800 hover:border-brand-300 dark:hover:border-brand-700 bg-zinc-50/50 dark:bg-zinc-950/30 cursor-pointer'
           }
           ${uploading ? 'pointer-events-none opacity-60' : ''}
         `}
+        style={{ minHeight: value ? '140px' : '120px' }}
       >
-        {uploading ? (
-          <div className="flex flex-col items-center space-y-2">
+        {/* Uploading state */}
+        {uploading && (
+          <div className="flex flex-col items-center justify-center py-6 space-y-2">
             <div className="w-8 h-8 rounded-full border-2 border-brand-200 border-t-brand-500 animate-spin" />
             <span className="text-[10px] font-mono text-zinc-400">Subiendo imagen...</span>
             {compressionStats && (
               <div className="flex items-center gap-2 mt-1 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-900/30 rounded-lg transition-all duration-300">
-                {/* Barra visual de comparación */}
                 <div className="flex flex-col items-end">
                   <span className="text-[8px] font-mono text-red-500/70 line-through">
                     {formatBytes(compressionStats.original)}
@@ -180,9 +212,7 @@ export default function ImageUploader({ value, onChange, placeholder }: ImageUpl
                 </div>
                 <div className="flex flex-col items-center gap-0.5">
                   <div className="relative w-16 h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-                    {/* Barra original (ancho completo) */}
                     <div className="absolute inset-0 rounded-full bg-red-200/50" />
-                    {/* Barra comprimida */}
                     <div
                       className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-500"
                       style={{ width: `${Math.min(100, (compressionStats.compressed / compressionStats.original) * 100)}%` }}
@@ -195,39 +225,90 @@ export default function ImageUploader({ value, onChange, placeholder }: ImageUpl
               </div>
             )}
           </div>
-        ) : isDragOver ? (
-          <div className="flex flex-col items-center space-y-1.5">
-            <Upload className="h-6 w-6 text-brand-500 animate-bounce" />
-            <span className="text-xs font-mono font-bold text-brand-600 dark:text-brand-400">Suelta la imagen aquí</span>
+        )}
+
+        {/* Drag-over state */}
+        {!uploading && isDragOver && (
+          <div className="flex flex-col items-center justify-center py-8 space-y-2">
+            <Upload className="h-8 w-8 text-brand-500 animate-bounce" />
+            <span className="text-sm font-mono font-bold text-brand-600 dark:text-brand-400">Suelta la imagen aquí</span>
           </div>
-        ) : value ? (
-          <div className="flex items-center justify-center space-x-2">
-            <img
-              src={value}
-              alt="Preview"
-              className="h-10 w-10 rounded-lg object-cover border border-zinc-200 dark:border-zinc-800"
-              referrerPolicy="no-referrer"
-            />
-            <span className="text-[10px] font-mono text-zinc-400 truncate max-w-[200px]">
-              Imagen lista — arrastra para reemplazar
-            </span>
+        )}
+
+        {/* Image preview */}
+        {!uploading && !isDragOver && value && (
+          <div className="flex items-center gap-4 p-3">
+            <div className="relative shrink-0 w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950 shadow-sm group/preview">
+              <img
+                src={value}
+                alt="Preview"
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); handleClear(); }}
+                className="absolute top-1 right-1 p-1 bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-lg opacity-0 group-hover/preview:opacity-100 transition-all cursor-pointer"
+                title="Quitar imagen"
+              >
+                <X className="h-3 w-3 text-white" />
+              </button>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-mono text-zinc-500 dark:text-zinc-400 truncate">
+                {value.split('/').pop() || 'Imagen seleccionada'}
+              </p>
+              <p className="text-[10px] font-mono text-zinc-400 mt-0.5">
+                Arrastra una imagen para reemplazar
+              </p>
+              <div className="flex gap-2 mt-2">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); triggerFileInput(); }}
+                  className="text-[9px] font-mono font-bold text-brand-600 dark:text-brand-400 hover:text-brand-700 px-2 py-1 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-950/30 transition-all cursor-pointer"
+                >
+                  Reemplazar
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setPickerOpen(true); }}
+                  className="text-[9px] font-mono font-bold text-zinc-500 hover:text-zinc-700 px-2 py-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all cursor-pointer"
+                >
+                  De galería
+                </button>
+              </div>
+            </div>
           </div>
-        ) : (
-          <div className="flex flex-col items-center space-y-1.5">
-            <Upload className="h-5 w-5 text-zinc-300 dark:text-zinc-600" />
-            <span className="text-[10px] font-mono text-zinc-400">
+        )}
+
+        {/* Empty state */}
+        {!uploading && !isDragOver && !value && (
+          <div className="flex flex-col items-center justify-center py-6 space-y-1.5">
+            <Upload className="h-6 w-6 text-zinc-300 dark:text-zinc-600" />
+            <span className="text-xs font-mono text-zinc-400">
               Arrastra una imagen aquí o <span className="text-brand-500 font-bold">haz clic</span> para subir
+            </span>
+            <span className="text-[9px] font-mono text-zinc-300 dark:text-zinc-600">
+              JPG, PNG, WebP · Máx 10 MB
             </span>
           </div>
         )}
       </div>
 
+      {/* Error */}
       {error && (
         <p className="text-[10px] text-red-500 font-medium flex items-center space-x-1">
           <span>⚠</span>
           <span>{error}</span>
         </p>
       )}
+
+      {/* ImagePickerModal */}
+      <ImagePickerModal
+        isOpen={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onSelect={handlePickerSelect}
+      />
     </div>
   );
 }
