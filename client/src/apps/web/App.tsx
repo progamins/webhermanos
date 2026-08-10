@@ -269,30 +269,52 @@ export default function App() {
     }
   }, [config]);
 
+  // 🖼️ Precarga inteligente por prioridad — NO satura el ancho de banda:
+  //   1. High: hero/logo/about (LCP) — se descargan de inmediato
+  //   2. Medium: primeras imágenes del catálogo (visibles sin scroll)
+  //   3. Low: resto — en idle, sin competir con la carga principal
   const preloadAllImages = useCallback((products: Product[], gallery: GalleryItem[], cfg: AppConfig | null) => {
-    const allImageUrls: string[] = [];
+    // ── Nivel 1 (HIGH): imágenes críticas del diseño ──
+    const critical: string[] = [];
+    if (cfg) {
+      if (cfg.heroImage && cfg.heroImage.length > 5) critical.push(cfg.heroImage);
+      if (cfg.logoUrl && cfg.logoUrl.length > 5) critical.push(cfg.logoUrl);
+      if (cfg.aboutImage && cfg.aboutImage.length > 5) critical.push(cfg.aboutImage);
+      if (cfg.faviconUrl && cfg.faviconUrl.length > 5) critical.push(cfg.faviconUrl);
+    }
+    const criticalUnique = [...new Set(critical)];
+    if (criticalUnique.length > 0) {
+      imageMemoryCache.preloadAll(criticalUnique);
+      preloadImages(criticalUnique);
+    }
+
+    // ── Nivel 2 (MEDIUM): primeras imágenes visibles del catálogo ──
+    const visible: string[] = [];
     for (const p of products) {
-      if (Array.isArray(p.images)) {
-        for (const img of p.images) {
-          if (img && typeof img === 'string' && img.length > 5) allImageUrls.push(img);
-        }
+      if (Array.isArray(p.images) && p.images[0] && p.images[0].length > 5) {
+        visible.push(p.images[0]); // solo la portada de cada producto
       }
     }
     for (const g of gallery) {
-      if (g.imageUrl && g.imageUrl.length > 5) allImageUrls.push(g.imageUrl);
+      if (g.imageUrl && g.imageUrl.length > 5) visible.push(g.imageUrl);
     }
-    if (cfg) {
-      if (cfg.heroImage && cfg.heroImage.length > 5) allImageUrls.push(cfg.heroImage);
-      if (cfg.logoUrl && cfg.logoUrl.length > 5) allImageUrls.push(cfg.logoUrl);
-      if (cfg.aboutImage && cfg.aboutImage.length > 5) allImageUrls.push(cfg.aboutImage);
-      if (cfg.faviconUrl && cfg.faviconUrl.length > 5) allImageUrls.push(cfg.faviconUrl);
+    const visibleUnique = [...new Set(visible.filter(u => !criticalUnique.includes(u)))];
+    // Solo las primeras 8 portadas cargan con prioridad media (primera fila visible)
+    imageMemoryCache.preloadBatch(visibleUnique.slice(0, 8), 'medium');
+
+    // ── Nivel 3 (LOW): resto de imágenes en idle ──
+    const rest: string[] = [];
+    for (const p of products) {
+      if (Array.isArray(p.images)) {
+        for (let i = 1; i < p.images.length; i++) {
+          if (p.images[i] && p.images[i].length > 5) rest.push(p.images[i]);
+        }
+      }
     }
-    const uniqueUrls = [...new Set(allImageUrls)];
-    if (uniqueUrls.length > 0) {
-      console.log(`[PRELOAD] Precargando ${uniqueUrls.length} imágenes en memoria...`);
-      imageMemoryCache.preloadAll(uniqueUrls);
-      preloadImages(uniqueUrls);
-    }
+    const restUnique = [...new Set(rest.filter(u => !criticalUnique.includes(u) && !visibleUnique.includes(u)))];
+    imageMemoryCache.preloadBatch(restUnique, 'low');
+
+    console.log(`[PRELOAD] Precarga priorizada: ${criticalUnique.length} críticas + ${visibleUnique.length} visibles + ${restUnique.length} en idle`);
   }, []);
 
 

@@ -11,12 +11,22 @@
  *   if (imageMemoryCache.has(url)) { ... }
  */
 
+type PreloadPriority = 'high' | 'medium' | 'low';
+
+/** Máx. descargas simultáneas — evita saturar el ancho de banda del usuario */
+const MAX_CONCURRENT_LOADS = 4;
+
 class ImageMemoryCacheService {
   /** Almacena las imágenes ya cargadas en la sesión actual */
   private cache = new Map<string, HTMLImageElement>();
 
   /** URLs que ya están en proceso de carga (evita duplicados) */
   private loading = new Set<string>();
+
+  /** Cola de precarga por prioridad (alto → medio → bajo) */
+  private queueHigh: string[] = [];
+  private queueMedium: string[] = [];
+  private queueLow: string[] = [];
 
   /** Estadísticas */
   public stats = { hits: 0, preloads: 0 };
@@ -37,40 +47,105 @@ class ImageMemoryCacheService {
   }
 
   /**
-   * Precarga una imagen ANTES de que React la necesite.
-   * Crea un new Image(), asigna src, y guarda la instancia.
-   * No bloquea — la descarga se inicia pero no se espera.
+   * Precarga una imagen con prioridad alta (fetchPriority='high').
+   * Se usa para el hero y el logo (LCP) — los más importantes.
    */
   preload(url: string): void {
-    if (!url) return;
-    if (this.cache.has(url)) return; // ya está cacheada
-    if (this.loading.has(url)) return; // ya está en proceso
+    this.enqueue(url, 'high');
+  }
 
+  /**
+   * Precarga múltiples imágenes (hero, logo, etc.) con prioridad alta.
+   */
+  preloadAll(urls: string[]): void {
+    this.enqueueMany(urls, 'high');
+  }
+
+  /**
+   * Precarga una imagen con prioridad media — primera fila del catálogo,
+   * visible sin scroll. fetchPriority='high' pero sin saltar la cola.
+   */
+  preloadMedium(url: string): void {
+    this.enqueue(url, 'medium');
+  }
+
+  /**
+   * Precarga una imagen con prioridad baja — resto de la página, se
+   * descarga en idle para no competir con el contenido visible.
+   */
+  preloadLow(url: string): void {
+    this.enqueue(url, 'low');
+  }
+
+  /**
+   * Precarga en lote por prioridad. Útil para el catálogo: las primeras
+   * imágenes visibles van en 'medium', el resto en 'low'.
+   */
+  preloadBatch(urls: string[], priority: PreloadPriority = 'low'): void {
+    for (const url of urls) {
+      this.enqueue(url, priority);
+    }
+  }
+
+  /**
+   * Encola una URL en la cola de su prioridad y arranca el drain si hay hueco.
+   */
+  private enqueue(url: string, priority: PreloadPriority): void {
+    if (!url) return;
+    if (this.cache.has(url)) return; // ya cacheada
+    if (this.loading.has(url)) return; // ya en proceso
+
+    const queue = priority === 'high' ? this.queueHigh : priority === 'medium' ? this.queueMedium : this.queueLow;
+    if (queue.includes(url)) return;
+    queue.push(url);
+    this.drain();
+  }
+
+  private enqueueMany(urls: string[], priority: PreloadPriority): void {
+    for (const url of urls) {
+      this.enqueue(url, priority);
+    }
+  }
+
+  /**
+   * Procesa la cola respetando prioridades y el límite de concurrencia.
+   * Se llama en cada enqueue y cuando una carga termina.
+   */
+  private drain(): void {
+    while (this.loading.size < MAX_CONCURRENT_LOADS) {
+      // Prioridad: sacar primero de la cola alta, luego media, luego baja
+      const next = this.queueHigh.length > 0
+        ? { url: this.queueHigh.shift()!, priority: 'high' as const }
+        : this.queueMedium.length > 0
+          ? { url: this.queueMedium.shift()!, priority: 'auto' as const }
+          : this.queueLow.length > 0
+            ? { url: this.queueLow.shift()!, priority: 'auto' as const }
+            : null;
+      if (!next) break;
+      if (this.cache.has(next.url) || this.loading.has(next.url)) continue;
+      this.startLoad(next.url, next.priority);
+    }
+  }
+
+  private startLoad(url: string, priority: 'high' | 'auto' = 'auto'): void {
     this.loading.add(url);
     this.stats.preloads++;
 
     const img = new Image();
-    img.fetchPriority = 'high';
+    img.fetchPriority = priority;
     img.decoding = 'async';
 
     img.onload = () => {
       this.cache.set(url, img);
       this.loading.delete(url);
+      this.drain();
     };
     img.onerror = () => {
       this.loading.delete(url);
+      this.drain();
     };
 
     img.src = url;
-  }
-
-  /**
-   * Precarga múltiples imágenes (hero, logo, etc.)
-   */
-  preloadAll(urls: string[]): void {
-    for (const url of urls) {
-      this.preload(url);
-    }
   }
 
   /**
@@ -79,6 +154,9 @@ class ImageMemoryCacheService {
   clear(): void {
     this.cache.clear();
     this.loading.clear();
+    this.queueHigh = [];
+    this.queueMedium = [];
+    this.queueLow = [];
   }
 
   /**

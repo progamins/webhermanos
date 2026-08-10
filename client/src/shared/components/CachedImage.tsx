@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
-import { imageCache } from '../utils/imageCache';
+import { imageCache, cacheImageForOffline } from '../utils/imageCache';
 import { imageMemoryCache } from '../utils/imageMemoryCache';
 import { optimizeImageUrl, getLocalImageUrl, extractProxyTarget } from '../utils/images';
 import { ImageOff } from 'lucide-react';
@@ -132,12 +132,46 @@ function CachedImage({
     onError?.();
   }, [cachedSrc, triedDirectFallback, onError]);
 
+  // Guarda una imagen local en IndexedDB (persistente entre sesiones)
+  // para que la próxima visita cargue la imagen instantáneamente.
+  const persistToCache = useCallback((imgSrc: string) => {
+    try {
+      // Solo persistir imágenes locales (mismo origen) — las externas
+      // dependen de CORS y no pueden leerse como blob.
+      if (!imgSrc || !imgSrc.startsWith('/')) return;
+      if (imageCache.has(imgSrc)) return; // ya persistida
+
+      fetch(imgSrc)
+        .then(r => {
+          if (!r.ok) return null;
+          const ct = r.headers.get('content-type') || '';
+          // Evitar persistir SVGs placeholders o respuestas no-imagen
+          if (!ct.startsWith('image/') || ct.includes('svg')) return null;
+          return r.blob();
+        })
+        .then(blob => {
+          if (!blob || blob.size === 0 || blob.size > 3 * 1024 * 1024) return; // máx 3MB
+          const reader = new FileReader();
+          reader.onload = () => {
+            if (typeof reader.result === 'string') {
+              cacheImageForOffline(imgSrc, reader.result);
+            }
+          };
+          reader.readAsDataURL(blob);
+        })
+        .catch(() => { /* no crítico */ });
+    } catch { /* no crítico */ }
+  }, []);
+
   const handleImgLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     if (!mountedRef.current) return;
     const img = e.currentTarget;
-    if (img.src) imageMemoryCache.preload(img.src);
+    if (img.src) {
+      imageMemoryCache.preload(img.src);
+      persistToCache(img.src);
+    }
     onLoad?.();
-  }, [onLoad]);
+  }, [onLoad, persistToCache]);
 
   // ═══════════════════════════════════════════
   // RENDER — condicionales sin hooks

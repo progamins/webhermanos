@@ -13,9 +13,11 @@
  */
 
 const DB_NAME = 'MaisonRosasCache';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'critical_images';
-const MAX_CRITICAL_ENTRIES = 10;
+// Ampliado: además de hero/logo/about, se cachean las portadas del catálogo
+// para que las visitas repetidas carguen imágenes de forma INSTANTÁNEA.
+const MAX_CRITICAL_ENTRIES = 60;
 const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 días
 
 interface CriticalEntry {
@@ -180,5 +182,14 @@ export function preloadImages(urls: string[]): void {
   for (const url of urls) {
     if (url) criticalImageCache.get(url).catch(() => {});
   }
+}
+
+/**
+ * Guarda una imagen (base64) en el cache persistente de IndexedDB.
+ * Se usa tras descargar una imagen para que la próxima visita sea instantánea.
+ */
+export function cacheImageForOffline(url: string, base64: string): void {
+  if (!url || !base64) return;
+  criticalImageCache.set(url, base64).catch(() => {});
 }
 

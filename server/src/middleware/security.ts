@@ -46,7 +46,7 @@ export function securityHeaders(req: Request, res: Response, next: NextFunction)
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; ` +
     `img-src 'self' data: blob: https:; ` +
     `font-src 'self' https://fonts.gstatic.com; ` +
-    `connect-src 'self' https://*.googleapis.com https://fonts.gstatic.com https://www.google-analytics.com wss: ws://localhost:* ws://127.0.0.1:*; ` +
+    `connect-src 'self' https://*.googleapis.com https://*.gstatic.com https://fonts.gstatic.com https://www.google-analytics.com https://maps.googleapis.com https://maps.gstatic.com wss: ws://localhost:* ws://127.0.0.1:*; ` +
     `frame-src 'self' https://www.google.com https://www.google.com.pe; ` +
     `media-src 'self' https:; ` +
     `object-src 'none'; ` +
