@@ -257,14 +257,13 @@ function blobToBase64(blob: Blob): Promise<string | null> {
  */
 export async function convertBlobToAvif(blob: Blob, quality = 0.8): Promise<Blob> {
   try {
+    // Si el navegador no puede codificar AVIF, devolver el original sin tocar
+    // (evita un round-trip por canvas que produciría un PNG inútil).
+    if (!isAvifSupported()) return blob;
     if (typeof createImageBitmap !== 'function' || typeof ImageBitmap === 'undefined') return blob;
 
     const bitmap = await createImageBitmap(blob);
     const scale = Math.min(1, 1600 / bitmap.width, 1600 / bitmap.height);
-    if (scale >= 1 && !isAvifSupported()) {
-      bitmap.close();
-      return blob;
-    }
 
     const canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.round(bitmap.width * scale));

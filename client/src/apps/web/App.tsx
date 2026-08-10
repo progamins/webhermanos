@@ -322,7 +322,9 @@ export default function App() {
 
 
 
-  const loadPublicData = async () => {
+  // useCallback: callbacks estables para que el memo de Navbar/Catalog/Reviews
+  // sea efectivo (si se recrean en cada render, los memo no sirven de nada).
+  const loadPublicData = useCallback(async () => {
     try {
       await seedDatabaseIfNeeded();
 
@@ -385,7 +387,7 @@ export default function App() {
       // Este catch solo atrapa errores fuera de las promesas (ej: seedDatabaseIfNeeded)
       console.error('[API] Error crítico al cargar datos del servidor:', error);
     }
-  };
+  }, [preloadAllImages]);
 
   // Exponer loadPublicData para reintento manual desde consola
   (window as any).__reloadPublicData = loadPublicData;
@@ -445,13 +447,26 @@ export default function App() {
     else root.classList.add('light-theme');
   }, [theme]);
 
-  const handleViewChange = (viewId: string) => {
+  const handleViewChange = useCallback((viewId: string) => {
     setCurrentView(viewId);
     const targetPath = viewId === 'inicio' ? '/' : `/${viewId}${window.location.search}`;
     if (window.location.pathname !== '/' || (viewId === 'inicio' && window.location.search)) {
       window.history.pushState({}, '', targetPath);
     }
-  };
+  }, []);
+
+  // Abrir el Customizer con un producto (callback estable para memo de Catalog)
+  const handleSelectCustomize = useCallback((prod: Product) => {
+    setSelectedProductForCustomize(prod);
+  }, []);
+
+  // Alternar tema (callback estable para memo de Navbar)
+  const handleToggleTheme = useCallback(() => {
+    hasUserInteracted.current = true;
+    const next = theme === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem('maison_theme', next); } catch {}
+    setTheme(next);
+  }, [theme]);
 
   const scrollToSection = (sectionId: string) => {
     handleViewChange(sectionId);
@@ -686,12 +701,7 @@ export default function App() {
           setCurrentView={handleViewChange}
           logoUrl={config?.logoUrl}
           theme={theme}
-          onToggleTheme={() => {
-            hasUserInteracted.current = true;
-            const next = theme === 'dark' ? 'light' : 'dark';
-            try { localStorage.setItem('maison_theme', next); } catch {}
-            setTheme(next);
-          }}
+          onToggleTheme={handleToggleTheme}
         />
       )}
 
@@ -706,7 +716,7 @@ export default function App() {
           <motion.div key="home-pages" id="main-content" role="main" variants={pageVariants} initial="initial" animate="animate" exit="exit">
             <Hero onViewCatalog={() => scrollToSection('catalogo')} onViewHistory={() => scrollToSection('historia')} config={config} />
             <Suspense fallback={<SectionSkeleton section="catalog" />}>
-              <Catalog products={products} onSelectCustomize={(prod) => setSelectedProductForCustomize(prod)} />
+              <Catalog products={products} onSelectCustomize={handleSelectCustomize} />
             </Suspense>
             <Suspense fallback={<SectionSkeleton section="history" />}>
               <History config={config} />

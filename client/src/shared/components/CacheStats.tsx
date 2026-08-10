@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { imageMemoryCache } from '../utils/imageMemoryCache';
 import { criticalImageCache, isAvifSupported } from '../utils/imageCache';
-import { Database, Zap, HardDrive, Trash2, Loader2, ImageOff } from 'lucide-react';
+import { Database, Zap, Trash2, Loader2, ImageOff } from 'lucide-react';
 
 interface CacheStatsSnapshot {
   mem: { entries: number; loading: number; queued: number; hits: number; preloads: number };
