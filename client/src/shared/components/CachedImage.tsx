@@ -134,11 +134,13 @@ function CachedImage({
 
   // Guarda una imagen local en IndexedDB (persistente entre sesiones)
   // para que la próxima visita cargue la imagen instantáneamente.
+  // Recibe la URL RELATIVA (localUrl/cachedSrc), no img.src (que el DOM
+  // resuelve a absoluta y rompería el guard de same-origin).
   const persistToCache = useCallback((imgSrc: string) => {
     try {
-      // Solo persistir imágenes locales (mismo origen) — las externas
-      // dependen de CORS y no pueden leerse como blob.
-      if (!imgSrc || !imgSrc.startsWith('/')) return;
+      // Solo persistir uploads locales del mismo origen — las externas
+      // (proxy /api/image-proxy) dependen de CORS y pueden cambiar.
+      if (!imgSrc || !imgSrc.startsWith('/api/uploads/')) return;
       if (imageCache.has(imgSrc)) return; // ya persistida
 
       fetch(imgSrc)
@@ -150,7 +152,7 @@ function CachedImage({
           return r.blob();
         })
         .then(blob => {
-          if (!blob || blob.size === 0 || blob.size > 3 * 1024 * 1024) return; // máx 3MB
+          if (!blob || blob.size === 0 || blob.size > 1024 * 1024) return; // máx 1MB
           const reader = new FileReader();
           reader.onload = () => {
             if (typeof reader.result === 'string') {
@@ -168,10 +170,13 @@ function CachedImage({
     const img = e.currentTarget;
     if (img.src) {
       imageMemoryCache.preload(img.src);
-      persistToCache(img.src);
+      // Usar la URL relativa local para la persistencia (misma key que el lookup)
+      if (localUrl.startsWith('/api/uploads/')) {
+        persistToCache(localUrl);
+      }
     }
     onLoad?.();
-  }, [onLoad, persistToCache]);
+  }, [onLoad, persistToCache, localUrl]);
 
   // ═══════════════════════════════════════════
   // RENDER — condicionales sin hooks

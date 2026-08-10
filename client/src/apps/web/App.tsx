@@ -282,7 +282,10 @@ export default function App() {
       if (cfg.aboutImage && cfg.aboutImage.length > 5) critical.push(cfg.aboutImage);
       if (cfg.faviconUrl && cfg.faviconUrl.length > 5) critical.push(cfg.faviconUrl);
     }
-    const criticalUnique = [...new Set(critical)];
+    // Normalizar con getLocalImageUrl: CachedImage siempre busca la URL
+    // localizada (proxy), así el memory cache debe usar las MISMA key.
+    const toLocal = (u: string) => getLocalImageUrl(u);
+    const criticalUnique = [...new Set(critical.map(toLocal))];
     if (criticalUnique.length > 0) {
       imageMemoryCache.preloadAll(criticalUnique);
       preloadImages(criticalUnique);
@@ -298,7 +301,7 @@ export default function App() {
     for (const g of gallery) {
       if (g.imageUrl && g.imageUrl.length > 5) visible.push(g.imageUrl);
     }
-    const visibleUnique = [...new Set(visible.filter(u => !criticalUnique.includes(u)))];
+    const visibleUnique = [...new Set(visible.map(toLocal).filter(u => !criticalUnique.includes(u)))];
     // Solo las primeras 8 portadas cargan con prioridad media (primera fila visible)
     imageMemoryCache.preloadBatch(visibleUnique.slice(0, 8), 'medium');
 
@@ -311,7 +314,7 @@ export default function App() {
         }
       }
     }
-    const restUnique = [...new Set(rest.filter(u => !criticalUnique.includes(u) && !visibleUnique.includes(u)))];
+    const restUnique = [...new Set(rest.map(toLocal).filter(u => !criticalUnique.includes(u) && !visibleUnique.includes(u)))];
     imageMemoryCache.preloadBatch(restUnique, 'low');
 
     console.log(`[PRELOAD] Precarga priorizada: ${criticalUnique.length} críticas + ${visibleUnique.length} visibles + ${restUnique.length} en idle`);
