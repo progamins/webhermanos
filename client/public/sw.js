@@ -107,7 +107,9 @@ async function safeCachePut(cache, request, response) {
 }
 
 // ── Install: precache essential static assets ──
-const PRECACHE_URLS = [];
+// El app-shell ('/') se guarda para que las visitas SIN conexión puedan cargar
+// la app y mostrar la pantalla offline personalizada (en vez de un error del navegador).
+const PRECACHE_URLS = ['/'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -216,5 +218,26 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ── Everything else (HTML, etc.): Network-only ──
+  // ── Navigations (HTML): Network-first, app-shell cacheado como fallback ──
+  // Si la red falla, se sirve la copia cacheada de '/' para que la app arranque
+  // y muestre la pantalla offline de Maison Rosas.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).then((response) => {
+        if (response && response.ok) {
+          caches.open(CACHE_NAME).then((cache) => {
+            safeCachePut(cache, event.request, response);
+          });
+        }
+        return response;
+      }).catch(() => {
+        return caches.match('/').then((cached) => {
+          return cached || new Response('Sin conexión', { status: 503, headers: { 'Content-Type': 'text/html' } });
+        });
+      })
+    );
+    return;
+  }
+
+  // ── Everything else: Network-only ──
 });

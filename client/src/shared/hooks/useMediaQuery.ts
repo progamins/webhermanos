@@ -56,3 +56,38 @@ export function useReducedMotion(): boolean {
 export function usePrefersDark(): boolean {
   return useMediaQuery('(prefers-color-scheme: dark)');
 }
+
+/**
+ * Estado de conexión a internet.
+ *
+ * Combina dos fuentes:
+ *  - `navigator.onLine` + eventos `online`/`offline` del navegador (cubre
+ *    cambios de red del sistema: wifi desactivado, datos móviles apagados, etc.)
+ *  - Evento `maison:network` emitido por el request pool cuando un fetch falla
+ *    o tiene éxito (detecta cortes que el navegador aún no notifica).
+ */
+export function useOnline(): boolean {
+  const [online, setOnline] = useState<boolean>(() =>
+    typeof navigator !== 'undefined' ? navigator.onLine : true
+  );
+
+  useEffect(() => {
+    const goOnline = () => setOnline(true);
+    const goOffline = () => setOnline(false);
+    const onNetworkEvent = (e: Event) => {
+      const detail = (e as CustomEvent<{ online?: boolean }> | null)?.detail;
+      if (detail && typeof detail.online === 'boolean') setOnline(detail.online);
+    };
+
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    window.addEventListener('maison:network', onNetworkEvent);
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+      window.removeEventListener('maison:network', onNetworkEvent);
+    };
+  }, []);
+
+  return online;
+}

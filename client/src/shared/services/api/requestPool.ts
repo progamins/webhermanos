@@ -30,6 +30,19 @@ const CACHE_TTL_MS = 10_000;     // 10s para datos públicos
 const RETRY_DELAY_MS = 400;      // backoff base
 const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
 
+/**
+ * Notifica el estado real de la red a la app (evento 'maison:network').
+ * El hook useOnline lo escucha para mostrar la pantalla offline personalizada
+ * incluso cuando navigator.onLine aún no se actualizó.
+ */
+function notifyNetwork(online: boolean) {
+  try {
+    window.dispatchEvent(new CustomEvent('maison:network', { detail: { online } }));
+  } catch {
+    /* no crítico */
+  }
+}
+
 class RequestPool {
   private active = 0;
   private queue: PooledTask[] = [];
@@ -145,6 +158,8 @@ class RequestPool {
   private async executeTask(task: PooledTask) {
     try {
       const result = await task.fn();
+      // Cualquier petición exitosa significa que hay red.
+      notifyNetwork(true);
       task.resolve(result);
     } catch (err) {
       // Retry solo para errores transitorios
@@ -155,6 +170,8 @@ class RequestPool {
         setTimeout(() => this.queue.unshift(task), delay);
         return; // no resolver aún
       }
+      // Se agotaron los reintentos: probablemente no hay conexión.
+      notifyNetwork(false);
       task.reject(err);
     }
   }

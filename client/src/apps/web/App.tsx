@@ -28,6 +28,9 @@ setFaviconFromLocalStorage();
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import TermsAndPrivacy from './components/TermsAndPrivacy';
+import OfflineScreen from './components/OfflineScreen';
+import { useOnline } from '../../shared/hooks';
+import { requestPool } from '../../shared/services/api/requestPool';
 import { imageMemoryCache } from '../../shared/utils/imageMemoryCache';
 import { preloadImages } from '../../shared/utils/imageCache';
 import { getLocalImageUrl } from '../../shared/utils/images';
@@ -81,6 +84,10 @@ export default function App() {
   const hasUserInteracted = useRef<boolean>(
     (() => { try { return localStorage.getItem('maison_theme') !== null; } catch { return false; }})()
   );
+
+  // Estado de conexión — muestra la pantalla offline personalizada
+  const online = useOnline();
+  const wasOfflineRef = useRef(false);
 
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -512,6 +519,26 @@ export default function App() {
   }, []);
 
   // Se elimina SectionFallback genérico — se usa SectionSkeleton por sección
+
+  // ─── Reconexión ───
+  // Cuando la conexión regresa tras un corte, invalida el cache TTL del pool
+  // (los datos pueden haber cambiado) y recarga todo.
+  useEffect(() => {
+    if (online) {
+      if (wasOfflineRef.current) {
+        requestPool.clearCache();
+        loadPublicData();
+      }
+      wasOfflineRef.current = false;
+    } else {
+      wasOfflineRef.current = true;
+    }
+  }, [online, loadPublicData]);
+
+  // Sin conexión → pantalla offline personalizada (se restaura sola al reconectar)
+  if (!online) {
+    return <OfflineScreen />;
+  }
 
   // Pantalla de Mantenimiento
   if (maintenanceMode) {
