@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-import { Cake, Globe, Wrench, ToggleLeft, ToggleRight, Clock, Eye, X, Edit3, Shield, Key, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import { Cake, Wrench, ToggleLeft, ToggleRight, Clock, Eye, X, Edit3, Shield, Key, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { AppConfig } from '../../../../shared/types';
 import { dbService } from '../../../../shared/services/dbService';
-import ImageUploader from './ImageUploader';
 
 interface AdminSettingsProps {
   config: AppConfig;
@@ -126,46 +125,12 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
         Configuración de la Tienda
       </h3>
 
-      {/* Logo */}
-      <div className="bg-zinc-50 dark:bg-zinc-950 p-5 rounded-2xl border border-zinc-150 dark:border-zinc-800/60 mb-6" id="logo-customizer-section">
-        <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-brand-500 mb-3 flex items-center gap-1.5">
-          <Cake className="h-4 w-4" />
-          Logo
-        </h4>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="flex items-center justify-center bg-white dark:bg-zinc-900 h-14 w-14 rounded-full overflow-hidden shrink-0 border border-zinc-200 dark:border-zinc-800 shadow-sm">
-            {logoUrl ? (
-              <img src={logoUrl} alt="Logo Preview" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-            ) : (
-              <Cake className="h-6 w-6 text-brand-500" />
-            )}
-          </div>
-          <div className="flex-1 space-y-1">
-            <span className="block text-[10px] font-mono uppercase text-zinc-400">            Personalizar Logo</span>
-            <ImageUploader value={logoUrl} onChange={(val) => setLogoUrl(val)} placeholder="URL de tu logo o sube uno" />
-          </div>
-        </div>
-      </div>
-
-      {/* Favicon */}
-      <div className="bg-zinc-50 dark:bg-zinc-950 p-5 rounded-2xl border border-zinc-150 dark:border-zinc-800/60 mb-6" id="favicon-customizer-section">
-        <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-brand-500 mb-3 flex items-center gap-1.5">
-          <Globe className="h-4 w-4" />
-          Favicon
-        </h4>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="flex items-center justify-center bg-white dark:bg-zinc-900 h-12 w-12 rounded-xl overflow-hidden shrink-0 border border-zinc-200 dark:border-zinc-800 shadow-sm ring-1 ring-zinc-100 dark:ring-zinc-800">
-            {faviconUrl ? (
-              <img src={faviconUrl} alt="Favicon Preview" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-lg">🧁</span>
-            )}
-          </div>
-          <div className="flex-1 space-y-1">
-            <span className="block text-[10px] font-mono uppercase text-zinc-400">            Ícono de la pestaña del navegador</span>
-            <ImageUploader value={faviconUrl} onChange={(val) => setFaviconUrl(val)} placeholder="URL de tu favicon (ico, png, svg) o sube uno" />
-          </div>
-        </div>
+      <div className="mb-6 px-4 py-3 bg-brand-50/60 dark:bg-brand-950/20 border border-brand-200/60 dark:border-brand-900/30 rounded-xl flex items-center gap-2">
+        <Cake className="h-4 w-4 text-brand-500 shrink-0" />
+        <p className="text-[10px] font-mono text-brand-700 dark:text-brand-300 leading-relaxed">
+          El <strong>logo</strong> y el <strong>ícono (favicon)</strong> ahora se gestionan en
+          <strong> Imágenes y Medios → Logo e Ícono</strong>.
+        </p>
       </div>
 
       <form onSubmit={handleSaveConfig} className="space-y-4">

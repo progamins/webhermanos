@@ -17,7 +17,7 @@ import AdminGallery from './AdminGallery';
 import AdminSettings from './AdminSettings';
 import AdminStock from './AdminStock';
 import AdminKitchen from './AdminKitchen';
-import AdminImageManager from './AdminImageManager';
+import AdminMediaHub from './AdminMediaHub';
 import AdminPaymentModal from './AdminPaymentModal';
 import VoucherModal from '../../../../shared/components/VoucherModal';
 import ScreenshotModal from '../../../../shared/components/ScreenshotModal';
@@ -36,7 +36,7 @@ export interface AdminPanelProps {
   onLogout?: () => void;
 }
 
-type ActiveTab = 'dashboard' | 'products' | 'orders' | 'reviews' | 'settings' | 'images' | 'payments' | 'stock' | 'storage' | 'kitchen';
+type ActiveTab = 'dashboard' | 'products' | 'orders' | 'reviews' | 'settings' | 'media' | 'payments' | 'stock' | 'kitchen';
 
 const SIDEBAR_SECTIONS: { title: string; tabs: { id: ActiveTab; label: string; icon: React.ElementType }[] }[] = [
   {
@@ -54,8 +54,7 @@ const SIDEBAR_SECTIONS: { title: string; tabs: { id: ActiveTab; label: string; i
     title: 'Contenido',
     tabs: [
       { id: 'reviews', label: 'Opiniones', icon: MessageSquare },
-      { id: 'images', label: 'Galería', icon: Image },
-      { id: 'storage', label: 'Archivos', icon: HardDrive },
+      { id: 'media', label: 'Imágenes y Medios', icon: Image },
     ],
   },
   {
@@ -67,9 +66,9 @@ const SIDEBAR_SECTIONS: { title: string; tabs: { id: ActiveTab; label: string; i
 ];
 
 const ROLE_TABS: Record<AdminRole, ActiveTab[]> = {
-  admin: ['dashboard', 'products', 'stock', 'orders', 'payments', 'kitchen', 'reviews', 'images', 'storage', 'settings'],
+  admin: ['dashboard', 'products', 'stock', 'orders', 'payments', 'kitchen', 'reviews', 'media', 'settings'],
   analyst: ['dashboard', 'orders', 'payments', 'reviews'],
-  stock_manager: ['dashboard', 'stock', 'images', 'kitchen'],
+  stock_manager: ['dashboard', 'stock', 'media', 'kitchen'],
 };
 
 const ROLE_CONFIG: Record<AdminRole, { label: string; color: string }> = {
@@ -297,8 +296,14 @@ export default function AdminPanel({
             {activeTab === 'reviews' && (
               <AdminReviews reviews={reviews} onRefreshData={onRefreshData} showToast={showToast} />
             )}
-            {activeTab === 'images' && (
-              <AdminGallery galleryItems={galleryItems} config={config} onRefreshData={onRefreshData} showToast={showToast} />
+            {activeTab === 'media' && (
+              <AdminMediaHub
+                products={searchResults ? searchResults.products : products}
+                galleryItems={galleryItems}
+                config={config}
+                onRefreshData={onRefreshData}
+                showToast={showToast}
+              />
             )}
             {activeTab === 'settings' && (
               <AdminSettings config={config} onRefreshData={onRefreshData} showToast={showToast} />
@@ -309,7 +314,6 @@ export default function AdminPanel({
             {activeTab === 'kitchen' && (
               <AdminKitchen showToast={showToast} />
             )}
-            {activeTab === 'storage' && <AdminImageManager />}
           </div>
         </div>
       </main>
