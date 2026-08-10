@@ -1,50 +1,35 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-import { WifiOff, RefreshCw, Wifi, Cake, CheckCircle2, Database } from 'lucide-react';
+import { WifiOff, RefreshCw, Wifi } from 'lucide-react';
 import { useReducedMotion } from '../../../shared/hooks';
-import { imageMemoryCache } from '../../../shared/utils/imageMemoryCache';
-import { criticalImageCache } from '../../../shared/utils/imageCache';
 
 /** Intervalo del auto-reintento silencioso (ms) — reconexión automática */
 const AUTO_RETRY_MS = 10_000;
 
-interface OfflineScreenProps {
-  /** Si se provee, muestra el botón para seguir navegando con contenido guardado */
-  onContinue?: () => void;
-}
-
 /**
- * Pantalla personalizada de "Sin conexión" — no es un mensaje genérico.
- * Muestra la identidad de la marca (lottie de pastel, serif, paleta), un badge
- * de señal, el estado de verificación y un botón de reintento. Cuando la red
- * vuelve, dispara el evento 'maison:network' y la app se restaura sola.
+ * Pantalla "Sin conexión" — limpia y centrada en la marca.
+ * Muestra el pastel animado, el estado y un único botón de reintento.
+ * La reconexión es automática: cada 10s se verifica la red en silencio y,
+ * al volver la señal, se dispara 'maison:network' para restaurar la app sola.
  */
-export default function OfflineScreen({ onContinue }: OfflineScreenProps) {
+export default function OfflineScreen() {
   const [retrying, setRetrying] = useState(false);
-  const [checked, setChecked] = useState(false); // ya se intentó y sigue sin red
-  const [since] = useState(() => Date.now());
-  const [now, setNow] = useState(() => Date.now());
   const busyRef = useRef(false);
   const reducedMotion = useReducedMotion();
-
-  // Imágenes que ya visitó el usuario y siguen disponibles en caché
-  const cachedImages = useMemo(
-    () => imageMemoryCache.getStats().entries + criticalImageCache.getStats().entries,
-    []
-  );
 
   /**
    * Verifica la red: si el health responde OK, avisa a la app para restaurarse.
    * El query param único (cache-busting) evita que el Service Worker devuelva
    * un health 200 viejo desde su caché cuando en realidad no hay red (lo que
    * causaría un bucle pantalla ↔ app).
+   * `manual` distingue el click del usuario (muestra el estado del botón) del
+   * auto-reintento silencioso (no debe alterar la UI).
    */
-  const checkConnection = useCallback(async () => {
+  const checkConnection = useCallback(async (manual = false) => {
     if (busyRef.current) return;
     busyRef.current = true;
-    setRetrying(true);
-    setChecked(false);
+    if (manual) setRetrying(true);
     try {
       const ctrl = new AbortController();
       const timeout = setTimeout(() => ctrl.abort(), 8000);
@@ -54,26 +39,19 @@ export default function OfflineScreen({ onContinue }: OfflineScreenProps) {
         window.dispatchEvent(new CustomEvent('maison:network', { detail: { online: true } }));
         return; // la app se restaura sola
       }
-      setChecked(true); // hay respuesta pero sin red real
     } catch {
-      setChecked(true); // timeout / sin red
+      // sigue sin red — se reintentará en el siguiente ciclo
     } finally {
       busyRef.current = false;
       setRetrying(false);
     }
   }, []);
 
-  // Auto-reconexión: mientras esté visible, reintentar cada N segundos.
+  // Auto-reconexión: mientras esté visible, reintentar cada N segundos en silencio.
   useEffect(() => {
     const timer = setInterval(() => checkConnection(), AUTO_RETRY_MS);
     return () => clearInterval(timer);
   }, [checkConnection]);
-
-  // Contador de segundos en vivo
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   const containerVariants = reducedMotion
     ? { hidden: { opacity: 1 }, show: { opacity: 1 } }
@@ -98,7 +76,7 @@ export default function OfflineScreen({ onContinue }: OfflineScreenProps) {
         variants={containerVariants}
         initial="hidden"
         animate="show"
-        className="max-w-lg w-full text-center relative z-10 space-y-7"
+        className="max-w-lg w-full text-center relative z-10 space-y-6"
       >
         {/* ─── Visual: pastel flotante + badge de señal ─── */}
         <div className="relative flex justify-center">
@@ -109,7 +87,7 @@ export default function OfflineScreen({ onContinue }: OfflineScreenProps) {
             initial={reducedMotion ? { opacity: 1 } : { opacity: 0, scale: 0.7, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={reducedMotion ? { duration: 0 } : { duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="w-52 h-52 sm:w-60 sm:h-60 relative"
+            className="w-44 h-44 sm:w-52 sm:h-52 relative"
           >
             <DotLottieReact src="/cake.lottie" autoplay loop style={{ width: '100%', height: '100%' }} />
           </motion.div>
@@ -130,7 +108,7 @@ export default function OfflineScreen({ onContinue }: OfflineScreenProps) {
           </motion.div>
         </div>
 
-        {/* ─── Badge de estado ─── */}
+        {/* ─── Estado ─── */}
         <motion.span
           initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -159,100 +137,23 @@ export default function OfflineScreen({ onContinue }: OfflineScreenProps) {
 
         <div className="w-12 h-[1.5px] bg-brand-secondary/40 mx-auto" aria-hidden="true" />
 
-        {/* ─── Mensaje ─── */}
-        <motion.p
+        {/* ─── Reintento ─── */}
+        <motion.button
           initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={reducedMotion ? { duration: 0 } : { delay: 0.35 }}
-          className="text-sm font-light leading-relaxed max-w-md mx-auto"
-          style={{ color: 'var(--theme-text-secondary)' }}
+          transition={reducedMotion ? { duration: 0 } : { delay: 0.4 }}
+          type="button"
+          onClick={() => checkConnection(true)}
+          disabled={retrying}
+          className="group inline-flex items-center gap-2.5 px-8 py-3.5 rounded-full bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 disabled:opacity-70 text-white text-xs font-mono font-bold uppercase tracking-wider shadow-lg shadow-brand-500/25 hover:shadow-xl hover:shadow-brand-500/30 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] transition-all duration-300 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-900"
         >
-          Revisa tu Wi-Fi o tus datos móviles. No te preocupes: tus pasteles,
-          tus pedidos y tu catálogo favorito están a salvo.
-        </motion.p>
-
-        {/* ─── Contador de caché ─── */}
-        <motion.div
-          initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={reducedMotion ? { duration: 0 } : { delay: 0.45 }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full border text-[10px] font-mono font-medium"
-          style={{ backgroundColor: 'var(--theme-surface-glass)', borderColor: 'var(--theme-border)', color: 'var(--theme-text-muted)' }}
-        >
-          <Database className="h-3.5 w-3.5" aria-hidden="true" />
-          {cachedImages > 0
-            ? `${cachedImages} imágenes en caché listas para verse`
-            : 'Tu catálogo está guardado en tu dispositivo'}
-        </motion.div>
-
-        {/* ─── Acciones ─── */}
-        <motion.div
-          initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={reducedMotion ? { duration: 0 } : { delay: 0.55 }}
-          className="space-y-4"
-        >
-          <button
-            type="button"
-            onClick={checkConnection}
-            disabled={retrying}
-            className="inline-flex items-center gap-2 px-7 py-3 bg-brand-500 hover:bg-brand-600 disabled:opacity-70 active:scale-[0.97] text-white rounded-full text-xs font-mono font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
-          >
-            {retrying ? <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Wifi className="h-4 w-4" aria-hidden="true" />}
-            {retrying ? 'Verificando...' : 'Reintentar ahora'}
-          </button>
-
-          {/* Estado silencioso de auto-reconexión */}
-          <p className="text-[10px] font-mono flex items-center justify-center gap-1.5" style={{ color: 'var(--theme-text-muted)' }}>
-            <span className="flex items-center gap-1.5">
-              <Cake className="h-3.5 w-3.5" aria-hidden="true" />
-              Te reconectaremos automáticamente cuando vuelva la señal
-              <span className="inline-flex gap-0.5">
-                {[0, 1, 2].map((i) => (
-                  <span
-                    key={i}
-                    className="w-1 h-1 rounded-full bg-current animate-bounce"
-                    style={{ animationDelay: `${i * 150}ms`, animationDuration: '1.2s' }}
-                  />
-                ))}
-              </span>
-            </span>
-            <span className="hidden sm:inline text-[9px] opacity-60 ml-1 tabular-nums">
-              · {Math.max(0, Math.round((now - since) / 1000))}s
-            </span>
-          </p>
-
-          {checked && (
-            <p className="text-[10px] font-mono flex items-center justify-center gap-1.5 text-amber-600 dark:text-amber-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-              Aún no hay señal — seguiremos intentando
-            </p>
+          {retrying ? (
+            <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />
+          ) : (
+            <Wifi className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12" aria-hidden="true" />
           )}
-
-          {onContinue && (
-            <button
-              type="button"
-              onClick={onContinue}
-              className="inline-flex items-center gap-2 px-5 py-2.5 border rounded-full text-[10px] font-mono font-bold uppercase tracking-wider transition-all duration-300 hover:scale-[1.02] cursor-pointer"
-              style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-text-secondary)' }}
-            >
-              <Database className="h-3.5 w-3.5" aria-hidden="true" />
-              Continuar con contenido guardado
-            </button>
-          )}
-        </motion.div>
-
-        {/* ─── Firma ─── */}
-        <motion.p
-          initial={reducedMotion ? { opacity: 1 } : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={reducedMotion ? { duration: 0 } : { delay: 0.7 }}
-          className="text-[11px] font-serif italic flex items-center justify-center gap-1.5"
-          style={{ color: 'var(--theme-text-muted)' }}
-        >
-          <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
-          Con amor, Carol & Edwin Rosas Albines
-        </motion.p>
+          {retrying ? 'Verificando...' : 'Reintentar'}
+        </motion.button>
       </motion.div>
     </div>
   );

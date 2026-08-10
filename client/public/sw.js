@@ -1,11 +1,13 @@
 // ─────────────────────────────────────────────
-// Maison Rosas — Service Worker v2
+// Maison Rosas — Service Worker v3
 // Caching strategy for faster repeat visits
 // ─────────────────────────────────────────────
 
-// Bumped to v2 to force clients to discard old cached JS/CSS/assets
-// after the client rebuild (Customizer date fix, order API fixes, etc.)
-const CACHE_NAME = 'maison-rosas-v2';
+// Bumped to v3 to force clients to discard the OLD cached app-shell
+// (which still shows the previous offline screen with cache counters
+// and status texts). Devices must load the site once online to pick
+// up this new SW and flush old caches.
+const CACHE_NAME = 'maison-rosas-v3';
 const META_KEY = '__maison_cache_meta__';
 const MAX_CACHE_SIZE = 50 * 1024 * 1024; // 50 MB limit
 
