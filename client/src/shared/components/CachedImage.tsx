@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
-import { imageCache, cacheImageForOffline } from '../utils/imageCache';
+import { imageCache, cacheImageBlobForOffline } from '../utils/imageCache';
 import { imageMemoryCache } from '../utils/imageMemoryCache';
 import { optimizeImageUrl, getLocalImageUrl, extractProxyTarget } from '../utils/images';
 import { ImageOff } from 'lucide-react';
@@ -153,13 +153,8 @@ function CachedImage({
         })
         .then(blob => {
           if (!blob || blob.size === 0 || blob.size > 1024 * 1024) return; // máx 1MB
-          const reader = new FileReader();
-          reader.onload = () => {
-            if (typeof reader.result === 'string') {
-              cacheImageForOffline(imgSrc, reader.result);
-            }
-          };
-          reader.readAsDataURL(blob);
+          // Convierte a AVIF automáticamente (si es más liviano) y guarda en IndexedDB
+          cacheImageBlobForOffline(imgSrc, blob);
         })
         .catch(() => { /* no crítico */ });
     } catch { /* no crítico */ }

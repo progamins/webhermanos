@@ -10,6 +10,7 @@ import ImageUploader from './ImageUploader';
 import MultiImageUploader from './MultiImageUploader';
 import AdminGallery from './AdminGallery';
 import AdminImageManager from './AdminImageManager';
+import CacheStats from '../../../../shared/components/CacheStats';
 import { optimizeImageUrl } from '../../../../shared/utils/images';
 
 type MediaTab = 'identity' | 'covers' | 'products' | 'storage';
@@ -184,7 +185,8 @@ export default function AdminMediaHub({ products, galleryItems, config, onRefres
 
         {/* ── TAB: ALMACENAMIENTO ── */}
         {activeTab === 'storage' && (
-          <motion.div key="storage" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+          <motion.div key="storage" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
+            <CacheStats />
             <AdminImageManager />
           </motion.div>
         )}

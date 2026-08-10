@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { memo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, HelpCircle, HeartHandshake } from 'lucide-react';
 import { useReducedMotion } from '../../../shared/hooks';
@@ -36,7 +36,7 @@ const FAQS: FAQItem[] = [
   }
 ];
 
-export default function FAQ() {
+function FAQ() {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const reducedMotion = useReducedMotion();
 
@@ -153,3 +153,5 @@ export default function FAQ() {
     </section>
   );
 }
+
+export default memo(FAQ);

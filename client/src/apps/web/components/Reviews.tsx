@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { memo, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Star, MessageSquarePlus, CheckCircle2, User, Sparkles, Quote } from 'lucide-react';
 import { dbService } from '../../../shared/services/dbService';
@@ -70,7 +70,7 @@ interface ReviewsProps {
   loading?: boolean;
 }
 
-export default function Reviews({ reviews, onRefreshReviews, loading = false }: ReviewsProps) {
+function Reviews({ reviews, onRefreshReviews, loading = false }: ReviewsProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [author, setAuthor] = useState('');
   const [role, setRole] = useState('');
@@ -382,3 +382,5 @@ export default function Reviews({ reviews, onRefreshReviews, loading = false }: 
     </section>
   );
 }
+
+export default memo(Reviews);

@@ -176,6 +176,17 @@ class ImageMemoryCacheService {
   get loadingCount(): number {
     return this.loading.size;
   }
+
+  /** Estadísticas agregadas para el panel de rendimiento */
+  getStats() {
+    return {
+      entries: this.cache.size,
+      loading: this.loading.size,
+      queued: this.queueHigh.length + this.queueMedium.length + this.queueLow.length,
+      hits: this.stats.hits,
+      preloads: this.stats.preloads,
+    };
+  }
 }
 
 // Instancia singleton global

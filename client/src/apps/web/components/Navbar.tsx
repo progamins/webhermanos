@@ -41,6 +41,13 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
   const reducedMotion = useReducedMotion();
   const navRef = useRef<HTMLDivElement>(null);
   const sheetCloseLockRef = useRef(false);
+  // Throttle del mousemove con rAF: el evento dispara ~60-120 veces/seg y cada
+  // setMousePos re-renderiza el navbar. Con rAF solo actualizamos 1 vez por frame.
+  const mouseMoveRafRef = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (mouseMoveRafRef.current !== null) cancelAnimationFrame(mouseMoveRafRef.current);
+  }, []);
 
   useEffect(() => {
     // ─── Forzar scroll al tope al montar el navbar ───
@@ -96,12 +103,21 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
   }, []);
 
   // ─── Mouse tracking para el highlight especular (Apple touch-point illumination) ───
+  // Throttled con rAF: máximo 1 actualización por frame, nunca bloquea el hilo.
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!navRef.current || reducedMotion) return;
-    const rect = navRef.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setMousePos({ x, y });
+    if (mouseMoveRafRef.current !== null) return; // ya hay un frame pendiente
+    const cx = e.clientX;
+    const cy = e.clientY;
+    mouseMoveRafRef.current = requestAnimationFrame(() => {
+      mouseMoveRafRef.current = null;
+      if (!navRef.current) return;
+      const rect = navRef.current.getBoundingClientRect();
+      setMousePos({
+        x: ((cx - rect.left) / rect.width) * 100,
+        y: ((cy - rect.top) / rect.height) * 100,
+      });
+    });
   }, [reducedMotion]);
 
   const handleMouseEnter = useCallback(() => {

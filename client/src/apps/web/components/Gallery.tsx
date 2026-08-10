@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { memo, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Calendar, Layers, Eye } from 'lucide-react';
@@ -15,7 +15,7 @@ interface GalleryProps {
 
 const CATEGORIES = ['Todos', 'Bodas', 'Cumpleaños', 'Infantiles', 'Aniversarios', 'Especiales'] as const;
 
-export default function Gallery({ galleryItems, loading = false }: GalleryProps) {
+function Gallery({ galleryItems, loading = false }: GalleryProps) {
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
   const [activeTab, setActiveTab] = useState<string>('Todos');
   const reducedMotion = useReducedMotion();
@@ -190,3 +190,5 @@ export default function Gallery({ galleryItems, loading = false }: GalleryProps)
     </section>
   );
 }
+
+export default memo(Gallery);

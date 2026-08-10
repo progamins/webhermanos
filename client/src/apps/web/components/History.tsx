@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { motion } from 'motion/react';
 import { Award, Heart, ShieldCheck, Users, Clock, Coffee } from 'lucide-react';
 import type { AppConfig } from '../../../shared/types';
@@ -48,7 +49,7 @@ const MILESTONES = [
   },
 ];
 
-export default function History({ config }: HistoryProps) {
+function History({ config }: HistoryProps) {
   const reducedMotion = useReducedMotion();
 
   const containerVariants = reducedMotion
@@ -207,3 +208,5 @@ export default function History({ config }: HistoryProps) {
     </section>
   );
 }
+
+export default memo(History);

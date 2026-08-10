@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { memo, useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { useReducedMotion } from '../../../shared/hooks';
 import { Search, Clock, CheckCircle2, ChevronRight, ChevronLeft, SlidersHorizontal, Images, X } from 'lucide-react';
@@ -39,7 +39,7 @@ function CatalogSkeleton() {
   );
 }
 
-export default function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps) {
+function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps) {
   const reducedMotion = useReducedMotion();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
@@ -424,3 +424,5 @@ export default function Catalog({ products, onSelectCustomize, loading = false }
     </section>
   );
 }
+
+export default memo(Catalog);

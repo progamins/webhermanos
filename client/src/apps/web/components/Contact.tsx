@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import {
@@ -20,7 +20,7 @@ const MAP_EMBED_SRC = 'https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d702
 const MAP_LINK = 'https://maps.app.goo.gl/qMp7JX9D1N44TSAfA';
 const WHATSAPP_NUMBER = '51902568187';
 
-export default function Contact({ config }: ContactProps) {
+function Contact({ config }: ContactProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
@@ -29,12 +29,38 @@ export default function Contact({ config }: ContactProps) {
   const [copied, setCopied] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapError, setMapError] = useState(false);
+  // Mapa lazy: el iframe solo se monta (src) cuando la sección está cerca del viewport.
+  // Ahorra red y DOM en la carga inicial — el mapa está al pie de la página.
+  const [mapInView, setMapInView] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const mapWrapRef = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotion();
 
-  // Safety timeout: if the iframe hasn't loaded after 12s, show the fallback UI
+  // IntersectionObserver: activar el mapa cuando esté a 400px del viewport.
+  // Si el navegador no lo soporta, cargar directo (comportamiento anterior).
   useEffect(() => {
-    if (mapLoaded) return;
+    if (mapInView) return;
+    if (typeof IntersectionObserver === 'undefined' || !mapWrapRef.current) {
+      setMapInView(true);
+      return;
+    }
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries.some(e => e.isIntersecting)) {
+          setMapInView(true);
+          obs.disconnect();
+        }
+      },
+      { rootMargin: '400px 0px' }
+    );
+    obs.observe(mapWrapRef.current);
+    return () => obs.disconnect();
+  }, [mapInView]);
+
+  // Safety timeout: if the iframe hasn't loaded after 12s, show the fallback UI
+  // (solo cuenta desde que el mapa empieza a cargar, no desde el montaje).
+  useEffect(() => {
+    if (mapLoaded || !mapInView) return;
     const timer = setTimeout(() => {
       if (!mapLoaded) {
         setMapError(true);
@@ -42,7 +68,7 @@ export default function Contact({ config }: ContactProps) {
       }
     }, 12000);
     return () => clearTimeout(timer);
-  }, [mapLoaded]);
+  }, [mapLoaded, mapInView]);
 
   const addressText = config?.address || 'Av. Ricardo Palma 213, Sánchez Cerro, Sullana, Piura, Perú';
 
@@ -177,7 +203,7 @@ export default function Contact({ config }: ContactProps) {
               id="map-container"
             >
               {/* Map area */}
-              <div className="relative h-64 sm:h-72 overflow-hidden" id="google-map-iframe-wrapper">
+              <div ref={mapWrapRef} className="relative h-64 sm:h-72 overflow-hidden" id="google-map-iframe-wrapper">
                 {/* Skeleton loader */}
                 {!mapLoaded && !mapError && (
                   <div className="absolute inset-0 z-10 flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--theme-bg-alt)' }}>
@@ -208,7 +234,7 @@ export default function Contact({ config }: ContactProps) {
 
                 <iframe
                   ref={iframeRef}
-                  src={MAP_EMBED_SRC}
+                  src={mapInView ? MAP_EMBED_SRC : undefined}
                   className={cn(
                     'w-full h-full border-0 transition-opacity duration-500',
                     mapLoaded && !mapError ? 'opacity-100' : 'opacity-0 absolute inset-0'
@@ -409,3 +435,5 @@ export default function Contact({ config }: ContactProps) {
     </section>
   );
 }
+
+export default memo(Contact);

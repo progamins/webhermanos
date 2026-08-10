@@ -32,6 +32,9 @@ class CriticalImageCache {
   private memoryBase64 = new Map<string, string>();
   private dbPromise: Promise<IDBDatabase | null> | null = null;
 
+  /** Estadísticas de uso (hits/misses de memoria + IndexedDB) */
+  public stats = { hits: 0, misses: 0 };
+
   constructor() {
     if (typeof indexedDB !== 'undefined') {
       this.initDB();
@@ -79,11 +82,17 @@ class CriticalImageCache {
   async get(url: string): Promise<string | null> {
     // 1. Memoria (instantáneo)
     const mem = this.memoryBase64.get(url);
-    if (mem) return mem;
+    if (mem) {
+      this.stats.hits++;
+      return mem;
+    }
 
     // 2. IndexedDB
     const db = await this.dbPromise;
-    if (!db) return null;
+    if (!db) {
+      this.stats.misses++;
+      return null;
+    }
 
     try {
       const tx = db.transaction(STORE_NAME, 'readonly');
@@ -95,14 +104,20 @@ class CriticalImageCache {
           const entry = req.result as CriticalEntry | undefined;
           if (entry && entry.timestamp > Date.now() - MAX_AGE_MS) {
             this.memoryBase64.set(url, entry.base64);
+            this.stats.hits++;
             resolve(entry.base64);
           } else {
+            this.stats.misses++;
             resolve(null);
           }
         };
-        req.onerror = () => resolve(null);
+        req.onerror = () => {
+          this.stats.misses++;
+          resolve(null);
+        };
       });
     } catch {
+      this.stats.misses++;
       return null;
     }
   }
@@ -145,6 +160,16 @@ class CriticalImageCache {
 
   has(url: string): boolean {
     return this.memoryBase64.has(url);
+  }
+
+  /** Estadísticas agregadas para el panel de rendimiento */
+  getStats() {
+    return {
+      entries: this.memoryBase64.size,
+      hits: this.stats.hits,
+      misses: this.stats.misses,
+      supported: typeof indexedDB !== 'undefined',
+    };
   }
 
   async clear(): Promise<void> {
@@ -191,5 +216,96 @@ export function preloadImages(urls: string[]): void {
 export function cacheImageForOffline(url: string, base64: string): void {
   if (!url || !base64) return;
   criticalImageCache.set(url, base64).catch(() => {});
+}
+
+/* ═══════════════════════════════════════════════
+   SOPORTE AVIF — convierte las imágenes cacheadas a
+   AVIF (comprime ~30-50% mejor que WebP) para que el
+   caché persistente ocupe menos y cargue más rápido.
+   ═══════════════════════════════════════════════ */
+
+let _avifSupport: boolean | null = null;
+
+/** Detecta si el navegador puede CODIFICAR AVIF (Chrome/Edge). */
+export function isAvifSupported(): boolean {
+  if (_avifSupport !== null) return _avifSupport;
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 8;
+    canvas.height = 8;
+    _avifSupport = canvas.toDataURL('image/avif').startsWith('data:image/avif');
+  } catch {
+    _avifSupport = false;
+  }
+  return _avifSupport;
+}
+
+function blobToBase64(blob: Blob): Promise<string | null> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(blob);
+  });
+}
+
+/**
+ * Convierte un Blob a AVIF cuando es posible y más pequeño que el original.
+ * Si el navegador no soporta AVIF (o la conversión sale más grande, ej: PNG
+ * re-codificado), devuelve el blob original — nunca empeora el resultado.
+ * Limita las dimensiones a 1600px para no inflar el caché con fotos gigantes.
+ */
+export async function convertBlobToAvif(blob: Blob, quality = 0.8): Promise<Blob> {
+  try {
+    if (typeof createImageBitmap !== 'function' || typeof ImageBitmap === 'undefined') return blob;
+
+    const bitmap = await createImageBitmap(blob);
+    const scale = Math.min(1, 1600 / bitmap.width, 1600 / bitmap.height);
+    if (scale >= 1 && !isAvifSupported()) {
+      bitmap.close();
+      return blob;
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      bitmap.close();
+      return blob;
+    }
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+
+    // toBlob('image/avif') → null si no soportado; PNG si es tipo desconocido.
+    const encoded = await new Promise<Blob | null>((resolve) => {
+      try {
+        canvas.toBlob(resolve, 'image/avif', quality);
+      } catch {
+        resolve(null);
+      }
+    });
+
+    // Solo usar la versión AVIF si es genuinamente más liviana.
+    if (encoded && encoded.size > 0 && encoded.size < blob.size * 0.9) return encoded;
+    return blob;
+  } catch {
+    return blob;
+  }
+}
+
+/**
+ * Guarda un Blob en el caché persistente convirtiéndolo a AVIF
+ * (si el navegador lo soporta y el resultado es más liviano).
+ */
+export async function cacheImageBlobForOffline(url: string, blob: Blob): Promise<void> {
+  if (!url || !blob || blob.size === 0) return;
+  try {
+    const optimized = await convertBlobToAvif(blob);
+    const base64 = await blobToBase64(optimized);
+    if (base64) cacheImageForOffline(url, base64);
+  } catch {
+    // no crítico
+  }
 }
 
