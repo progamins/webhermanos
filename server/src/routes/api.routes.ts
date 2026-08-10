@@ -10,8 +10,8 @@ import { galleryService } from '../services/GalleryService.js';
 import { configService } from '../services/ConfigService.js';
 import { emailService } from '../services/EmailService.js';
 import { otpService } from '../services/OtpService.js';
-import { contactLimiter, apiLimiter } from '../middleware/rateLimit.js';
-import { isValidEmail, escapeHtml, isAllowedImageUrl } from '../middleware/security.js';
+import { contactLimiter, apiLimiter, otpSendLimiter, otpVerifyLimiter, proxyLimiter } from '../middleware/rateLimit.js';
+import { isValidEmail, escapeHtml, isAllowedImageUrl, isPrivateHostname } from '../middleware/security.js';
 import { RealtimeService } from '../services/RealtimeService.js';
 import { calculatePrice } from '../services/PricingService.js';
 import { env } from '../config/env.js';
@@ -294,8 +294,8 @@ router.post('/orders', async (req, res) => {
 });
 
 // ─── OTP (con rate limiting específico) ───
-// OTP send limited to 3 attempts per IP per 15 minutes to prevent brute force
-router.post('/otp/send', apiLimiter, async (req, res) => {
+// OTP send: 5 por hora por IP — evita spam de correos y brute force
+router.post('/otp/send', otpSendLimiter, async (req, res) => {
   try {
     const { email, customerName } = req.body;
     if (!email || !customerName) {
@@ -313,8 +313,9 @@ router.post('/otp/send', apiLimiter, async (req, res) => {
   }
 });
 
-// OTP verify also rate limited to prevent brute force
-router.post('/otp/verify', apiLimiter, async (req, res) => {
+// OTP verify: 10 intentos por 15 min — evita brute force de códigos de 6 dígitos
+router.post('/otp/verify', otpVerifyLimiter, async (req, res) => {
+
   try {
     const { email, code } = req.body;
     if (!email || !code) {
@@ -443,8 +444,8 @@ router.get('/uploads/:filename', async (req, res) => {
   }
 });
 
-// ─── Image Proxy ───
-router.get('/image-proxy', async (req, res) => {
+// ─── Image Proxy (con rate limit + anti-SSRF) ───
+router.get('/image-proxy', proxyLimiter, async (req, res) => {
   const url = req.query.url as string;
   if (!url) return res.status(400).json({ error: 'URL requerida.' });
 
@@ -456,6 +457,13 @@ router.get('/image-proxy', async (req, res) => {
   }
 
   try {
+    const parsed = new URL(url);
+
+    // 🔒 Anti-SSRF: nunca hacer fetch a IPs privadas/loopback/reservadas.
+    if (isPrivateHostname(parsed.hostname)) {
+      return res.status(403).json({ error: 'Acceso denegado.' });
+    }
+
     if (!isAllowedImageUrl(url)) {
       return res.status(403).json({ error: 'Dominio no permitido.' });
     }
@@ -473,9 +481,18 @@ router.get('/image-proxy', async (req, res) => {
           'Accept': 'image/*',
         },
         signal: controller.signal,
+        // 🔒 No seguir redirects: evita redirección a IPs privadas (SSRF
+        // via redirect) y reduce superficie de ataque.
+        redirect: 'manual',
       });
     } finally {
       clearTimeout(timeout);
+    }
+
+    // Si el origen responde con redirect, no lo seguimos: devolver 502
+    // (el cliente tiene fallback a URL directa en CachedImage).
+    if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400)) {
+      throw new Error(`Redirect not followed: ${response.status}`);
     }
 
     if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);

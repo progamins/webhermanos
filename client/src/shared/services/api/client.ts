@@ -3,12 +3,31 @@
 // En producción: build + Express sirve todo en el mismo puerto (APP_URL)
 // Para apuntar a otro backend: VITE_API_URL=https://dominio.com/api
 
+import { requestPool } from './requestPool';
+
 const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || '/api';
+
+// Rutas públicas que se cachean por TTL (datos que cambian poco)
+const CACHEABLE_PATHS = ['/products', '/reviews', '/gallery', '/config'];
+
+function buildKey(path: string, options: RequestInit): string {
+  const method = (options.method || 'GET').toUpperCase();
+  return `${method} ${path}`;
+}
+
+function getCacheTtl(path: string, method: string): number {
+  // Solo GET públicos se cachean (10s). Admin NO cachea (datos frescos).
+  if (method !== 'GET') return 0;
+  if (path.startsWith('/admin/')) return 0;
+  if (CACHEABLE_PATHS.some(p => path.startsWith(p))) return 10_000;
+  return 0;
+}
 
 async function request<T = any>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const method = (options.method || 'GET').toUpperCase();
   const token = localStorage.getItem('maison_admin_token') || '';
 
   const headers: Record<string, string> = {
@@ -24,21 +43,33 @@ async function request<T = any>(
     headers['x-admin-token'] = token;
   }
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers,
+  const doFetch = async (): Promise<T> => {
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers,
+    });
+
+    if (!res.ok) {
+      let errorMsg = `Error ${res.status}`;
+      try {
+        const data = await res.json();
+        errorMsg = data.error || data.message || errorMsg;
+      } catch { /* ignore */ }
+      throw new Error(errorMsg);
+    }
+
+    return res.json();
+  };
+
+  const key = buildKey(path, options);
+  const cacheTtl = getCacheTtl(path, method);
+
+  // 🔄 Pasar por el request pool: concurrencia limitada + dedupe + cache + retry
+  return requestPool.run(key, doFetch, {
+    mutating: method !== 'GET',
+    cacheTtlMs: cacheTtl,
+    maxAttempts: method === 'GET' ? 3 : 1, // no reintentar mutaciones (evita duplicados)
   });
-
-  if (!res.ok) {
-    let errorMsg = `Error ${res.status}`;
-    try {
-      const data = await res.json();
-      errorMsg = data.error || data.message || errorMsg;
-    } catch { /* ignore */ }
-    throw new Error(errorMsg);
-  }
-
-  return res.json();
 }
 
 export const api = {

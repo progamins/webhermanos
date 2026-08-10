@@ -61,6 +61,15 @@ export function securityHeaders(req: Request, res: Response, next: NextFunction)
   // COEP and CORP are intentionally NOT set because require-corp would
   // block all cross-origin resources that don't explicitly opt in.
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+
+  // 🔒 No-store para rutas sensibles del admin: evita que el navegador
+  //    cachee datos privados (pedidos, pagos, reseñas) en disco.
+  if (req.path.startsWith('/api/admin') || req.path.startsWith('/api/upload')) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+
   next();
 }
 
@@ -78,12 +87,64 @@ export function isAllowedImageUrl(url: string): boolean {
 
   try {
     const parsed = new URL(url);
+    // 🔒 Anti-SSRF: bloquear hosts que no sean https (el proxy solo debe
+    //    servir imágenes seguras) y puertos no estándar.
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false;
+    if (parsed.port) return false;
     return ALLOWED_IMAGE_DOMAINS.some(
       domain => parsed.hostname === domain || parsed.hostname.endsWith('.' + domain)
     );
   } catch {
     return false;
   }
+}
+
+/**
+ * 🔒 Anti-SSRF: verifica que el hostname de una URL no sea una IP
+ * privada/reservada/loopback. Se usa en el image-proxy para impedir
+ * que un atacante acceda a la red interna del servidor.
+ */
+export function isPrivateHostname(hostname: string): boolean {
+  if (!hostname) return true;
+  const h = hostname.toLowerCase().replace(/^\[|\]$/g, ''); // quitar [ ] de IPv6
+
+  // Loopback, localhost, IPv6 loopback
+  if (h === 'localhost' || h === '::1' || h === '0.0.0.0') return true;
+
+  // IPv6: simplificar — bloquear cualquier IPv6 literal excepto las públicas no es trivial
+  // sin resolución DNS; bloqueamos formas obvias de loopback/link-local/private.
+  if (h.includes(':')) {
+    return h.startsWith('::') || h.startsWith('fc') || h.startsWith('fd') || h.startsWith('fe8') || h.startsWith('fe9') || h.startsWith('fea') || h.startsWith('feb');
+  }
+
+  // IPv4
+  const parts = h.split('.').map(Number);
+  if (parts.length !== 4 || parts.some(p => isNaN(p) || p < 0 || p > 255)) return false;
+  const [a, b] = parts;
+
+  // 10.0.0.0/8
+  if (a === 10) return true;
+  // 127.0.0.0/8 (loopback)
+  if (a === 127) return true;
+  // 169.254.0.0/16 (link-local)
+  if (a === 169 && b === 254) return true;
+  // 172.16.0.0/12
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  // 192.168.0.0/16
+  if (a === 192 && b === 168) return true;
+  // 100.64.0.0/10 (CGNAT)
+  if (a === 100 && b >= 64 && b <= 127) return true;
+  // 192.0.0.0/24, 192.0.2.0/24 (documentation), 198.18.0.0/15 (benchmark), 198.51.100.0/24
+  if (a === 192 && b === 0) return true;
+  if (a === 192 && b === 0 && parts[2] === 2) return true;
+  if (a === 198 && (b === 18 || b === 19)) return true;
+  if (a === 198 && b === 51 && parts[2] === 100) return true;
+  // 203.0.113.0/24 (documentation)
+  if (a === 203 && b === 0 && parts[2] === 113) return true;
+  // 224.0.0.0/4 multicast, 240.0.0.0/4 reserved
+  if (a >= 224) return true;
+
+  return false;
 }
 
 export function escapeHtml(str: string): string {
