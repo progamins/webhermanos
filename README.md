@@ -1,116 +1,333 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/progamins/webhermanos/main/client/public/logo.png" width="200" alt="Maison Rosas"/>
-  <h1 style="margin-top: 12px; font-size: 2.5em;">🍰 Maison Rosas</h1>
-  <p style="font-size: 1.1em; color: #666;">Pastelería de autor &amp; repostería fina</p>
-  <br/>
-  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white" alt="React 19"/>
-  <img src="https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white" alt="Vite 6"/>
-  <img src="https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white" alt="Express 4"/>
-  <img src="https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white" alt="MySQL 8"/>
-  <img src="https://img.shields.io/badge/Docker-✔-2496ED?logo=docker&logoColor=white" alt="Docker"/>
-  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5"/>
+
+<img src="https://raw.githubusercontent.com/progamins/webhermanos/main/client/public/logo.png" width="180" alt="Maison Rosas" />
+
+# 🍰 Maison Rosas
+
+**Pastelería de autor & repostería fina** — Tienda online + panel administrativo full-stack para la pastelería familiar Rosas Albines.
+
+[![Live Demo](https://img.shields.io/badge/Demo-En%20vivo-7C3AED?style=flat-square)](https://webhermanos-client.vercel.app)
+[![React 19](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=white)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Express](https://img.shields.io/badge/Express-4-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com)
+[![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?style=flat-square&logo=mysql&logoColor=white)](https://www.mysql.com)
+[![Docker](https://img.shields.io/badge/Docker-Listo-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com)
+
 </div>
 
-<br/>
+---
 
-**Aplicación web full-stack** (tienda online + panel administrativo) para la pastelería de autor **Maison Rosas**, creada por la familia Rosas Albines.
+## 📖 ¿Qué es Maison Rosas?
 
-Cliente en React + Vite · Servidor Express + MySQL · Docker listo para producción.
+Una **aplicación web completa** para una pastelería de autor real: los clientes exploran un catálogo de pasteles personalizables, hacen pedidos con seguimiento por código, y el equipo administra todo — pedidos, stock de cocina, galería, reseñas y la configuración de la tienda — desde un panel de administración con roles y seguridad reforzada.
 
-> 📦 **Nueva: instalación con Docker.** Levanta todo con un solo comando.
-> Ver la guía completa en **[docker/README.md](docker/README.md)**.
+- **Para quién:** pastelerías y negocios de repostería que quieren digitalizar sus pedidos sin depender de redes sociales.
+- **Problema que resuelve:** reemplaza el flujo manual (mensajes sueltos, hojas de cálculo) por un sistema con pedidos trazables, notificaciones por correo y un panel de gestión en tiempo real.
+- **Qué lo diferencia:** arquitectura completa (cliente + API + base de datos + Docker + despliegue), panel multi-rol con seguridad por ruta secreta, IP/MAC y sesiones, y modo offline PWA para la tienda.
+- **Objetivo:** servir como producto real en producción y como portafolio que demuestra desarrollo full-stack de punta a punta.
+
+**Estado:** 🟢 En producción (desplegado en Vercel) · **Versión:** 1.1.0 · **Changelog:** [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
-## 🚀 Opción A — Docker (recomendado, multiplataforma)
+## 🚀 Demo en vivo
 
-La forma más sencilla de correr el proyecto en **Windows, Linux o macOS**
-sin instalar Node, MySQL ni XAMPP manualmente.
+| Interfaz | URL | Descripción |
+|---|---|---|
+| 🏠 **Tienda** | [webhermanos-client.vercel.app](https://webhermanos-client.vercel.app) | Catálogo, personalizador de pasteles, pedidos y tracking |
+| ❤️ **API Health** | [webhermanos-client.vercel.app/api/health](https://webhermanos-client.vercel.app/api/health) | Estado del servidor (`{"status":"ok"}`) |
+| 🔐 **Panel admin** | Ruta secreta configurada con `ADMIN_SECRET_PATH` | No publicada por seguridad |
 
-**Requisitos:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/macOS) o `docker` + `docker compose` (Linux).
-
-```bash
-cp .env.example .env          # 1. Copia el entorno
-#                              2. Edita .env con tus claves (SMTP, etc.)
-docker compose up -d --build   # 3. Levanta cliente + servidor + MySQL
-```
-
-URLs una vez levantado:
-- 🏠 Tienda: http://localhost:3000
-- 🔐 Admin: http://localhost:3000/admin
-- ❤️ Health: http://localhost:3000/api/health
-
-Guía completa (backups, troubleshooting, Adminer, migrar Win→Linux) en
-**[docker/README.md](docker/README.md)**.
+> El panel admin se sirve en una ruta aleatoria (definida por `ADMIN_SECRET_PATH`) y está protegido además por contraseña, token de sesión y, opcionalmente, filtros de IP/MAC.
 
 ---
 
-## 💻 Opción B — Sin Docker (desarrollo local)
+## 🖼️ Screenshots
 
-**Prerrequisitos:** Node.js 20+, MySQL 8 (o XAMPP).
+La estructura prevista (se capturarán con el proyecto en ejecución):
 
-```bash
-# 1. Instalar dependencias del monorepo
-npm install
-
-# 2. Configurar entorno
-cp .env.example .env
-#    - Edita .env: DB_HOST=localhost, DB_USER, DB_PASSWORD...
-
-# 3. Crear base de datos + tablas
-npm run db:migrate
-#    (opcional) datos de ejemplo:
-npm run db:seed
-
-# 4. Modo desarrollo (cliente en :5173 con proxy al servidor en :3000)
-npm run dev
+```text
+/screenshots
+├── home.png          # Hero + catálogo
+├── catalog.png       # Filtros y búsqueda
+├── customizer.png    # Personalizador de pasteles
+├── tracking.png      # Seguimiento de pedido
+├── admin-dashboard.png
+├── admin-orders.png
+├── admin-kitchen.png
+└── mobile.png        # Vista móvil
 ```
 
-Otros scripts útiles:
-- `npm run build` — construye cliente (`client/dist`) y servidor (`server/dist`)
-- `npm start` — arranca el servidor en producción (sirve el cliente ya construido)
+---
+
+## 🧰 Tech Stack
+
+### Frontend
+- **React 19** + **TypeScript 5** + **Vite 6**
+- **Tailwind CSS 4** (con `@tailwindcss/vite`)
+- **Motion** (animaciones), **Recharts** (gráficos del panel), **Embla Carousel**
+- **lucide-react** (iconos), **sonner** (toasts), **jsbarcode** (códigos de barras), **html2canvas** (capturas)
+- **PWA**: Service Worker con modo offline y caché de imágenes en IndexedDB
+
+### Backend
+- **Node.js 20+** + **Express 4** + **TypeScript** (bundle con esbuild, dev con tsx)
+- **mysql2** (pool de conexiones con health check), **bcryptjs** (hashing), **multer** (uploads)
+- **Nodemailer** (SMTP Gmail) y **Resend** (correos transaccionales)
+- **express-rate-limit**, **winston** (logging estructurado), **@vercel/blob** (storage serverless), **SSE** (tiempo real)
+
+### Base de datos
+- **MySQL 8** (utf8mb4) con **migraciones SQL versionadas** (6 migraciones, 13+ tablas)
+
+### DevOps
+- **Docker** multi-stage + **docker-compose** (app + MySQL + Adminer opcional)
+- **Vercel** (frontend + funciones serverless) · **HostGator** (guía Apache/.htaccess)
+- **GitHub Actions** (CI: typecheck + build)
+
+---
+
+## 🏗️ Arquitectura
+
+```mermaid
+flowchart LR
+    U[Visitante] --> WEB[Tienda Web - React SPA]
+    A[Admin] --> ADM[Panel Admin - React SPA]
+    WEB --> API[Express API]
+    ADM --> API
+    API --> DB[(MySQL 8)]
+    API --> MAIL[Email SMTP / Resend]
+    API --> STORE[Storage: Vercel Blob / uploads]
+    API --> SSE[SSE - notificaciones en tiempo real]
+    ADM --> SSE
+    API --> EXT[Google Maps / GA4]
+```
+
+- **Frontend:** dos SPAs (tienda pública y panel admin) construidas con Vite, servidas como estáticos por Express (o por el CDN de Vercel).
+- **Backend:** API REST Express con capas de rutas → servicios → repositorios, y middleware de seguridad (headers, rate limit, validación, auth por token).
+- **Base de datos:** MySQL 8, esquema aplicado automáticamente en el primer arranque de Docker (`/docker-entrypoint-initdb.d/`) o vía `npm run db:migrate`.
+- **Autenticación:** sesiones de admin con token en BD, un solo dispositivo activo por rol, contraseñas con bcrypt, ruta secreta + filtros opcionales de IP/MAC.
+- **Uploads:** almacenamiento local (bind mount en Docker) o Vercel Blob en serverless, con registro en BD y deduplicación por hash.
+- **Tiempo real:** SSE para notificaciones de pedidos nuevos y panel de cocina.
+- **Deployment:** `docker compose up` para producción autogestionada, o Vercel (estáticos + `api/index.ts` serverless).
 
 ---
 
 ## 📂 Estructura del proyecto
 
+```text
+webhermanos/
+├── client/                  # Frontend React + Vite (tienda y panel admin)
+│   ├── src/apps/web/        #   SPA tienda pública
+│   ├── src/apps/admin/      #   SPA panel admin
+│   └── src/shared/          #   Componentes, servicios y utilidades compartidos
+├── server/                  # API Express + TypeScript
+│   └── src/
+│       ├── routes/          #   Rutas públicas y de admin
+│       ├── services/        #   Lógica de negocio
+│       ├── repositories/    #   Capa de datos (MySQL)
+│       ├── middleware/      #   Auth, seguridad, rate limit, uploads
+│       └── migrations/      #   Esquema SQL versionado
+├── api/                     # Entry point serverless para Vercel
+├── docker/                  # Guía Docker completa
+├── scripts/                 # Utilidades (versionado, seed, uploads)
+├── public/                  # Manifest PWA, robots, sitemap
+├── docker-compose.yml       # Orquestación (app + MySQL + Adminer)
+├── Dockerfile               # Build multi-stage
+├── .github/                 # CI y plantillas de issues
+└── .env.example             # Plantilla de variables de entorno
 ```
-maison-rosas/
-├── client/              # App React + Vite (tienda + admin)
-│   ├── src/
-│   ├── index.html       # SPA tienda
-│   └── admin.html       # SPA admin
-├── server/              # API Express + MySQL
-│   ├── src/
-│   │   ├── index.ts     # Entry point (escucha en 0.0.0.0:3000)
-│   │   ├── app.ts       # Express, sirve /api, /uploads y cliente
-│   │   ├── migrations/  # 001_init.sql (esquema DB)
-│   │   └── ...
-│   └── uploads/         # Imágenes subidas (bind mount en Docker)
-├── docker-compose.yml   # Orquestación Docker
-├── Dockerfile           # Build multi-stage
-├── .env.example         # Variables de entorno (plantilla)
-└── README.md
+
+---
+
+## ✨ Funcionalidades
+
+### ✅ Implementado
+
+**Tienda pública**
+- Catálogo de pasteles con búsqueda (tolerante a acentos), filtros por categoría y caché de imágenes.
+- Personalizador de pasteles (tamaño, relleno, decoración) con **precio calculado y validado en el servidor**.
+- Pedidos con código de tracking único, línea de tiempo de estados y **verificación por OTP** (código de 6 dígitos por email).
+- Formulario de contacto, galería, reseñas de clientes y sección de preguntas frecuentes.
+- Integración WhatsApp, Google Maps y Google Analytics 4 (configurables).
+- **PWA con modo offline**: app shell, precarga priorizada e imágenes persistentes en IndexedDB.
+- SEO: meta tags, Open Graph, JSON-LD (Schema.org Bakery), sitemap y robots.txt.
+
+**Panel administrativo** (roles: admin, analista, gestor de stock)
+- Dashboard con métricas y gráficos (Recharts).
+- Gestión de productos, pedidos (estados, vouchers de pago, fotos de progreso) y stock de cocina con **notificaciones en tiempo real (SSE)**.
+- Centro de medios unificado: subida de imágenes, hashes, deduplicación y limpieza de huérfanos.
+- Galería, reseñas (aprobación y respuestas) y configuración dinámica de toda la tienda.
+- Registro de actividad, gestión de contraseñas de roles y envío de credenciales por correo.
+
+**Infraestructura y seguridad**
+- API REST con rate limiting por área (API, login, admin, contacto, OTP), timeouts y validación de `Content-Type`.
+- Headers de hardening (CSP, HSTS, X-Frame-Options, etc.), cookies `HttpOnly`/`SameSite=Strict`/`__Host-`.
+- Anti-SSRF en el proxy de imágenes, sanitización HTML, validación de email RFC-5322 y precios siempre calculados en servidor.
+- Docker listo para producción, migraciones idempotentes, logging estructurado con Winston.
+- CI con GitHub Actions (typecheck + build) en cada push/PR.
+
+### 🚧 En desarrollo
+- Capturas de pantalla oficiales del producto (ver sección Screenshots).
+- Decisiones de licencia y roadmap público (se gestionarán vía GitHub Issues).
+
+---
+
+## 🛠️ Instalación
+
+### Requisitos
+- **Node.js 20+** (para desarrollo local)
+- **Docker + Docker Compose** (recomendado, levanta todo) — o **MySQL 8** instalado localmente
+
+### Opción A — Docker (recomendado)
+
+```bash
+git clone https://github.com/progamins/webhermanos.git
+cd webhermanos
+cp .env.example .env      # edita .env con tus claves (ver sección de variables)
+docker compose up -d --build
 ```
+
+| URL | Qué verás |
+|---|---|
+| http://localhost:3000 | 🏠 Tienda |
+| http://localhost:3000/admin | 🔐 Panel admin (redirige a la ruta secreta) |
+| http://localhost:3000/api/health | ❤️ Health check |
+
+La primera vez, MySQL tarda ~20-40s en aplicar el esquema automáticamente. Guía completa (backups, troubleshooting, Adminer) en **[docker/README.md](docker/README.md)**.
+
+### Opción B — Desarrollo local
+
+```bash
+git clone https://github.com/progamins/webhermanos.git
+cd webhermanos
+npm install
+cp .env.example .env      # DB_HOST=localhost, edita credenciales
+npm run db:migrate        # crea el esquema
+npm run db:seed           # (opcional) datos de ejemplo
+npm run dev               # cliente en :5173 con proxy a la API en :3000
+```
+
+### Scripts útiles
+
+| Comando | Descripción |
+|---|---|
+| `npm run dev` | Desarrollo (cliente + proxy a servidor) |
+| `npm run dev:server` | Solo API en modo watch |
+| `npm run build` | Build de producción (cliente + servidor) |
+| `npm start` | Servidor en producción (sirve el cliente construido) |
+| `npm run lint` | Typecheck de ambos workspaces |
+| `npm run db:migrate` / `npm run db:seed` | Migraciones / datos de ejemplo |
 
 ---
 
 ## 🔑 Variables de entorno
 
-Cópialas desde `.env.example` a `.env` (que **no** se sube a GitHub):
+Copia `.env.example` a `.env` (nunca se sube a GitHub). No se requieren claves para un arranque de prueba, pero la app exige algunos valores para el seed de roles.
 
-| Variable | Docker | Local | Descripción |
-|---|---|---|---|
-| `DB_HOST` | `db` | `localhost` | Hostname de MySQL |
-| `DB_USER` / `DB_PASSWORD` | `root` / `MYSQL_ROOT_PASSWORD` | tu config | Credenciales DB |
-| `MYSQL_ROOT_PASSWORD` | ✅ (define) | — | Contraseña root del contenedor MySQL |
-| `SMTP_USER` / `SMTP_PASS` | ✅ | ✅ | Gmail + contraseña de aplicación |
-| `GOOGLE_MAPS_PLATFORM_KEY` | opcional | opcional | Clave Google Maps |
-| `APP_URL` | `http://localhost:3000` | `http://localhost:3000` | URL pública |
+### Obligatorias
+| Variable | Descripción |
+|---|---|
+| `DB_HOST` / `DB_PORT` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` | Conexión a MySQL (`db` en Docker, `localhost` en local) |
+| `ADMIN_SECRET_PATH` | Ruta aleatoria del panel admin (genera una con `crypto.randomBytes(32).toString('hex')`) |
+| `ADMIN_DEFAULT_PASSWORD` / `ANALYST_DEFAULT_PASSWORD` / `STOCK_MANAGER_DEFAULT_PASSWORD` | Contraseñas iniciales de roles (solo para el seed; rotar desde el panel después) |
+
+### Opcionales
+| Variable | Descripción |
+|---|---|
+| `SMTP_USER` / `SMTP_PASS` / `SMTP_HOST` / `SMTP_PORT` | Correo SMTP (Gmail) para notificaciones |
+| `RESEND_API_KEY` / `RESEND_SENDER_EMAIL` | Alternativa de correo con Resend |
+| `GOOGLE_MAPS_PLATFORM_KEY` | Mapas interactivos |
+| `VITE_GA_MEASUREMENT_ID` | Google Analytics 4 |
+| `APP_URL` | URL pública del sitio |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob (solo serverless) |
+| `ALLOWED_ADMIN_IPS` / `ALLOWED_MAC_ADDRESSES` | Blindaje extra del panel admin (vacío = sin restricción) |
+| `MYSQL_ROOT_PASSWORD` / `DB_PORT_PUBLISHED` / `APP_PORT_PUBLISHED` | Solo Docker |
+
+> 🔒 **Nunca** subas `.env` ni credenciales reales al repositorio. Si tienes secretos en el historial git, rótalos y purga el historial.
+
+---
+
+## 📡 API
+
+Base: `/api`. Respuestas en JSON. El panel admin (`/api/admin/*`) requiere el header `x-admin-token`.
+
+### Públicas
+| Método | Endpoint | Propósito |
+|---|---|---|
+| GET | `/api/health` | Estado del servidor |
+| GET | `/api/status` | Diagnóstico (env vars, BD, tablas, auth) |
+| GET | `/api/products` | Catálogo de productos |
+| GET | `/api/reviews` | Reseñas aprobadas |
+| GET | `/api/gallery` | Galería de imágenes |
+| GET | `/api/config` | Configuración pública de la tienda |
+| GET | `/api/config/critical-urls` | URLs críticas (hero, logo, favicon) |
+| GET | `/api/orders?trackingCode=…` o `?email=…` | Consultar pedido por tracking o email |
+| POST | `/api/orders` | Crear pedido (precio validado en servidor) |
+| POST | `/api/otp/send` | Enviar código OTP (límite: 5/hora) |
+| POST | `/api/otp/verify` | Verificar código OTP (límite: 10/15 min) |
+| POST | `/api/contact` | Formulario de contacto (límite: 3/hora) |
+| POST | `/api/csp-report` | Reportes de violaciones CSP |
+| GET | `/api/uploads/:filename` | Servir archivos subidos |
+| GET | `/api/image-proxy?url=…` | Proxy de imágenes (anti-SSRF, lista blanca de dominios) |
+| GET | `/api/events` | SSE — notificaciones en tiempo real |
+
+### Admin (requieren sesión)
+| Método | Endpoint | Propósito |
+|---|---|---|
+| POST | `/api/admin/login` / `/verify` / `/logout` | Autenticación de roles |
+| POST | `/api/admin/change-admin-password` | Cambiar contraseña de admin |
+| GET/POST | `/api/admin/products` · `DELETE /api/admin/products/:id` | Gestión de productos |
+| GET/POST | `/api/admin/orders` · `POST /orders/status` · `POST /orders/update-full` · `POST /orders/update-payment` | Gestión de pedidos |
+| POST | `/api/admin/orders/upload-voucher` · `/delete-voucher` · `/progress-photo` · `/delete-progress-photo` | Vouchers y fotos de progreso |
+| POST | `/api/admin/orders/assign-stock` | Asignar stock a pedidos |
+| GET/POST | `/api/admin/kitchen/orders` · `/kitchen/update-status` · `/kitchen/notes` | Panel de cocina |
+| POST | `/api/admin/orders/reset-timer` | Reiniciar temporizador |
+| GET/POST/DELETE | `/api/admin/gallery` | Galería |
+| POST | `/api/admin/reviews/approve` · `/reviews/reply` · `DELETE /reviews/:id` | Reseñas |
+| GET/POST | `/api/admin/config` | Configuración de la tienda |
+| GET/POST/DELETE | `/api/admin/stock` | Stock de pasteles |
+| GET/POST | `/api/admin/role-passwords` · `/send-credentials` | Credenciales de roles |
+| GET | `/api/admin/activity-log` · `/audit/urls` · `/diagnostics` | Auditoría y diagnóstico |
+| GET/DELETE/POST | `/api/admin/storage/*` | Gestión de almacenamiento (listar, borrar, migrar, deduplicar) |
+| POST | `/api/upload` | Subida de imágenes (multipart, token requerido) |
+
+---
+
+## 🔒 Seguridad
+
+Medidas implementadas en el código:
+
+- **Headers de hardening** en todas las respuestas: CSP con `report-uri`, HSTS, `X-Frame-Options`, `X-Content-Type-Options`, `Permissions-Policy`, `Referrer-Policy`, `Cross-Origin-Opener-Policy`.
+- **Rate limiting** por IP en API, login, admin, contacto y OTP; timeouts de request y validación de `Content-Type` (anti-CSRF por form-encoding).
+- **Panel admin**: ruta secreta (`ADMIN_SECRET_PATH`), filtros opcionales de IP/MAC, sesiones con token, una sesión activa por rol, contraseñas con bcrypt y rotación desde el panel.
+- **Anti-SSRF** en el proxy de imágenes (bloqueo de IPs privadas/loopback, lista blanca de dominios, sin seguir redirects).
+- **Sanitización HTML** y validación estricta de email en los endpoints públicos.
+- **Precios siempre calculados en servidor** (el cliente no decide el total).
+- **Cookies** `HttpOnly`, `SameSite=Strict` y `__Host-` en producción.
+- **Caché `no-store`** en rutas administrativas; **CORS** restringido por lista de orígenes.
+
+Para reportar una vulnerabilidad, consulta **[SECURITY.md](SECURITY.md)**.
+
+---
+
+## 🤝 Contribuir
+
+¿Quieres colaborar? Consulta **[CONTRIBUTING.md](CONTRIBUTING.md)** — incluye cómo reportar bugs, proponer funcionalidades y el flujo de trabajo con ramas.
+
+- Reporta bugs o pide features con las plantillas de **[GitHub Issues](https://github.com/progamins/webhermanos/issues)**.
+
+---
+
+## 📄 Licencia
+
+El proyecto **no tiene licencia definida** aún. Al no declararse, aplica el copyright por defecto (reservados todos los derechos).
+
+**Recomendación:** si el objetivo es usarlo como portafolio y atraer colaboradores, **MIT** es la opción natural (permite que otros lo usen y aprendan de él). Si el código es para un cliente comercial exclusivo, considera mantener "Todos los derechos reservados". Decidir esto es el paso previo a cualquier contribución externa.
 
 ---
 
 ## 📚 Documentación adicional
 
-- 🐳 [docker/README.md](docker/README.md) — Guía Docker completa
-- 🌐 [README_DEPLOY_HOSTGATOR.md](README_DEPLOY_HOSTGATOR.md) — Deploy en HostGator
+- 🐳 [docker/README.md](docker/README.md) — Guía Docker completa (backups, troubleshooting, Adminer)
+- 🌐 [README_DEPLOY_HOSTGATOR.md](README_DEPLOY_HOSTGATOR.md) — Despliegue en HostGator
+- 📜 [CHANGELOG.md](CHANGELOG.md) — Historial de versiones
+- 🛡️ [SECURITY.md](SECURITY.md) — Política de seguridad

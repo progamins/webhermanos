@@ -13,6 +13,23 @@ Las secciones son:
 - `Fixed` para bug fixes
 - `Security` para mejoras de seguridad
 
+## [Unreleased]
+
+### Added
+- CI con GitHub Actions (typecheck + build en Node 20/22) para cada push y pull request.
+- `CONTRIBUTING.md` con guía de contribución, flujo de ramas y formato de commits.
+- `SECURITY.md` con política de divulgación responsable de vulnerabilidades.
+- Plantillas de GitHub Issues para reportes de bug y solicitudes de funcionalidad.
+
+### Changed
+- `README.md` rediseñado como presentación profesional: demo en vivo, stack por categorías, arquitectura (Mermaid), funcionalidades reales, API documentada, variables de entorno y sección de seguridad.
+
+### Security
+- Eliminadas credenciales reales (contraseña de BD, contraseñas de roles y `ADMIN_SECRET_PATH`) que estaban expuestas en `.vercel.env.example`. El archivo ahora solo contiene placeholders.
+- `uploads/` y `lighthouse-*.json` dejan de estar versionados (se mantienen en disco local como datos de ejecución/artefactos).
+
+> ⚠️ **Acción pendiente:** rotar todas las credenciales que estuvieron expuestas en el historial del repositorio (ver SECURITY.md).
+
 ## [1.1.0] - 2026-07-23
 
 ### Security

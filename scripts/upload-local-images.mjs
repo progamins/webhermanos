@@ -22,8 +22,14 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UPLOADS_DIR = path.resolve(__dirname, '../server/uploads');
 const API_BASE = process.env.API_URL || 'https://webhermanos-client.vercel.app/api';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'A4B234-551!';
-const ADMIN_SECRET_PATH = process.env.ADMIN_SECRET_PATH || 'admin-53835f670ab35744a8448d8b257bbb96';
+// 🔒 Sin valores por defecto: las credenciales se exigen en el entorno.
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || process.env.ADMIN_DEFAULT_PASSWORD || '';
+const ADMIN_SECRET_PATH = process.env.ADMIN_SECRET_PATH || '';
+if (!ADMIN_PASSWORD || !ADMIN_SECRET_PATH) {
+  console.error('❌ Falta ADMIN_PASSWORD (o ADMIN_DEFAULT_PASSWORD) y ADMIN_SECRET_PATH en el entorno.');
+  console.error('   Configúralos en tu .env antes de ejecutar el script.');
+  process.exit(1);
+}
 
 async function login() {
   console.log(`🔐 Iniciando sesión como admin...`);

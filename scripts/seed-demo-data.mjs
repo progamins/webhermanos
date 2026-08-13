@@ -35,21 +35,34 @@ import bcrypt from 'bcryptjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// ─── Config ───────────────────────────────────────────────────────
-const DB_HOST = process.env.DB_HOST || 'sakura.proxy.rlwy.net';
-const DB_PORT = Number(process.env.DB_PORT || 21373);
-const DB_USER = process.env.DB_USER || 'root';
-const DB_PASSWORD = process.env.DB_PASSWORD || 'XFJyuoGaKwBWgxXFjBeTBJYWRXUMQuSO';
-const DB_NAME = process.env.DB_NAME || 'railway';
+/**
+ * 🔒 Lee una variable de entorno obligatoria o aborta el script.
+ * No hay valores por defecto con credenciales reales: el script
+ * exige que el operador defina el entorno al que quiere apuntar.
+ */
+function requireEnv(name) {
+  const value = process.env[name];
+  if (!value) {
+    console.error(`[SEED] ERROR: Falta ${name} en el entorno. Defínelo en .env antes de ejecutar el script.`);
+    process.exit(1);
+  }
+  return value;
+}
 
-// Contraseñas documentadas para Vercel (.vercel.env.example)
-// 🔒 IMPORTANTE: se fijan AQUÍ de forma determinista y NO se leen de
-// process.env para evitar que variables de entorno del shell (p.ej. las
-// de .env local) pisen las credenciales de producción.
+// ─── Config (SIEMPRE desde variables de entorno) ───────────────
+const DB_HOST = requireEnv('DB_HOST');
+const DB_PORT = Number(requireEnv('DB_PORT'));
+const DB_USER = requireEnv('DB_USER');
+const DB_PASSWORD = requireEnv('DB_PASSWORD');
+const DB_NAME = requireEnv('DB_NAME');
+
+// Contraseñas de roles para el seed inicial (se leen del entorno).
+// ⚠️ Al ejecutar contra producción, asegúrate de que el .env que
+// cargas sea el de producción y no uno local de desarrollo.
 const PASSWORDS = {
-  admin: 'A4B234-551!',
-  analyst: '9C15D5-848!',
-  stock_manager: '4DCA3A-619!',
+  admin: requireEnv('ADMIN_DEFAULT_PASSWORD'),
+  analyst: requireEnv('ANALYST_DEFAULT_PASSWORD'),
+  stock_manager: requireEnv('STOCK_MANAGER_DEFAULT_PASSWORD'),
 };
 
 const UPLOADS_DIR = path.resolve(__dirname, '../server/uploads');
