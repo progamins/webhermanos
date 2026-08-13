@@ -42,20 +42,25 @@ Una **aplicación web completa** para una pastelería de autor real: los cliente
 
 ---
 
-## 🖼️ Screenshots
+## 🖼️ Capturas reales
 
-La estructura prevista (se capturarán con el proyecto en ejecución):
+<img src="screenshots/home.png" width="49%" alt="Vista principal — escritorio" />
+<img src="screenshots/mobile-home.png" width="49%" alt="Vista principal — móvil" />
 
-```text
-/screenshots
-├── home.png          # Hero + catálogo
-├── catalog.png       # Filtros y búsqueda
-├── customizer.png    # Personalizador de pasteles
-├── tracking.png      # Seguimiento de pedido
-├── admin-dashboard.png
-├── admin-orders.png
-├── admin-kitchen.png
-└── mobile.png        # Vista móvil
+<img src="screenshots/catalog.png" width="49%" alt="Catálogo de modelos" />
+<img src="screenshots/tracking.png" width="49%" alt="Seguimiento de pedidos" />
+
+> Capturas generadas automáticamente desde la web desplegada. Para regenerarlas:
+> `node scripts/capture-screenshots.mjs` (ver [screenshots/README.md](screenshots/README.md)).
+
+## 🎬 Demo en video
+
+Próximamente: video de la web en acción. Para añadirlo, sube la grabación a
+YouTube/Loom y pega el enlace aquí, o guarda un `.mp4` en `media/` (ver
+[screenshots/README.md](screenshots/README.md)):
+
+```markdown
+[▶️ Ver video demo](https://www.youtube.com/watch?v=TU_ID)
 ```
 
 ---

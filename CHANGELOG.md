@@ -21,6 +21,7 @@ Las secciones son:
 - `SECURITY.md` con política de divulgación responsable de vulnerabilidades.
 - Plantillas de GitHub Issues para reportes de bug y solicitudes de funcionalidad.
 - Licencia MIT (`LICENSE`).
+- Capturas reales de la web desplegada en `screenshots/` con script regenerable (`scripts/capture-screenshots.mjs`) y espacio para video demo en el README.
 
 ### Changed
 - `README.md` rediseñado como presentación profesional: demo en vivo, stack por categorías, arquitectura (Mermaid), funcionalidades reales, API documentada, variables de entorno y sección de seguridad.
