@@ -20,6 +20,7 @@ Las secciones son:
 - `CONTRIBUTING.md` con guía de contribución, flujo de ramas y formato de commits.
 - `SECURITY.md` con política de divulgación responsable de vulnerabilidades.
 - Plantillas de GitHub Issues para reportes de bug y solicitudes de funcionalidad.
+- Licencia MIT (`LICENSE`).
 
 ### Changed
 - `README.md` rediseñado como presentación profesional: demo en vivo, stack por categorías, arquitectura (Mermaid), funcionalidades reales, API documentada, variables de entorno y sección de seguridad.

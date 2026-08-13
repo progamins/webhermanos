@@ -319,9 +319,9 @@ Para reportar una vulnerabilidad, consulta **[SECURITY.md](SECURITY.md)**.
 
 ## 📄 Licencia
 
-El proyecto **no tiene licencia definida** aún. Al no declararse, aplica el copyright por defecto (reservados todos los derechos).
+Distribuido bajo la **Licencia MIT** — consulta [LICENSE](LICENSE) para más detalles.
 
-**Recomendación:** si el objetivo es usarlo como portafolio y atraer colaboradores, **MIT** es la opción natural (permite que otros lo usen y aprendan de él). Si el código es para un cliente comercial exclusivo, considera mantener "Todos los derechos reservados". Decidir esto es el paso previo a cualquier contribución externa.
+> Permite usar, copiar, modificar y distribuir el código libremente, incluso con fines comerciales, siempre que se conserve el aviso de copyright original. Ideal para un proyecto de portafolio abierto a colaboración.
 
 ---
 
