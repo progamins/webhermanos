@@ -28,6 +28,8 @@ interface CatalogProps {
 }
 
 const CATEGORIES = ['Todos', 'Kekes Clásicos', 'Kekes Frutales', 'Kekes Peruanos'] as const;
+// Orden de las repisas de la vitrina (mismas categorías del filtro, sin "Todos").
+const SHELF_ORDER = ['Kekes Clásicos', 'Kekes Frutales', 'Kekes Peruanos'] as const;
 
 function CatalogSkeleton() {
   return (
@@ -86,6 +88,25 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
       }),
     [products, searchTerm, selectedCategory, normalize]
   );
+
+  // ─── Vitrina artesanal ───
+  // Agrupa los productos por categoría: cada grupo es una "repisa" con sus
+  // productos encima. El orden respeta el de las categorías del filtro; las
+  // categorías no conocidas se anexan al final.
+  const shelves = useMemo(() => {
+    const groups = new Map<string, Product[]>();
+    for (const p of filteredProducts) {
+      const cat = p.category || SHELF_ORDER[0];
+      if (!groups.has(cat)) groups.set(cat, []);
+      groups.get(cat)!.push(p);
+    }
+    const ordered: { category: string; items: Product[] }[] = [];
+    for (const c of SHELF_ORDER) {
+      if (groups.has(c)) { ordered.push({ category: c, items: groups.get(c)! }); groups.delete(c); }
+    }
+    for (const [cat, items] of groups) ordered.push({ category: cat, items });
+    return ordered;
+  }, [filteredProducts]);
 
   const handleClearFilters = useCallback(() => {
     setSearchTerm('');
@@ -158,46 +179,57 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
             action={{ label: 'Restablecer Filtros', onClick: handleClearFilters }}
           />
         ) : (
-          <motion.div
-            initial={reducedMotion ? false : 'hidden'}
-            animate={reducedMotion ? false : 'show'}
-            variants={reducedMotion ? undefined : {
-              hidden: { opacity: 0 },
-              show: {
-                opacity: 1,
-                transition: {
-                  staggerChildren: 0.08,
-                  delayChildren: 0.1,
-                  ease: [0.16, 1, 0.3, 1],
-                },
-              },
-            }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
-            id="catalog-products-grid"
-            role="list"
-            aria-label="Lista de productos"
-          >
-            {/* Nota: se usa animate (no whileInView) para que la cuadrícula NUNCA
-                pueda quedar oculta esperando un evento de scroll. Los hijos con
+          <div className="space-y-24" id="catalog-products-grid" aria-label="Lista de productos">
+            {/* Nota: se usa animate (no whileInView) para que los productos NUNCA
+                puedan quedar ocultos esperando un evento de scroll. Los hijos con
                 variants animan solos al montar (stagger al filtrar). */}
-            {filteredProducts.map((product) => (
-              <motion.div
-                key={product.id}
-                variants={reducedMotion ? undefined : {
-                  hidden: { opacity: 0, y: 30 },
-                  show: {
-                    opacity: 1,
-                    y: 0,
-                    transition: {
-                      type: 'tween' as const,
-                      ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
-                      duration: 0.55,
+            {shelves.map((shelf, si) => (
+              <div key={shelf.category} className="catalog-shelf" id={`catalog-shelf-${si}`}>
+                <div className="catalog-shelf-label">
+                  <span>{shelf.category}</span>
+                </div>
+                <motion.div
+                  className="catalog-shelf-items"
+                  role="list"
+                  initial={reducedMotion ? false : 'hidden'}
+                  animate={reducedMotion ? false : 'show'}
+                  variants={reducedMotion ? undefined : {
+                    hidden: { opacity: 0 },
+                    show: {
+                      opacity: 1,
+                      transition: {
+                        staggerChildren: 0.08,
+                        delayChildren: 0.08,
+                        ease: [0.16, 1, 0.3, 1],
+                      },
                     },
-                  },
-                }}
-                role="listitem"
-                id={`catalog-card-${product.id}`}
-              >
+                  }}
+                >
+                  {shelf.items.map((product, i) => {
+                    // Profundidad alterna: los impares van "más al fondo" (más
+                    // arriba, ligeramente más chicos y con inclinación propia).
+                    const back = i % 2 === 1;
+                    return (
+                      <motion.div
+                        key={product.id}
+                        className={`catalog-shelf-item${back ? ' catalog-shelf-item-back' : ''}`}
+                        role="listitem"
+                        id={`catalog-card-${product.id}`}
+                        variants={reducedMotion ? undefined : {
+                          hidden: { opacity: 0, y: 30, rotate: 0, scale: 1 },
+                          show: {
+                            opacity: 1,
+                            y: back ? -10 : 0,
+                            rotate: back ? 0.6 : -0.5,
+                            scale: back ? 0.97 : 1,
+                            transition: {
+                              type: 'tween' as const,
+                              ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
+                              duration: 0.55,
+                            },
+                          },
+                        }}
+                      >
               <MagicCard
                 className="flex flex-col h-full overflow-hidden rounded-[24px] keke-card"
                 style={{ backgroundColor: 'var(--theme-surface)' }}
@@ -326,10 +358,15 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
                     </div>
                   </div>
                 </div>
-              </MagicCard>
-              </motion.div>
+                </MagicCard>
+                      </motion.div>
+                    );
+                  })}
+                </motion.div>
+                <div className="catalog-shelf-board" aria-hidden="true" />
+              </div>
             ))}
-          </motion.div>
+          </div>
         )}
       </div>
 
