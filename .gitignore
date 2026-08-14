@@ -64,3 +64,6 @@ _nul
 
 .claude/
 agent/
+
+# Logs locales de desarrollo
+logs/
