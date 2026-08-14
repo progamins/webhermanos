@@ -14,30 +14,32 @@ function getRequiredPassword(envVar: string): string {
   return value;
 }
 
+const U = (id: string, w = 800) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=80`;
+
 const INITIAL_PRODUCTS = [
-  { id: 'prod-1', name: 'Maison Trufa Imperial', description: 'Exquisito pastel de chocolate belga con capas de ganache suave de cacao y cobertura texturizada coronada por trufas artesanales.', base_price: 120, category: 'Especiales', preparation_time: '48 horas', active: 1, stock: 1, images: '[]', flavors: '["Chocolate Belga","Fudge Intenso","Café Moca"]', decorations: '["Trufas de la Casa","Polvo de Oro Comestible","Salsa Fudge Caliente"]', tags: '["Chocolate","Premium","Trufas"]' },
-  { id: 'prod-2', name: 'Rosado Floral Vintage', description: 'Diseño romántico con cobertura en crema de mantequilla vintage color pastel, adornado con rosas naturales seleccionadas y perlas de azúcar.', base_price: 135, category: 'Bodas', preparation_time: '72 horas', active: 1, stock: 1, images: '[]', flavors: '["Vainilla Francesa","Red Velvet","Manjar Blanco de Leche"]', decorations: '["Flores Frescas","Macarons de Frambuesa","Perlas Comestibles"]', tags: '["Boda","Vintage","Rosas"]' },
-  { id: 'prod-3', name: 'Cielo de Macarons', description: 'Sutil y fina cobertura cremosa de degradado celeste y lila, coronado con crujientes macarons artesanales y merengues suizos.', base_price: 110, category: 'Infantiles', preparation_time: '48 horas', active: 1, stock: 1, images: '[]', flavors: '["Vainilla Francesa","Chocolate Blanco","Manjar de Lúcuma"]', decorations: '["Macarons de Colores","Destellos de Azúcar","Merengues Suizos"]', tags: '["Macarons","Lila","Infantil"]' },
-  { id: 'prod-4', name: 'Elegancia de Oro & Velvet', description: 'Bizcocho aterciopelado Red Velvet con frosting de queso crema premium, decorado con pan de oro comestible de 24k.', base_price: 140, category: 'Aniversarios', preparation_time: '48 horas', active: 1, stock: 1, images: '[]', flavors: '["Red Velvet","Chocolate Amargo","Vainilla con Frutos Rojos"]', decorations: '["Pan de Oro 24K","Frutas del Bosque","Hojas de Menta"]', tags: '["Lujo","Red Velvet","Aniversario"]' },
-  { id: 'prod-5', name: 'Cumpleaños Arcoíris Alegre', description: 'Pastel repleto de alegría con bizcochos coloridos y cobertura de crema sedosa de vainilla, coronado con minidonuts artesanales.', base_price: 95, category: 'Cumpleaños', preparation_time: '24 horas', active: 1, stock: 1, images: '[]', flavors: '["Vainilla Multicolor","Doble Chocolate","Dulce de Leche"]', decorations: '["Lluvia de Sprinkles","Minidonuts Artesanales","Chispas de Chocolate"]', tags: '["Fiesta","Cumpleaños","Arcoíris"]' },
-  { id: 'prod-6', name: 'Chocolatier de Autor', description: 'Obra de arte geométrica para amantes del chocolate. Glaseado espejo brillante, decoraciones de chocolate templado y fresas frescas.', base_price: 115, category: 'Especiales', preparation_time: '48 horas', active: 1, stock: 1, images: '[]', flavors: '["Chocolate Belga","Ganache Semi-Amargo","Mousse de Chocolate"]', decorations: '["Láminas de Chocolate Templado","Fresas Bañadas en Fudge","Salsa de Frambuesa"]', tags: '["Especial","Espejo","Intenso"]' },
-  { id: 'prod-7', name: 'Elegancia Rústica del Bosque', description: 'Pastel de estilo Naked Cake con crema ligera de mantequilla, decorado con romero fresco silvestre y bayas.', base_price: 150, category: 'Bodas', preparation_time: '72 horas', active: 1, stock: 1, images: '[]', flavors: '["Bizcocho de Zanahoria & Nueces","Vainilla Francesa","Manjar Casero"]', decorations: '["Arándanos y Fresas","Romero Fresco","Hojas de Azúcar rústicas"]', tags: '["Rústico","Naked","Romero"]' },
-  { id: 'prod-8', name: 'Encanto Infantil Celestial', description: 'Dulce pastel de fresa con corona de merengues secos horneados a fuego lento y decoración tierna.', base_price: 105, category: 'Infantiles', preparation_time: '48 horas', active: 1, stock: 1, images: '[]', flavors: '["Dulce de Fresa","Chocolate con Leche","Vainilla Clásica"]', decorations: '["Merengues de Colores","Estrellitas de Fondant","Flores de Azúcar"]', tags: '["Infantil","Tierno","Estrellas"]' },
+  { id: 'prod-1', name: 'Keke de Chocolate', description: 'Keke húmedo de cacao peruano, con chispas de chocolate oscuro y un toque de canela. Horneado cada mañana.', base_price: 35, category: 'Kekes Clásicos', preparation_time: '24 horas', active: 1, stock: 1, images: JSON.stringify([U('photo-1578985545062-69928b1d9587'), U('photo-1606313564200-e75d5e30476c')]), flavors: '["Chocolate Intenso","Doble Chocolate","Chocolate con Nuez"]', decorations: '["Chips de Chocolate","Glaseado de Cacao","Nueces Tostadas"]', tags: '["Chocolate","Clásico","Cacao Peruano"]' },
+  { id: 'prod-2', name: 'Keke de Vainilla', description: 'Keke esponjoso con aroma de vainilla peruana y un ligero toque de azúcar perlada. Suave y delicado.', base_price: 30, category: 'Kekes Clásicos', preparation_time: '24 horas', active: 1, stock: 1, images: JSON.stringify([U('photo-1606890737304-57a1ca8a5b62')]), flavors: '["Vainilla Peruana","Vainilla con Chispas","Vainilla y Canela"]', decorations: '["Azúcar Perlada","Glaseado de Vainilla","Chispas de Colores"]', tags: '["Vainilla","Clásico","Esponjoso"]' },
+  { id: 'prod-3', name: 'Keke de Plátano', description: 'El clásico de la casa: plátano maduro, nueces tostadas y especias cálidas. Sabe a domingo en familia.', base_price: 32, category: 'Kekes Clásicos', preparation_time: '24 horas', active: 1, stock: 1, images: JSON.stringify([U('photo-1596040033229-a9821ebd058d'), U('photo-1621303837174-89787a7d4729')]), flavors: '["Plátano Maduro","Plátano con Nuez","Plátano y Canela"]', decorations: '["Nueces Tostadas","Glaseado de Mantequilla","Canela Espolvoreada"]', tags: '["Plátano","Casero","Familia"]' },
+  { id: 'prod-4', name: 'Keke de Zanahoria', description: 'Keke jugoso de zanahoria con nuez y glaseado cremoso de queso. Húmedo y reconfortante.', base_price: 34, category: 'Kekes Clásicos', preparation_time: '24 horas', active: 1, stock: 1, images: JSON.stringify([U('photo-1586788680434-30d324b2d46f')]), flavors: '["Zanahoria y Nuez","Zanahoria Especiada","Zanahoria con Pasas"]', decorations: '["Glaseado de Queso","Nuez Picada","Canela Molida"]', tags: '["Zanahoria","Húmedo","Glaseado"]' },
+  { id: 'prod-5', name: 'Keke de Maracuyá', description: 'Fresco y tropical: maracuyá en su punto con un toque de miel y glaseado cítrico.', base_price: 36, category: 'Kekes Frutales', preparation_time: '24 horas', active: 1, stock: 1, images: JSON.stringify([U('photo-1565958011703-44f9829ba187')]), flavors: '["Maracuyá Fresco","Maracuyá y Miel","Maracuyá con Jalea"]', decorations: '["Glaseado de Maracuyá","Ralladura de Lima","Semillas Frescas"]', tags: '["Maracuyá","Frutal","Peruano"]' },
+  { id: 'prod-6', name: 'Keke de Naranja', description: 'Aroma intenso a naranja natural, almendras laminadas y un glaseado brillante que enamora.', base_price: 32, category: 'Kekes Frutales', preparation_time: '24 horas', active: 1, stock: 1, images: JSON.stringify([U('photo-1541783245831-57d6fb0926d3')]), flavors: '["Naranja Natural","Naranja y Almendras","Naranja con Miel"]', decorations: '["Glaseado de Naranja","Almendras Laminadas","Azúcar Perlada"]', tags: '["Naranja","Frutal","Cítrico"]' },
+  { id: 'prod-7', name: 'Keke de Lúcuma', description: 'El sabor del norte: lúcuma selecta en un keke suave y aromático. Nuestro peruano favorito.', base_price: 38, category: 'Kekes Peruanos', preparation_time: '24 horas', active: 1, stock: 1, images: JSON.stringify([U('photo-1464349095431-e9a21285b5f3')]), flavors: '["Lúcuma Norteña","Lúcuma con Manjar","Lúcuma y Nueces"]', decorations: '["Manjar de Leche","Nueces Tostadas","Azúcar Espolvoreada"]', tags: '["Lúcuma","Peruano","Premium"]' },
+  { id: 'prod-8', name: 'Keke de Canela', description: 'Keke aromático de canela con pasas doradas y un toque de miel. Perfecto con café de olla.', base_price: 33, category: 'Kekes Peruanos', preparation_time: '24 horas', active: 1, stock: 1, images: JSON.stringify([U('photo-1607920591413-4ec007e70023')]), flavors: '["Canela Fina","Canela y Pasas","Canela con Miel"]', decorations: '["Canela Molida","Pasas Doradas","Glaseado de Miel"]', tags: '["Canela","Peruano","Aromático"]' },
 ];
 
 const INITIAL_REVIEWS = [
-  { id: 'rev-1', author: 'Andrea Beltrán', role: 'Madre de cumpleañera', rating: 5, comment: '¡El pastel Cielo de Macarons fue la sensación del cumpleaños de mi hija! Carol tiene un talento increíble.', cake_model: 'Cielo de Macarons', date: '2026-06-15', approved: 1, response: '¡Muchísimas gracias Andrea!' },
-  { id: 'rev-2', author: 'Carlos Alberto Rosas', role: 'Cliente frecuente', rating: 5, comment: 'Siempre confío en Maison Rosas para nuestras celebraciones familiares. El Maison Trufa Imperial es mi favorito.', cake_model: 'Maison Trufa Imperial', date: '2026-06-28', approved: 1, response: '¡Agradecemos tu preferencia Carlos!' },
-  { id: 'rev-3', author: 'María José & Sebastián', role: 'Novios', rating: 5, comment: 'El pastel Rosado Floral Vintage superó nuestras expectativas para nuestra boda civil. ¡Muchas gracias Edwin y Carol!', cake_model: 'Rosado Floral Vintage', date: '2026-07-01', approved: 1, response: null },
+  { id: 'rev-1', author: 'Andrea Beltrán', role: 'Madre de cumpleañera', rating: 5, comment: 'El keke de chocolate de la casa es el mejor que he probado en Sullana. Húmedo y con sabor a cacao de verdad.', cake_model: 'Keke de Chocolate', date: '2026-06-15', approved: 1, response: '¡Muchísimas gracias Andrea!' },
+  { id: 'rev-2', author: 'Carlos Alberto Rosas', role: 'Cliente frecuente', rating: 5, comment: 'Pido los kekes para todas las reuniones de la familia. El de lúcuma es mi favorito: sabe a Perú.', cake_model: 'Keke de Lúcuma', date: '2026-06-28', approved: 1, response: '¡Agradecemos tu preferencia Carlos!' },
+  { id: 'rev-3', author: 'María José & Sebastián', role: 'Clientes', rating: 5, comment: 'Pedimos un keke de plátano para nuestro aniversario y quedó perfecto. Se nota el horneado casero.', cake_model: 'Keke de Plátano', date: '2026-07-01', approved: 1, response: null },
 ];
 
 const INITIAL_GALLERY = [
-  { id: 'gal-1', image_url: '', title: 'Tarta de Boda Vintage', category: 'Bodas', date: '2026-05-10' },
-  { id: 'gal-2', image_url: '', title: 'Imperial de Trufas', category: 'Especiales', date: '2026-05-24' },
-  { id: 'gal-3', image_url: '', title: 'Fantasía de Cumpleaños Arcoíris', category: 'Cumpleaños', date: '2026-06-02' },
-  { id: 'gal-4', image_url: '', title: 'Macaron Pastel Delight', category: 'Infantiles', date: '2026-06-14' },
-  { id: 'gal-5', image_url: '', title: 'Elegancia de Oro 24K Red Velvet', category: 'Aniversarios', date: '2026-06-25' },
-  { id: 'gal-6', image_url: '', title: 'Naked Cake de Romero y Bayas', category: 'Bodas', date: '2026-06-30' },
+  { id: 'gal-1', image_url: U('photo-1606313564200-e75d5e30476c'), title: 'Keke de Chocolate de la Casa', category: 'Kekes Clásicos', date: '2026-05-10' },
+  { id: 'gal-2', image_url: U('photo-1621303837174-89787a7d4729'), title: 'Keke de Plátano con Nuez', category: 'Kekes Clásicos', date: '2026-05-24' },
+  { id: 'gal-3', image_url: U('photo-1606890737304-57a1ca8a5b62'), title: 'Keke de Vainilla Esponjoso', category: 'Kekes Clásicos', date: '2026-06-02' },
+  { id: 'gal-4', image_url: U('photo-1565958011703-44f9829ba187'), title: 'Keke de Maracuyá Fresco', category: 'Kekes Frutales', date: '2026-06-14' },
+  { id: 'gal-5', image_url: U('photo-1586788680434-30d324b2d46f'), title: 'Keke de Zanahoria Glaseado', category: 'Kekes Clásicos', date: '2026-06-25' },
+  { id: 'gal-6', image_url: U('photo-1541783245831-57d6fb0926d3'), title: 'Keke de Naranja Cítrico', category: 'Kekes Frutales', date: '2026-06-30' },
 ];
 
 const DEFAULT_CONFIG = {
@@ -47,21 +49,21 @@ const DEFAULT_CONFIG = {
   email: 'edwinraulrosasalbines@gmail.com',
   address: 'Av. Ricardo Palma 213, Sánchez Cerro, Sullana, Piura',
   openingHours: 'Lunes a Sábado: 9:00 AM - 7:00 PM | Domingos: 10:00 AM - 2:00 PM',
-  seoTitle: 'Maison Rosas | Pastelería de Autor & Repostería Fina',
-  seoDescription: 'Deléitate con los pasteles personalizados de Carol Rosas Albines. Modelos exclusivos, ingredientes premium de alta repostería artesanal.',
+  seoTitle: 'Maison Rosas | Kekes Artesanales Peruanos en Sullana',
+  seoDescription: 'Kekes artesanales horneados todos los días con sabores peruanos: chocolate, lúcuma, plátano, maracuyá y más. Pedidos por WhatsApp en Sullana, Piura.',
   maintenanceMode: false,
-  heroTitle: 'El Arte de Compartir',
-  heroDescription: 'Diseños exclusivos creados por Carol Rosas para transformar tus momentos especiales en legados de sabor.',
-  heroBadge: 'Por Carol & Edwin Rosas Albines',
-  heroImage: '',
+  heroTitle: 'El sabor de casa, hecho keke',
+  heroDescription: 'Kekes artesanales preparados con sabores que nos recuerdan al Perú.',
+  heroBadge: 'Kekes artesanales · Sullana, Piura',
+  heroImage: U('photo-1551024506-0bccd828d307', 1000),
   aboutTitle: 'Nuestra Esencia Familiar',
-  aboutDescription: 'En Maison Rosas, la repostería no es solo un oficio, sino un legado familiar de amor y dedicación.',
-  aboutImage: '',
+  aboutDescription: 'En Maison Rosas cada keke nace de una receta familiar: ingredientes naturales, horneado artesanal y el sabor de casa que nos acompaña siempre.',
+  aboutImage: U('photo-1517433670267-08bbd4be890f', 1000),
   faviconUrl: '',
   logoUrl: '',
-  heroReviewText: 'El sabor es increíblemente suave y la presentación fue perfecta para mi boda civil.',
+  heroReviewText: 'El sabor es increíblemente suave y se nota el horneado casero. Mi keke favorito: el de lúcuma.',
   heroReviewAuthor: 'María José',
-  heroReviewRole: 'Novia',
+  heroReviewRole: 'Cliente',
   heroReviewRating: 5,
 };
 

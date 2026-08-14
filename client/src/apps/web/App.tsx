@@ -140,7 +140,7 @@ export default function App() {
     if (!config) return;
 
     // ─── Título ───
-    document.title = config.seoTitle || 'Maison Rosas | Pastelería de Autor & Repostería Fina';
+    document.title = config.seoTitle || 'Maison Rosas | Kekes Artesanales Peruanos';
 
     // ─── Meta description ───
     let metaDesc = document.querySelector('meta[name="description"]');
@@ -149,12 +149,12 @@ export default function App() {
       metaDesc.setAttribute('name', 'description');
       document.head.appendChild(metaDesc);
     }
-    metaDesc.setAttribute('content', config.seoDescription || 'Pastelería de autor y repostería fina en Sullana, Piura. Pasteles personalizados.');
+    metaDesc.setAttribute('content', config.seoDescription || 'Kekes artesanales horneados todos los días con sabores peruanos en Sullana, Piura. Pedidos por WhatsApp.');
 
     // ─── Open Graph ───
     const ogMappings: [string, string][] = [
-      ['og:title', config.seoTitle || 'Maison Rosas | Pastelería de Autor & Repostería Fina'],
-      ['og:description', config.seoDescription || 'Pasteles personalizados de diseño exclusivo. Ingredientes premium, amor artesanal.'],
+      ['og:title', config.seoTitle || 'Maison Rosas | Kekes Artesanales Peruanos'],
+      ['og:description', config.seoDescription || 'Kekes artesanales preparados con sabores que nos recuerdan al Perú. Horneados todos los días en Sullana.'],
       ['og:image', config.heroImage || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=1200&auto=format&fit=crop&q=80'],
       ['og:url', 'https://maisonrosas.com/'],
       ['og:site_name', 'Maison Rosas'],
@@ -174,8 +174,8 @@ export default function App() {
     const twitterOgImage = config.heroImage || 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=1200&auto=format&fit=crop&q=80';
     const twitterMappings: [string, string][] = [
       ['twitter:card', 'summary_large_image'],
-      ['twitter:title', config.seoTitle?.split('|')[0]?.trim() || 'Maison Rosas | Pastelería de Autor'],
-      ['twitter:description', (config.seoDescription || 'Pasteles personalizados de diseño exclusivo en Sullana, Piura.').slice(0, 200)],
+      ['twitter:title', config.seoTitle?.split('|')[0]?.trim() || 'Maison Rosas | Kekes Artesanales'],
+      ['twitter:description', (config.seoDescription || 'Kekes artesanales preparados con sabores que nos recuerdan al Perú, en Sullana, Piura.').slice(0, 200)],
       ['twitter:image', twitterOgImage],
     ];
     for (const [name, content] of twitterMappings) {
@@ -198,7 +198,7 @@ export default function App() {
       name: 'Maison Rosas',
       image: heroImg,
       logo: logoSchema,
-      description: config.seoDescription || 'Pastelería de autor y repostería fina en Sullana, Piura.',
+      description: config.seoDescription || 'Kekes artesanales horneados todos los días con sabores peruanos en Sullana, Piura.',
       url: 'https://maisonrosas.com/',
       telephone: config.whatsappNumber ? `+${config.whatsappNumber}` : '+51902568187',
       email: config.email || 'edwinraulrosasalbines@gmail.com',
@@ -218,8 +218,8 @@ export default function App() {
         { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Saturday', 'opens': '09:00', 'closes': '19:00' },
         { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Sunday', 'opens': '10:00', 'closes': '14:00' },
       ],
-      priceRange: 'S/. 95 - S/. 150',
-      servesCuisine: 'Repostería Fina',
+      priceRange: 'S/. 30 - S/. 45',
+      servesCuisine: 'Kekes Artesanales',
       areaServed: { '@type': 'City', name: 'Sullana' },
       sameAs: [
         config.facebookUrl,
@@ -543,7 +543,7 @@ export default function App() {
   // Pantalla de Mantenimiento
   if (maintenanceMode) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#FFF9F5] via-white to-[#FFF9F5] dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 flex items-center justify-center p-4 overflow-hidden relative">
+      <div className="min-h-screen bg-gradient-to-b from-[#FFF8ED] via-[#FFFCF7] to-[#FFF8ED] dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 flex items-center justify-center p-4 overflow-hidden relative">
         <GoogleAnalytics />
 
         <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
@@ -704,7 +704,7 @@ export default function App() {
               {/* ─── Título ─── */}
               <h1 className="font-serif text-4xl font-bold tracking-tight entrance-title"
                 style={{
-                  background: 'linear-gradient(135deg, #C4847D 0%, #D4A373 50%, #C4847D 100%)',
+                  background: 'linear-gradient(135deg, #D96B45 0%, #D6A34A 50%, #D96B45 100%)',
                   backgroundSize: '200% 200%',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
@@ -716,7 +716,7 @@ export default function App() {
               <div className="h-px bg-gradient-to-r from-transparent via-brand-300/60 to-transparent mx-auto origin-center entrance-divider" style={{ width: '50%' }} />
 
               {/* ─── Subtítulo ─── */}
-              <p className="text-[10px] font-mono tracking-[0.3em] text-brand-500 uppercase mt-3 entrance-subtitle">Alma Artesanal</p>
+              <p className="text-[10px] font-mono tracking-[0.3em] text-brand-500 uppercase mt-3 entrance-subtitle">Kekes Artesanales Peruanos</p>
             </div>
           </motion.div>
         )}
@@ -781,7 +781,7 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <span className="font-serif text-2xl font-bold tracking-tight">Maison Rosas</span>
-            <p className="text-xs leading-relaxed font-sans" style={{color: 'var(--theme-text-secondary)'}}>Pastelería de Autor & Repostería Fina hecha con amor en Sullana, Piura.</p>
+            <p className="text-xs leading-relaxed font-sans" style={{color: 'var(--theme-text-secondary)'}}>Kekes artesanales peruanos, horneados con amor cada mañana en Sullana, Piura.</p>
           </div>
           <div>
             <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-brand-400 mb-4">Nuestra Casa</h4>
@@ -797,13 +797,13 @@ export default function App() {
             <ul className="space-y-2 text-xs" style={{color: 'var(--theme-text-secondary)'}}>
               <li><button onClick={() => scrollToSection('inicio')} className="transition-opacity hover:opacity-80 cursor-pointer">Inicio</button></li>
               <li><button onClick={() => scrollToSection('historia')} className="transition-opacity hover:opacity-80 cursor-pointer">Nuestra Historia</button></li>
-              <li><button onClick={() => scrollToSection('catalogo')} className="transition-opacity hover:opacity-80 cursor-pointer">Catálogo de Modelos</button></li>
+              <li><button onClick={() => scrollToSection('catalogo')} className="transition-opacity hover:opacity-80 cursor-pointer">Nuestros Kekes</button></li>
               <li><button onClick={() => scrollToSection('opiniones')} className="transition-opacity hover:opacity-80 cursor-pointer">Opiniones de Clientes</button></li>
             </ul>
           </div>
           <div>
             <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-brand-400 mb-4">Políticas & Confianza</h4>
-            <p className="text-[11px] leading-relaxed" style={{color: 'var(--theme-text-secondary)'}}>Todos nuestros pasteles se hornean a pedido con un mínimo de 48 horas de anticipación.</p>
+            <p className="text-[11px] leading-relaxed" style={{color: 'var(--theme-text-secondary)'}}>Todos nuestros kekes se hornean el mismo día con ingredientes frescos. Pídelos por WhatsApp.</p>
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between text-[11px] gap-4" style={{borderTop: '1px solid var(--theme-border)'}}>

@@ -24,18 +24,18 @@ function TermsContent() {
         <p>Al acceder y utilizar el sitio web de Maison Rosas, aceptas cumplir con estos Términos de Servicio.</p>
       </ContentSection>
       <ContentSection title="2. Servicios Ofrecidos">
-        <p>Maison Rosas, propiedad de Carol Yakeline Rosas Albines y Edwin Raúl Rosas Albines, ofrece servicios de pastelería de autor y repostería fina.</p>
+        <p>Maison Rosas, propiedad de Carol Yakeline Rosas Albines y Edwin Raúl Rosas Albines, ofrece servicios de pastelería artesanal enfocados en kekes peruanos horneados a diario.</p>
         <ul className="list-disc pl-5 space-y-1 mt-2">
-          <li>Venta de pasteles personalizados bajo pedido</li>
-          <li>Servicio de personalización de diseños a través de nuestra plataforma web</li>
+          <li>Venta de kekes artesanales bajo pedido</li>
+          <li>Servicio de personalización de sabores y decoración a través de nuestra plataforma web</li>
           <li>Coordinación de entregas y recojo en nuestro taller en Sullana, Piura</li>
-          <li>Decoración artesanal de alta repostería</li>
+          <li>Decoración artesanal de kekes y encargos especiales</li>
         </ul>
       </ContentSection>
       <ContentSection title="3. Proceso de Pedido">
         <p>Todos los pedidos se realizan a través de nuestra plataforma web y se confirman mediante coordinación directa por WhatsApp.</p>
         <ul className="list-disc pl-5 space-y-1 mt-2">
-          <li>Los pedidos requieren un mínimo de 48 horas de anticipación para pasteles estándar y 72 horas para pasteles de bodas o alta gama.</li>
+          <li>Los pedidos requieren un mínimo de 24 horas de anticipación; los kekes se hornean el mismo día de la entrega.</li>
           <li>Se solicita un abono del 50% para confirmar la reserva del pedido.</li>
           <li>El saldo restante debe cancelarse antes de la entrega o al momento del recojo.</li>
         </ul>
@@ -69,7 +69,7 @@ function PrivacyContent() {
           <li>Número de teléfono y/o WhatsApp</li>
           <li>Dirección de correo electrónico</li>
           <li>Dirección de entrega (cuando aplica)</li>
-          <li>Detalles del pedido y personalización del pastel</li>
+          <li>Detalles del pedido y personalización del keke</li>
         </ul>
       </ContentSection>
       <ContentSection title="2. Uso de la Información">
@@ -161,7 +161,7 @@ export default function TermsAndPrivacy({ isOpen, onClose, initialTab = 'terms' 
                     Información Legal
                   </h3>
                   <p className="text-[9px] sm:text-[10px] font-mono uppercase tracking-wider mt-0.5 truncate" style={{ color: 'var(--theme-text-muted)' }}>
-                    Maison Rosas &bull; Pastelería de Autor
+                    Maison Rosas &bull; Kekes Artesanales
                   </p>
                 </div>
               </div>

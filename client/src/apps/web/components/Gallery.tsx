@@ -13,7 +13,7 @@ interface GalleryProps {
   loading?: boolean;
 }
 
-const CATEGORIES = ['Todos', 'Bodas', 'Cumpleaños', 'Infantiles', 'Aniversarios', 'Especiales'] as const;
+const CATEGORIES = ['Todos', 'Kekes Clásicos', 'Kekes Frutales', 'Kekes Peruanos'] as const;
 
 function Gallery({ galleryItems, loading = false }: GalleryProps) {
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
@@ -45,14 +45,14 @@ function Gallery({ galleryItems, loading = false }: GalleryProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center max-w-3xl mx-auto mb-12">
           <span className="text-[10px] tracking-[0.3em] uppercase opacity-75 text-brand-secondary dark:text-brand-300 block font-semibold">
-            EXPERIENCIAS COMPARTIDAS
+            HORNEADOS CON AMOR
           </span>
           <h2 className="text-4xl sm:text-5xl font-serif font-light italic mt-3" style={{ color: 'var(--theme-text)' }}>
-            Galería de Creaciones Maison
+            Galería de Kekes Maison
           </h2>
           <div className="w-12 h-[1px] bg-brand-secondary/30 mx-auto mt-5" aria-hidden="true" />
           <p className="text-sm font-light mt-5 max-w-xl mx-auto leading-relaxed" style={{ color: 'var(--theme-text-secondary)' }}>
-            Fotografías reales de pasteles personalizados entregados a nuestros clientes.
+            Los kekes que horneamos cada día con ingredientes frescos y sabores peruanos.
           </p>
         </div>
 

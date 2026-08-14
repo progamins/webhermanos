@@ -27,7 +27,7 @@ interface CatalogProps {
   loading?: boolean;
 }
 
-const CATEGORIES = ['Todos', 'Bodas', 'Cumpleaños', 'Infantiles', 'Aniversarios', 'Especiales'] as const;
+const CATEGORIES = ['Todos', 'Kekes Clásicos', 'Kekes Frutales', 'Kekes Peruanos'] as const;
 
 function CatalogSkeleton() {
   return (
@@ -97,15 +97,15 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="text-[10px] tracking-[0.3em] uppercase opacity-75 text-brand-secondary dark:text-brand-300 block font-semibold">
-            MODELOS DE AUTOR EXCLUSIVOS
+            KEKES ARTESANALES PERUANOS
           </span>
           <h2 className="text-4xl sm:text-5xl font-serif font-light italic mt-3" style={{ color: 'var(--theme-text)' }}>
-            Catálogo de Diseños
+            Nuestros Kekes
           </h2>
-          <div className="w-12 h-[1px] bg-brand-secondary/30 mx-auto mt-5" aria-hidden="true" />
+          <div className="w-12 h-[1px] bg-brand-secondary/40 mx-auto mt-5" aria-hidden="true" />
           <p className="text-sm font-light mt-5 max-w-xl mx-auto leading-relaxed" style={{ color: 'var(--theme-text-secondary)' }}>
-            Cada opción es una plantilla cuidadosamente diseñada por Carol. Podrás personalizar sabores,
-            cobertura de color, mensajes escritos a mano en azúcar y decoraciones secundarias.
+            Horneados cada mañana con ingredientes naturales y sabores que nos recuerdan al Perú.
+            Elige tu sabor favorito y personalízalo a tu gusto.
           </p>
         </div>
 
@@ -114,7 +114,7 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-400" aria-hidden="true" />
             <input
               type="text"
-              placeholder="Buscar pastel, ingrediente o etiqueta..."
+              placeholder="Buscar keke, sabor o ingrediente..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-11 pr-4 py-3 border rounded-xl text-sm text-zinc-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/40 transition-all shadow-sm"
@@ -153,8 +153,8 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
         ) : filteredProducts.length === 0 ? (
           <EmptyState
             icon={<Search className="h-5 w-5 text-zinc-400" />}
-            title="No encontramos pasteles para tu búsqueda"
-            description='Prueba buscando por "chocolate", "rosado" o seleccionando otra categoría.'
+            title="No encontramos kekes para tu búsqueda"
+            description='Prueba buscando por "chocolate", "lúcuma" o seleccionando otra categoría.'
             action={{ label: 'Restablecer Filtros', onClick: handleClearFilters }}
           />
         ) : (
@@ -199,7 +199,7 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
                 id={`catalog-card-${product.id}`}
               >
               <MagicCard
-                className="flex flex-col h-full overflow-hidden rounded-[24px]"
+                className="flex flex-col h-full overflow-hidden rounded-[24px] keke-card"
                 style={{ backgroundColor: 'var(--theme-surface)' }}
                 gradientColor="var(--color-brand-500)"
                 gradientOpacity={0.06}
@@ -226,7 +226,7 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
                       width={600}
                       alt={product.name}
                       wrapperClassName="w-full h-full"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 keke-img-zoom"
                       id={`catalog-img-${product.id}`}
                     />
                   </button>
@@ -280,7 +280,7 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
                       <h3 className="text-base font-serif font-light group-hover:text-brand-secondary transition-colors leading-snug" style={{ color: 'var(--theme-text)' }}>
                         {product.name}
                       </h3>
-                      <span className="font-serif italic font-light text-base shrink-0" style={{ color: 'var(--theme-text)' }}>
+                      <span className="keke-price font-serif italic shrink-0">
                         S/. {Math.round(Number(product.basePrice))}
                       </span>
                       </div>
@@ -319,7 +319,7 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
                         id={`customize-trigger-${product.id}`}
                       >
                         <span className="flex items-center gap-2">
-                          <span>Personalizar Pedido</span>
+                          <span>Pedir este Keke</span>
                           <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
                         </span>
                       </ShimmerButton>

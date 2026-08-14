@@ -1,17 +1,25 @@
 /* ============= WEB TYPOGRAPHY ============= */
 
-/* Body text — sistema de fuentes nativas: más legible, familiar y sin descargas */
+/* Body text — Manrope (cargado desde Google Fonts) con fallback nativo.
+   Moderno, limpio y cálido: acompaña a Playfair Display en títulos. */
 html, body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.65;
+  letter-spacing: 0.01em;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+  letter-spacing: -0.01em;
+}
+
+/* Precios y datos numéricos: tabular para alineación limpia */
+.price, .tabular-nums, .font-mono {
+  font-variant-numeric: tabular-nums;
 }
 
 code, pre, kbd, samp, .font-mono {

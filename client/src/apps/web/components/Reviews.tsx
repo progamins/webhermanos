@@ -267,7 +267,7 @@ function Reviews({ reviews, onRefreshReviews, loading = false }: ReviewsProps) {
 
                     <span className="inline-block mt-3 px-2.5 py-1 text-[9px] font-mono font-bold uppercase tracking-widest border rounded-full"
                       style={{ backgroundColor: 'var(--theme-surface)', borderColor: 'var(--theme-border)', color: 'var(--theme-text-secondary)' }}>
-                      Modelo: {review.cakeModel}
+                      Keke: {review.cakeModel}
                     </span>
 
                     {review.response && (
@@ -338,7 +338,7 @@ function Reviews({ reviews, onRefreshReviews, loading = false }: ReviewsProps) {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <Input label="Modelo de Pastel" placeholder="Ej: Cielo de Macarons" value={cakeModel} onChange={(e) => setCakeModel(e.target.value)} required id="review-model-input" />
+                    <Input label="Sabor de Keke" placeholder="Ej: Keke de Chocolate" value={cakeModel} onChange={(e) => setCakeModel(e.target.value)} required id="review-model-input" />
                     <Select
                       label="Calificación (Estrellas)"
                       value={rating.toString()}

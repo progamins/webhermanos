@@ -55,3 +55,9 @@ List
 
 # Scripts de despliegue local (contienen rutas del servidor)
 deploy-produccion.sh
+
+# ⚠️ Contiene credenciales reales de la BD de Railway — NO subir a GitHub
+.vercel.env.example
+
+# Archivo basura generado por redirecciones de Windows (nunca commitear)
+_nul

@@ -166,7 +166,7 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
   );
 
   const isDark = theme === 'dark';
-  const textColor = isDark ? '#f0ede8' : '#3d2a25';
+  const textColor = isDark ? '#f0ede8' : '#3A2118';
   const textMuted = isDark ? 'rgba(240,237,232,0.7)' : 'rgba(61,42,37,0.7)';
 
   // ─── iOS 26 Liquid Glass: estilos memoizados ───
@@ -196,14 +196,14 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
     const glassShadow = atTop
       ? isDark
         ? '0 0 0 0.5px rgba(255,255,255,0.08) inset, 0 10px 40px -10px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.14), inset 0 -1px 2px rgba(0,0,0,0.35)'
-        : '0 0 0 0.5px rgba(255,255,255,0.18) inset, 0 10px 40px -10px rgba(0,0,0,0.10), 0 2px 12px rgba(212,163,115,0.08), inset 0 1px 1px rgba(255,255,255,0.55), inset 0 -1px 2px rgba(0,0,0,0.06)'
+        : '0 0 0 0.5px rgba(255,255,255,0.18) inset, 0 10px 40px -10px rgba(0,0,0,0.10), 0 2px 12pxrgba(214, 163, 74, 0.10), inset 0 1px 1px rgba(255,255,255,0.55), inset 0 -1px 2px rgba(0,0,0,0.06)'
       : scrolled
         ? isDark
-          ? '0 0 0 0.5px rgba(255,255,255,0.06) inset, 0 24px 70px -12px rgba(0,0,0,0.6), 0 12px 40px -10px rgba(212,163,115,0.05), inset 0 1px 1px rgba(255,255,255,0.10), inset 0 -1px 2px rgba(0,0,0,0.4)'
-          : '0 0 0 0.5px rgba(255,255,255,0.14) inset, 0 24px 70px -12px rgba(0,0,0,0.15), 0 12px 40px -10px rgba(212,163,115,0.10), inset 0 1px 1px rgba(255,255,255,0.45), inset 0 -1px 2px rgba(0,0,0,0.08)'
+          ? '0 0 0 0.5px rgba(255,255,255,0.06) inset, 0 24px 70px -12px rgba(0,0,0,0.6), 0 12px 40px -10pxrgba(214, 163, 74, 0.06), inset 0 1px 1px rgba(255,255,255,0.10), inset 0 -1px 2px rgba(0,0,0,0.4)'
+          : '0 0 0 0.5px rgba(255,255,255,0.14) inset, 0 24px 70px -12px rgba(0,0,0,0.15), 0 12px 40px -10pxrgba(214, 163, 74, 0.12), inset 0 1px 1px rgba(255,255,255,0.45), inset 0 -1px 2px rgba(0,0,0,0.08)'
         : isDark
-          ? '0 0 0 0.5px rgba(255,255,255,0.07) inset, 0 18px 55px -12px rgba(0,0,0,0.5), 0 8px 30px -10px rgba(212,163,115,0.04), inset 0 1px 1px rgba(255,255,255,0.12), inset 0 -1px 2px rgba(0,0,0,0.38)'
-          : '0 0 0 0.5px rgba(255,255,255,0.16) inset, 0 18px 55px -12px rgba(0,0,0,0.12), 0 8px 30px -10px rgba(212,163,115,0.09), inset 0 1px 1px rgba(255,255,255,0.50), inset 0 -1px 2px rgba(0,0,0,0.07)';
+          ? '0 0 0 0.5px rgba(255,255,255,0.07) inset, 0 18px 55px -12px rgba(0,0,0,0.5), 0 8px 30px -10pxrgba(214, 163, 74, 0.05), inset 0 1px 1px rgba(255,255,255,0.12), inset 0 -1px 2px rgba(0,0,0,0.38)'
+          : '0 0 0 0.5px rgba(255,255,255,0.16) inset, 0 18px 55px -12px rgba(0,0,0,0.12), 0 8px 30px -10pxrgba(214, 163, 74, 0.10), inset 0 1px 1px rgba(255,255,255,0.50), inset 0 -1px 2px rgba(0,0,0,0.07)';
 
     // ─── Vidrio físico iOS 26: blur amplio + saturación + brightness ───
     // Mientras más translúcida la capa, más se cuela el color del fondo con saturación extra.
@@ -388,7 +388,7 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
             )}
             <div>
               <span className="text-base font-bold tracking-tight block leading-none" style={{ color: textColor }}>Maison Rosas</span>
-              <span className="text-[8px] tracking-[0.2em] uppercase block mt-0.5 font-medium" style={{ color: textMuted }}>Alta Repostería Artesanal</span>
+              <span className="text-[8px] tracking-[0.2em] uppercase block mt-0.5 font-medium" style={{ color: textMuted }}>Kekes Artesanales Peruanos</span>
             </div>
           </button>
 

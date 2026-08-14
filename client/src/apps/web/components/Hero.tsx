@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import { motion, useScroll, useTransform } from 'motion/react';
-import { Sparkles, Star } from 'lucide-react';
+import { Sparkles, Star, MessageCircle } from 'lucide-react';
 import type { AppConfig } from '../../../shared/types';
 import { useReducedMotion, useIsMobile } from '../../../shared/hooks';
 import CachedImage from '../../../shared/components/CachedImage';
@@ -100,7 +100,7 @@ function Hero({ onViewCatalog, onViewHistory, config }: HeroProps) {
   return (
     <section
       id="inicio"
-      className="relative min-h-[92vh] flex items-center justify-center pt-24 overflow-hidden"
+      className="relative min-h-[92vh] flex items-center justify-center pt-24 overflow-hidden grain-texture"
       style={{
         background: 'linear-gradient(to bottom, var(--theme-bg-alt), var(--theme-bg))',
       }}
@@ -165,8 +165,8 @@ function Hero({ onViewCatalog, onViewHistory, config }: HeroProps) {
         <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
           <defs>
             <pattern id="hero-dots-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-              <circle cx="20" cy="20" r="1" fill="#C4847D" />
-              <circle cx="0" cy="0" r="0.8" fill="#D4A373" />
+              <circle cx="20" cy="20" r="1" fill="#B86B3D" />
+              <circle cx="0" cy="0" r="0.8" fill="#D6A34A" />
             </pattern>
           </defs>
           <rect x="0" y="0" width="100%" height="100%" fill="url(#hero-dots-pattern)" />
@@ -231,11 +231,24 @@ function Hero({ onViewCatalog, onViewHistory, config }: HeroProps) {
               id="hero-actions"
             >
               <Button onClick={onViewCatalog} variant="primary" size="lg">
-                Ver Catálogo
+                Ver Kekes
               </Button>
-              <Button onClick={onViewHistory} variant="secondary" size="lg">
-                Nuestra Historia
-              </Button>
+              <a
+                href={`https://wa.me/${config?.whatsappNumber || '51902568187'}?text=${encodeURIComponent('¡Hola! Quiero pedir un keke 🍰')}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-full font-semibold text-sm sm:text-base px-7 py-3.5 transition-all duration-300 border"
+                style={{
+                  backgroundColor: 'transparent',
+                  borderColor: 'var(--theme-brand-primary)',
+                  color: 'var(--theme-brand-primary)',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--theme-brand-primary)'; e.currentTarget.style.color = '#FFFCF7'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--theme-brand-primary)'; }}
+              >
+                <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                Pedir Ahora
+              </a>
             </motion.div>
 
             <motion.div
@@ -249,8 +262,8 @@ function Hero({ onViewCatalog, onViewHistory, config }: HeroProps) {
               </div>
               <div className="w-px h-8 bg-zinc-200 dark:bg-zinc-800" aria-hidden="true" />
               <div>
-                <span className="text-2xl font-light block" style={{ color: 'var(--theme-text)' }}>Hecho a Mano</span>
-                <span className="text-[9px] uppercase tracking-tighter" style={{ color: 'var(--theme-text-secondary)' }}>Con Amor</span>
+                <span className="text-2xl font-light block" style={{ color: 'var(--theme-text)' }}>A Diario</span>
+                <span className="text-[9px] uppercase tracking-tighter" style={{ color: 'var(--theme-text-secondary)' }}>Horneado Fresco</span>
               </div>
               <div className="w-px h-8 bg-zinc-200 dark:bg-zinc-800" aria-hidden="true" />
               <div>
@@ -292,7 +305,7 @@ function Hero({ onViewCatalog, onViewHistory, config }: HeroProps) {
               initial={reducedMotion ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 0.92, rotate: -2 }}
               animate={{ opacity: 1, scale: 1, rotate: 0 }}
               transition={{ type: 'tween', ease: PREMIUM_EASE, duration: isMobile ? 0.5 : 0.65 }}
-              className="premium-glass-card relative w-full max-w-[420px] aspect-[4/5] rounded-[40px] p-4 overflow-hidden shadow-[0_20px_50px_rgba(196,132,125,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/40 dark:border-white/10"
+              className="premium-glass-card relative w-full max-w-[420px] aspect-[4/5] rounded-[40px] p-4 overflow-hidden shadow-[0_20px_50px_rgba(184,107,61,0.18)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/40 dark:border-white/10"
               id="hero-image-container"
             >
               <motion.div
@@ -304,7 +317,7 @@ function Hero({ onViewCatalog, onViewHistory, config }: HeroProps) {
                   src={config?.heroImage || ''}
                   width={isMobile ? 320 : 600}
                   sizes="(max-width: 768px) 85vw, 420px"
-                  alt="Pastel destacado de Maison Rosas"
+                  alt="Keke destacado de Maison Rosas"
                   wrapperClassName="w-full h-full rounded-[32px]"
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                   id="hero-cake-image"
@@ -312,9 +325,9 @@ function Hero({ onViewCatalog, onViewHistory, config }: HeroProps) {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" aria-hidden="true" />
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent p-6 text-white">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-brand-200">Modelo Destacado</span>
-                  <h3 className="text-xl font-serif font-light italic mt-1">Rosado Floral Vintage</h3>
-                  <p className="text-xs text-zinc-200 mt-1">Sabor: Vainilla Francesa • Decorado con Rosas Frescas</p>
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-brand-200">El Keke de la Casa</span>
+                  <h3 className="text-xl font-serif font-light italic mt-1">Keke de Chocolate</h3>
+                  <p className="text-xs text-zinc-200 mt-1">Horneado fresco cada mañana · Cacao Peruano</p>
                 </div>
               </motion.div>
 

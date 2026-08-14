@@ -161,8 +161,8 @@ function Contact({ config }: ContactProps) {
           </h2>
           <div className="w-12 h-[1.5px] bg-brand-secondary/40 mx-auto mt-5" aria-hidden="true" />
           <p className="text-sm font-light mt-5 max-w-xl mx-auto leading-relaxed" style={{ color: 'var(--theme-text-secondary)' }}>
-            Coordina con Edwin Raúl Rosas Albines todos los detalles de tu evento.
-            Estaremos encantados de resolver tus requerimientos con nuestra pastelería gourmet de autor.
+            Coordina con Edwin Raúl Rosas Albines todos los detalles de tu pedido.
+            Estaremos encantados de atenderte con nuestros kekes artesanales horneados cada mañana.
           </p>
         </motion.div>
 

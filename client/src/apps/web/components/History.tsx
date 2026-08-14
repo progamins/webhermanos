@@ -14,7 +14,7 @@ const MILESTONES = [
   {
     year: '2018',
     title: 'El Primer Suspiro',
-    description: 'Carol, tras graduarse con honores de repostería fina, comenzó a hornear desde la cocina de casa en Sullana, Piura, deleitando a vecinos con su receta secreta de bizcocho de vainilla francesa.',
+    description: 'Carol, tras graduarse con honores en repostería, comenzó a hornear desde la cocina de casa en Sullana, Piura, deleitando a vecinos con su receta secreta de keke de vainilla.',
     icon: Coffee,
   },
   {
@@ -25,26 +25,26 @@ const MILESTONES = [
   },
   {
     year: '2022',
-    title: 'Estudio de Diseño Floral',
-    description: 'Carol obtiene su certificación avanzada en repostería floral, incorporando exclusivamente pétalos de rosa, flores de jamaica y lavanda deshidratada a sus betunes artesanales.',
+    title: 'Sabores del Perú',
+    description: 'Carol perfecciona sus recetas con insumos de la región: lúcuma, cacao, plátano, maracuyá y canela, dando vida a los kekes que hoy nos identifican.',
     icon: Award,
   },
   {
     year: '2023',
-    title: 'Pastelería Boutique Familiar',
-    description: 'Creamos nuestro espacio de atención Boutique desde el hogar, implementando una dinámica de pedidos por encargo con ingredientes orgánicos y tuppers personalizados.',
+    title: 'Kekes de la Casa',
+    description: 'Creamos nuestro espacio de atención desde el hogar, con una dinámica de pedidos por encargo e ingredientes naturales horneados cada mañana.',
     icon: Heart,
   },
   {
     year: '2024',
-    title: 'Plantillas Digitales & Delivery Premium',
-    description: 'Lanzamos nuestro catálogo interactivo en línea y el servicio de delivery climatizado para toda Sullana y Piura, haciendo posible que más familias disfruten de nuestros pasteles.',
+    title: 'Catálogo Online & Delivery',
+    description: 'Lanzamos nuestro catálogo interactivo en línea y el servicio de delivery para toda Sullana y Piura, haciendo posible que más familias disfruten de nuestros kekes.',
     icon: ShieldCheck,
   },
   {
     year: '2025',
     title: 'Reconocimiento Regional',
-    description: 'Nombrados como uno de los emprendimientos de repostería más prometedores de la región Piura, siendo reconocidos por la calidad y el diseño único de nuestros pasteles.',
+    description: 'Nombrados como uno de los emprendimientos de repostería artesanal más prometedores de la región Piura, reconocidos por la calidad y el sabor único de nuestros kekes.',
     icon: Clock,
   },
 ];
@@ -71,14 +71,14 @@ function History({ config }: HistoryProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="text-[10px] tracking-[0.3em] uppercase opacity-75 text-brand-secondary dark:text-brand-300 block font-semibold">
-            Repostería Boutique desde Sullana, Piura
+            Kekes Artesanales desde Sullana, Piura
           </span>
           <h2 className="text-4xl sm:text-5xl font-serif font-light italic mt-3" style={{ color: 'var(--theme-text)' }}>
             Nuestra Historia de Sabor
           </h2>
           <div className="w-12 h-[1px] bg-brand-secondary/30 mx-auto mt-5" aria-hidden="true" />
           <p className="text-sm font-light mt-5 max-w-xl mx-auto leading-relaxed" style={{ color: 'var(--theme-text-secondary)' }}>
-            {config?.aboutDescription || 'Cada pastel cuenta una historia de pasión, familia y el inconfundible sabor de la dedicación artesanal de Carol y Edwin Rosas.'}
+            {config?.aboutDescription || 'Cada keke cuenta una historia de pasión, familia y el inconfundible sabor de la dedicación artesanal de Carol y Edwin Rosas.'}
           </p>
         </div>
 
@@ -116,8 +116,8 @@ function History({ config }: HistoryProps) {
               {config?.aboutTitle || 'El Sueño de una Familia, Horneado con Amor'}
             </h3>
             <p className="text-sm leading-relaxed font-light" style={{ color: 'var(--theme-text-secondary)' }}>
-              Maison Rosas nace del amor por el arte de la repostería fina y el deseo de una familia sullanense de compartir su talento con el mundo.
-              Cada creación es el resultado del perfeccionismo de Carol y la visión emprendedora de Edwin.
+              Maison Rosas nace del amor por el arte del horneado artesanal y el deseo de una familia sullanense de compartir su talento con el mundo.
+              Cada keke es el resultado del perfeccionismo de Carol y la visión emprendedora de Edwin.
             </p>
             <div className="flex flex-wrap gap-4 pt-4">
               {['100% Natural', 'Artesanal', 'Sullana, Piura', 'Hecho con Amor'].map((tag) => (

@@ -122,7 +122,7 @@ export default function Customizer({ product, onClose, whatsappNumber }: Customi
         return;
       }
       if (!deliveryDate) {
-        setValidationError('Por favor, selecciona la fecha tentativa de entrega de tu pastel.');
+        setValidationError('Por favor, selecciona la fecha tentativa de entrega de tu keke.');
         return;
       }
       if (!deliveryTime) {
@@ -130,7 +130,7 @@ export default function Customizer({ product, onClose, whatsappNumber }: Customi
         return;
       }
       if (deliveryType === 'domicilio' && !deliveryAddress.trim()) {
-        setValidationError('Por favor, escribe la dirección completa a donde enviaremos el pastel.');
+        setValidationError('Por favor, escribe la dirección completa a donde enviaremos tu keke.');
         return;
       }
 
@@ -456,7 +456,7 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
 
               <div className="hidden lg:flex w-full text-center text-[10px] text-zinc-400 dark:text-zinc-500 font-sans items-center justify-center space-x-1 border-t border-zinc-200/50 dark:border-zinc-900 pt-3">
                 <Info className="h-3 w-3 text-brand-500 shrink-0" />
-                <span>Pastelería de Autor. Pedidos con mínimo 48 horas de anticipación.</span>
+                <span>Kekes Artesanales. Pedidos con mínimo 24 horas de anticipación.</span>
               </div>
             </div>
 
@@ -849,7 +849,7 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                           </div>
 
                           <div>
-                            <label className="block text-[9px] font-mono uppercase text-zinc-400 mb-1 font-bold">Mensaje manuscrito para el pastel (Opcional)</label>
+                            <label className="block text-[9px] font-mono uppercase text-zinc-400 mb-1 font-bold">Mensaje manuscrito para el keke (Opcional)</label>
                             <input
                               type="text"
                               maxLength={35}
@@ -911,7 +911,7 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
                           </div>
 
                           <div className="space-y-1">
-                            <strong className="text-zinc-400 block text-[9px] font-mono uppercase">Pastel de Autor</strong>
+                            <strong className="text-zinc-400 block text-[9px] font-mono uppercase">Keke de Autor</strong>
                             <p className="text-zinc-800 dark:text-zinc-100 font-serif">
                               <strong>{product.name}</strong> • Sabor {selectedFlavor} • Relleno de {selectedFilling.name}
                             </p>
@@ -922,7 +922,7 @@ Por favor confirmen disponibilidad de agenda para realizar mi depósito bancario
 
                           {celebratedName.trim() && (
                             <div className="pt-2 border-t border-zinc-200/50">
-                              <strong className="text-zinc-400 block text-[9px] font-mono uppercase">Dedicatoria para pastel</strong>
+                              <strong className="text-zinc-400 block text-[9px] font-mono uppercase">Dedicatoria para el keke</strong>
                               <p className="text-zinc-800 dark:text-zinc-100">
                                 Para <strong>{celebratedName}</strong> ({customerAge ? `${customerAge} años` : 'Edad no especificada'}). 
                                 {message.trim() && <span className="italic block font-serif text-brand-secondary mt-1">"Placa: {message}"</span>}

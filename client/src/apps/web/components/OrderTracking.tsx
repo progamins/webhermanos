@@ -241,10 +241,10 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
   const steps = [
     { name: 'Pendiente', title: 'Pedido Recibido', desc: 'Tu solicitud de diseño ya está en nuestro taller. Carol comenzará la revisión técnica de inmediato.' },
     { name: 'Confirmado', title: 'Diseño Confirmado', desc: 'Edwin y Carol han confirmado la agenda, ingredientes premium y disponibilidad de entrega.' },
-    { name: 'Preparando', title: 'En Horneado', desc: 'Seleccionamos los mejores insumos orgánicos y comenzamos a hornear el bizcocho húmedo artesanal.' },
-    { name: 'Decoración', title: 'Decoración de Autor', desc: 'El pastel está frío. Carol modela a mano la cobertura de crema sedosa y decoraciones de ensueño.' },
-    { name: 'Listo', title: 'Listo para Entrega', desc: 'Pastel listo y empacado con el sello de calidad de Maison Rosas, esperando recojo o envío.' },
-    { name: 'En camino', title: 'En Camino / Delivery', desc: 'Nuestra movilidad especializada transporta tu pastel con sumo cuidado y aire acondicionado.' },
+    { name: 'Preparando', title: 'En Horneado', desc: 'Seleccionamos los mejores insumos y comenzamos a hornear tu keke artesanal.' },
+    { name: 'Decoración', title: 'Decoración Artesanal', desc: 'El keke está listo. Carol lo termina con su toque artesanal y los detalles que elegiste.' },
+    { name: 'Listo', title: 'Listo para Entrega', desc: 'Keke listo y empacado con el sello de calidad de Maison Rosas, esperando recojo o envío.' },
+    { name: 'En camino', title: 'En Camino / Delivery', desc: 'Nuestra movilidad especializada transporta tu keke con sumo cuidado.' },
     { name: 'Entregado', title: 'Entregado con Éxito', desc: '¡Entregado! Esperamos con todo el corazón que endulce tu celebración familiar.' }
   ];
 
@@ -709,7 +709,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                     <div>
                       <h4 className="font-serif text-sm font-bold mb-3 flex items-center space-x-2" style={{color: 'var(--theme-text)'}}>
                         <Gift className="h-4 w-4 text-brand-500" />
-                        <span>Composición del Pastel</span>
+                        <span>Composición del Keke</span>
                       </h4>
                       <ul className="space-y-2 text-xs font-sans text-zinc-600">
                         <li><strong>Bizcocho:</strong> {selectedOrder.flavor}</li>
@@ -751,7 +751,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                     {/* PRICE SUMMARY */}
                     <div className="space-y-3 font-sans text-xs">
                       <div className="flex justify-between" style={{color: 'var(--theme-text-secondary)'}}>
-                        <span>Precio Base Pastel:</span>
+                        <span>Precio Base Keke:</span>
                         <span className="font-mono font-medium">S/. {(selectedOrder.totalPrice * 0.8).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between" style={{color: 'var(--theme-text-secondary)'}}>

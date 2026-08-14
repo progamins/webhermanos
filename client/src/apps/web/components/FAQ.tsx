@@ -11,28 +11,28 @@ interface FAQItem {
 
 const FAQS: FAQItem[] = [
   {
-    question: '¿Cómo realizo mi pedido mediante el catálogo de Maison Rosas?',
-    answer: '¡Es súper fácil! Primero explora nuestro catálogo y elige tu plantilla prediseñada favorita. Presiona el botón "Personalizar" para seleccionar el tamaño, el sabor del bizcocho, el color base de la cobertura, la decoración adicional, y escribe un mensaje en azúcar o el nombre del festejado. Luego presiona "Pedir por WhatsApp". Se abrirá automáticamente un chat de WhatsApp con Edwin Rosas con todos tus detalles listos para que coordinen la fecha y hora de entrega.'
+    question: '¿Cómo realizo mi pedido de kekes por WhatsApp?',
+    answer: '¡Es súper fácil! Explora nuestro catálogo y elige tu keke favorito. Presiona "Pedir este Keke" para seleccionar el tamaño, el sabor y la decoración adicional. Luego presiona "Pedir por WhatsApp". Se abrirá automáticamente un chat con Edwin Rosas con todos tus detalles listos para coordinar la fecha y hora de entrega.'
   },
   {
-    question: '¿Con cuánta anticipación debo realizar mi pedido personalizado?',
-    answer: 'Para garantizar la frescura y la dedicación artesanal de Carol Rosas, solicitamos que los pedidos se realicen con un mínimo de 48 horas (2 días) para pasteles de cumpleaños o especiales, y de 72 horas (3 días) para pasteles de bodas o de aniversarios de alta gama.'
+    question: '¿Con cuánta anticipación debo realizar mi pedido?',
+    answer: 'Nuestros kekes se hornean el mismo día con ingredientes frescos. Te pedimos realizar tu pedido con un mínimo de 24 horas de anticipación; para encargos grandes o fechas especiales, coordinamos la fecha directamente por WhatsApp.'
   },
   {
     question: '¿Cuáles son las opciones de entrega y recojo?',
-    answer: 'Ofrecemos dos modalidades convenientes: Recojo presencial sin costo en nuestro taller familiar ubicado en Sullana, Piura; o Delivery premium climatizado coordinado directamente con Edwin, garantizando que el pastel llegue intacto y en perfectas condiciones a tu dirección.'
+    answer: 'Ofrecemos dos modalidades convenientes: Recojo presencial sin costo en nuestro taller familiar ubicado en Sullana, Piura; o Delivery coordinado directamente con Edwin, garantizando que tu keke llegue intacto y en perfectas condiciones.'
   },
   {
-    question: '¿Puedo solicitar un pastel con un diseño completamente desde cero?',
-    answer: 'Para mantener la excelencia estética, la alta calidad de sabor y la precisión en los acabados que nos caracteriza, no trabajamos con bocetos libres de internet o diseños abstractos desde cero. Carol ha estructurado con mucho amor nuestras plantillas base de autor, las cuales te ofrecen márgenes ideales de personalización (sabores, colores, mensajes escritos, flores o macarons).'
+    question: '¿Puedo pedir un keke con un sabor o decoración especial?',
+    answer: '¡Claro! Trabajamos con nuestros sabores artesanales de la casa y puedes personalizar el tamaño, el relleno y la decoración. Si tienes una idea especial (por ejemplo un keke con mensaje o para una celebración), escríbenos por WhatsApp y lo hacemos realidad.'
   },
   {
     question: '¿Cuáles son los métodos de pago aceptados para concretar el pedido?',
-    answer: 'Tras definir todos los detalles de entrega con Edwin por WhatsApp, podrás concretar tu reserva realizando un abono del 50% o el pago total mediante transferencias bancarias (BCP, Interbank, BBVA) o a través de billeteras digitales (Yape o Plin).'
+    answer: 'Tras definir todos los detalles de entrega con Edwin por WhatsApp, podrás concretar tu pedido con el pago total o un adelanto mediante transferencias bancarias (BCP, Interbank, BBVA) o a través de billeteras digitales (Yape o Plin).'
   },
   {
-    question: '¿Cómo debo conservar mi pastel Maison Rosas una vez recibido?',
-    answer: 'Nuestros pasteles están elaborados a base de cremas de mantequilla sedosas y coberturas finas, por lo que recomendamos mantenerlos en un espacio fresco, seco y alejado de la luz solar directa. Si el clima es muy cálido, consérvalo refrigerado en su empaque Maison original y retíralo unos 20-30 minutos antes de servir para disfrutar de la suavidad del bizcocho.'
+    question: '¿Cómo debo conservar mi keke una vez recibido?',
+    answer: 'Nuestros kekes están elaborados con ingredientes naturales y se disfrutan mejor frescos. Guárdalos en un lugar fresco y seco; en climas cálidos, consérvalos refrigerados y sácalos unos minutos antes de servir para disfrutar de toda su suavidad y aroma.'
   }
 ];
 
