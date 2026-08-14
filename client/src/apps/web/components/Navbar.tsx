@@ -41,6 +41,9 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
   const reducedMotion = useReducedMotion();
   const navRef = useRef<HTMLDivElement>(null);
   const sheetCloseLockRef = useRef(false);
+  // Ref espejo de `isOpen` para leerla dentro del scroll listener y del
+  // MutationObserver (ambos con deps [] estables) sin re-suscribirlos.
+  const isOpenRef = useRef(false);
   // Throttle del mousemove con rAF: el evento dispara ~60-120 veces/seg y cada
   // setMousePos re-renderiza el navbar. Con rAF solo actualizamos 1 vez por frame.
   const mouseMoveRafRef = useRef<number | null>(null);
@@ -57,6 +60,9 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
 
     let ticking = false;
     const handleScroll = () => {
+      // Con el menú móvil abierto el navbar está oculto: ignoramos scroll para
+      // que no actualice su estado visual (ni reactive el estilo "scrolled").
+      if (isOpenRef.current) return;
       if (!ticking) {
         requestAnimationFrame(() => {
           const y = window.scrollY;
@@ -87,6 +93,14 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
       return z >= 100;
     };
     const scan = () => {
+      // El menú móvil (Sheet) gestiona su propio ocultado: mientras esté abierto
+      // forzamos navHidden y no dejamos que el scan lo reactive. Base UI bloquea
+      // el scroll con overflow en longhand (overflowY/overflowX sobre html/body),
+      // que este scan no detecta — por eso el navbar volvía a flotar sobre el menú.
+      if (isOpenRef.current) {
+        setNavHidden(true);
+        return;
+      }
       const overlayOpen =
         document.body.style.overflow === 'hidden' ||
         !!document.getElementById('customizer-modal') ||
@@ -131,12 +145,24 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
 
   const handleOpenChange = useCallback((open: boolean) => {
     if (sheetCloseLockRef.current && !open) return;
+    isOpenRef.current = open;
     setIsOpen(open);
-    setNavHidden(open);
-    if (!open) {
+    if (open) {
+      // Menú abierto: el navbar queda fuera de juego — invisible, sin interacción
+      // y con z-index por debajo del overlay del sheet (ver style del motion.div).
+      setNavHidden(true);
+    } else {
+      // Al cerrar esperamos a que termine la animación de salida del sheet (200ms)
+      // antes de restaurar scroll y navbar a su estado anterior.
       setTimeout(() => {
         document.body.style.overflow = '';
         document.body.style.touchAction = '';
+        setNavHidden(false);
+        // Re-sincronizar el estado de scroll: en iOS el fondo puede quedar
+        // desplazado a pesar del bloqueo mientras el menú estuvo abierto.
+        const y = window.scrollY;
+        setScrolled(y > 50);
+        setAtTop(y < 10);
       }, 200);
     }
   }, []);
@@ -270,7 +296,10 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
         onMouseLeave={handleMouseLeave}
         style={{
           position: 'fixed',
-          zIndex: 90,
+          // Mientras el navbar está oculto (menú móvil abierto o en animación de
+          // salida) baja por debajo del overlay/popup del sheet (z-50): así jamás
+          // puede quedar flotando sobre el menú, ni siquiera a mitad de transición.
+          zIndex: navHidden ? 40 : 90,
           pointerEvents: navHidden ? 'none' : 'auto',
         }}
         whileHover={reducedMotion || atTop ? undefined : { y: -2 }}
