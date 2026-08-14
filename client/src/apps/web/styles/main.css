@@ -17,7 +17,7 @@
 
 @theme {
   --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
-  --font-sans: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
   --color-brand-bg: #FFF8ED;
@@ -38,7 +38,7 @@
 
 @theme inline {
   --font-heading: var(--font-serif);
-  --font-sans: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -435,6 +435,37 @@ section[id]:not(#inicio):not(#tracking), footer {
 }
 .dark .grain-texture::before {
   background-image: radial-gradient(rgba(240, 225, 205, 0.5) 0.5px, transparent 0.5px);
+}
+
+/* Ticker editorial de sabores — banda en chocolate profundo (el momento memorable) */
+.flavor-ticker {
+  background: #3A2118;
+  overflow: hidden;
+  border-top: 1px solid rgba(214, 163, 74, 0.28);
+  border-bottom: 1px solid rgba(214, 163, 74, 0.28);
+}
+.flavor-ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker-scroll 36s linear infinite;
+  will-change: transform;
+}
+.flavor-ticker:hover .flavor-ticker-track {
+  animation-play-state: paused;
+}
+@media (max-width: 640px) {
+  .flavor-ticker-track { animation-duration: 26s; }
+}
+
+/* Banda "El Keke de la Casa" — fondo chocolate profundo con degradado cálido */
+.house-keke-band {
+  background: linear-gradient(135deg, #3A2118 0%, #462719 55%, #5A3022 100%);
+}
+.house-keke-img {
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.house-keke-img-wrap:hover .house-keke-img {
+  transform: scale(1.05);
 }
 
 /* ============= SWIPER OVERRIDES ============= */

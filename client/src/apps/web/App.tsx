@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Cake, Mail, MessageCircle, CheckCircle, RefreshCw, Facebook, Instagram } from 'lucide-react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
@@ -27,6 +27,7 @@ setFaviconFromLocalStorage();
 
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
+import FlavorTicker from './components/FlavorTicker';
 import TermsAndPrivacy from './components/TermsAndPrivacy';
 import OfflineScreen from './components/OfflineScreen';
 import { useOnline } from '../../shared/hooks';
@@ -39,6 +40,7 @@ import SectionSkeleton from '../../shared/components/SectionSkeleton';
 
 const History = lazy(() => import('./components/History'));
 const Catalog = lazy(() => import('./components/Catalog'));
+const HouseKeke = lazy(() => import('./components/HouseKeke'));
 import { lazyImportPrewarm } from '../../shared/utils/lazyImportPrewarm'
 
 // Factory compartida: lazy() la usa para montar, onHover/idle la usa para prewarm.
@@ -454,6 +456,12 @@ export default function App() {
     else root.classList.add('light-theme');
   }, [theme]);
 
+  // Producto destacado "El Keke de la Casa" — siempre datos reales de la API
+  const houseKeke = useMemo(
+    () => products.find((p) => p.id === 'prod-1') ?? products[0] ?? null,
+    [products]
+  );
+
   const handleViewChange = useCallback((viewId: string) => {
     setCurrentView(viewId);
     const targetPath = viewId === 'inicio' ? '/' : `/${viewId}${window.location.search}`;
@@ -742,8 +750,16 @@ export default function App() {
         ) : (
           <motion.div key="home-pages" id="main-content" role="main" variants={pageVariants} initial="initial" animate="animate" exit="exit">
             <Hero onViewCatalog={() => scrollToSection('catalogo')} onViewHistory={() => scrollToSection('historia')} config={config} />
+            <FlavorTicker />
             <Suspense fallback={<SectionSkeleton section="catalog" />}>
               <Catalog products={products} onSelectCustomize={handleSelectCustomize} />
+            </Suspense>
+            <Suspense fallback={<SectionSkeleton section="catalog" />}>
+              <HouseKeke
+                product={houseKeke}
+                whatsappNumber={config?.whatsappNumber || '51902568187'}
+                onViewCatalog={() => scrollToSection('catalogo')}
+              />
             </Suspense>
             <Suspense fallback={<SectionSkeleton section="history" />}>
               <History config={config} />

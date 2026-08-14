@@ -4,7 +4,7 @@
 
 # 🍰 Maison Rosas
 
-**Pastelería de autor & repostería fina** — Tienda online + panel administrativo full-stack para la pastelería familiar Rosas Albines.
+**Kekes artesanales peruanos** — Tienda online + panel administrativo full-stack para la pastelería familiar Rosas Albines.
 
 [![Live Demo](https://img.shields.io/badge/Demo-En%20vivo-7C3AED?style=flat-square)](https://webhermanos-client.vercel.app)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=white)](https://react.dev)
@@ -19,7 +19,7 @@
 
 ## 📖 ¿Qué es Maison Rosas?
 
-Una **aplicación web completa** para una pastelería de autor real: los clientes exploran un catálogo de pasteles personalizables, hacen pedidos con seguimiento por código, y el equipo administra todo — pedidos, stock de cocina, galería, reseñas y la configuración de la tienda — desde un panel de administración con roles y seguridad reforzada.
+Una **aplicación web completa** para una pastelería familiar real: los clientes exploran un catálogo de **kekes artesanales** con sabores peruanos (chocolate, lúcuma, maracuyá, plátano, zanahoria, naranja, canela y vainilla), hacen pedidos con seguimiento por código, y el equipo administra todo — pedidos, stock de cocina, galería, reseñas y la configuración de la tienda — desde un panel de administración con roles y seguridad reforzada.
 
 - **Para quién:** pastelerías y negocios de repostería que quieren digitalizar sus pedidos sin depender de redes sociales.
 - **Problema que resuelve:** reemplaza el flujo manual (mensajes sueltos, hojas de cálculo) por un sistema con pedidos trazables, notificaciones por correo y un panel de gestión en tiempo real.
@@ -34,7 +34,7 @@ Una **aplicación web completa** para una pastelería de autor real: los cliente
 
 | Interfaz | URL | Descripción |
 |---|---|---|
-| 🏠 **Tienda** | [webhermanos-client.vercel.app](https://webhermanos-client.vercel.app) | Catálogo, personalizador de pasteles, pedidos y tracking |
+| 🏠 **Tienda** | [webhermanos-client.vercel.app](https://webhermanos-client.vercel.app) | Catálogo de kekes, personalizador, pedidos y tracking |
 | ❤️ **API Health** | [webhermanos-client.vercel.app/api/health](https://webhermanos-client.vercel.app/api/health) | Estado del servidor (`{"status":"ok"}`) |
 | 🔐 **Panel admin** | Ruta secreta configurada con `ADMIN_SECRET_PATH` | No publicada por seguridad |
 
@@ -65,12 +65,27 @@ YouTube/Loom y pega el enlace aquí, o guarda un `.mp4` en `media/` (ver
 
 ---
 
+## 🎨 Identidad y diseño
+
+Rediseño visual aplicado sobre la web existente (sin tocar arquitectura ni funcionalidad), con dirección **editorial premium**:
+
+- **Paleta cálida peruana**: crema `#FFF8ED`, blanco cálido `#FFFCF7`, chocolate `#3A2118`, cacao `#5A3022`, caramelo `#B86B3D`, dorado `#D6A34A` y frutal `#D96B45` (solo en CTAs y detalles destacados).
+- **Tipografía**: Playfair Display (títulos serif editoriales) + Plus Jakarta Sans (cuerpo) — máximo 2 familias.
+- **Hero editorial**: portada tipo revista con el keke como protagonista, CTAs **Ver Kekes** y **Pedir Ahora** (WhatsApp).
+- **Ticker de sabores**: banda en chocolate profundo con los sabores desfilando en loop (marquee CSS, pausa al hover).
+- **El Keke de la Casa**: sección destacada con composición editorial asimétrica y datos reales del producto (foto, precio, descripción).
+- **Cards de producto**: fotografía protagonista con zoom al hover, precio en caramelo, elevación suave y CTA claro.
+- Microinteracciones sutiles reutilizando `animations.css`, textura de grano casi imperceptible, mobile-first y modo oscuro.
+
+---
+
 ## 🧰 Tech Stack
 
 ### Frontend
 - **React 19** + **TypeScript 5** + **Vite 6**
 - **Tailwind CSS 4** (con `@tailwindcss/vite`)
 - **Motion** (animaciones), **Recharts** (gráficos del panel), **Embla Carousel**
+- **Google Fonts**: Playfair Display + Plus Jakarta Sans (máximo 2 familias)
 - **lucide-react** (iconos), **sonner** (toasts), **jsbarcode** (códigos de barras), **html2canvas** (capturas)
 - **PWA**: Service Worker con modo offline y caché de imágenes en IndexedDB
 
@@ -148,8 +163,8 @@ webhermanos/
 ### ✅ Implementado
 
 **Tienda pública**
-- Catálogo de pasteles con búsqueda (tolerante a acentos), filtros por categoría y caché de imágenes.
-- Personalizador de pasteles (tamaño, relleno, decoración) con **precio calculado y validado en el servidor**.
+- Catálogo de kekes con búsqueda (tolerante a acentos), filtros por categoría y caché de imágenes.
+- Personalizador de kekes (tamaño, relleno, decoración) con **precio calculado y validado en el servidor**.
 - Pedidos con código de tracking único, línea de tiempo de estados y **verificación por OTP** (código de 6 dígitos por email).
 - Formulario de contacto, galería, reseñas de clientes y sección de preguntas frecuentes.
 - Integración WhatsApp, Google Maps y Google Analytics 4 (configurables).

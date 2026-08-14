@@ -1,9 +1,9 @@
 /* ============= WEB TYPOGRAPHY ============= */
 
-/* Body text — Manrope (cargado desde Google Fonts) con fallback nativo.
-   Moderno, limpio y cálido: acompaña a Playfair Display en títulos. */
+/* Body text — Plus Jakarta Sans (cargado desde Google Fonts) con fallback nativo.
+   Moderna, cálida y distintiva: acompaña a Playfair Display en títulos. */
 html, body {
-  font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -14,7 +14,13 @@ html, body {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: "Playfair Display", Georgia, "Times New Roman", serif;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
+  font-weight: 600;
+}
+
+/* Titulares editoriales: serif con peso y presencia */
+.font-serif {
+  font-family: "Playfair Display", Georgia, "Times New Roman", serif;
 }
 
 /* Precios y datos numéricos: tabular para alineación limpia */

@@ -195,3 +195,9 @@
   0%   { opacity: 0; transform: translateY(-4px) scale(0.96); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* Flavor ticker — marquee editorial de sabores (loop perfecto con track duplicado) */
+@keyframes ticker-scroll {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
