@@ -32,7 +32,7 @@ const NAV_ITEMS = [
 
 function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggleTheme }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
-    const [scrolled, setScrolled] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [atTop, setAtTop] = useState(true);
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
   const [isHovering, setIsHovering] = useState(false);
@@ -181,46 +181,43 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
   // props cuando los estilos realmente cambiaron.
   const glassStyles = useMemo(() => {
     // ─── iOS 26 Liquid Glass: tinte translúcido mínimamente opaco ───
-    // La saturación/brillo la aporta backdrop-filter; aquí solo damos el tinte.
-    // Al hacer scroll (pill flotante) el vidrio se vuelve casi opaco: el texto
-    // debe ser legible sobre CUALQUIER sección (incluida la banda de cacao).
+    // Al hacer scroll (pill flotante) el vidrio sube su opacidad para que el
+    // texto sea legible sobre CUALQUIER sección, pero sin llegar a tapar el fondo.
     const glassBg = isDark
       ? atTop
-        ? 'linear-gradient(135deg, rgba(28,25,23,0.62), rgba(18,16,14,0.42))'
-        : 'linear-gradient(135deg, rgba(32,19,13,0.88), rgba(24,15,10,0.80))'
+        ? 'linear-gradient(135deg, rgba(28,25,23,0.56), rgba(18,16,14,0.40))'
+        : 'linear-gradient(135deg, rgba(32,19,13,0.84), rgba(24,15,10,0.76))'
       : atTop
-        ? 'linear-gradient(135deg, rgba(255,253,245,0.55), rgba(255,253,245,0.30))'
-        : 'linear-gradient(135deg, rgba(255,253,245,0.92), rgba(255,251,242,0.86))';
+        ? 'linear-gradient(135deg, rgba(255,253,245,0.52), rgba(255,253,245,0.30))'
+        : 'linear-gradient(135deg, rgba(255,253,245,0.90), rgba(255,251,242,0.84))';
 
-    // Borde specular dual: línea brillante + halo (refracción del borde del vidrio)
+    // Borde specular: única línea brillante (refracción del borde del vidrio)
     const glassBorder = isDark
-      ? atTop ? '0.5px solid rgba(255,255,255,0.35)' : '0.5px solid rgba(255,255,255,0.22)'
-      : atTop ? '0.5px solid rgba(255,255,255,0.75)' : '0.5px solid rgba(255,255,255,0.50)';
+      ? atTop ? '0.5px solid rgba(255,255,255,0.30)' : '0.5px solid rgba(255,255,255,0.18)'
+      : atTop ? '0.5px solid rgba(255,255,255,0.80)' : '0.5px solid rgba(255,255,255,0.55)';
 
-    // Sombra interna superior (highlight) + inferior (inner shadow) + drop + glow etéreo dorado
-    const goldGlow = isDark ? 'rgba(233, 161, 59, 0.06)' : 'rgba(233, 161, 59, 0.14)';
+    // Sombra limpia: una sola elevación suave + highlight interior superior.
+    // Se quitaron las capas extra (glow dorado y doble drop shadow) que al hacer
+    // scroll recargaban el pill; ahora el vidrio se ve pulido, no apilado.
     const glassShadow = atTop
       ? isDark
-        ? '0 0 0 0.5px rgba(255,255,255,0.08) inset, 0 10px 40px -10px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.14), inset 0 -1px 2px rgba(0,0,0,0.35)'
-        : '0 0 0 0.5px rgba(255,255,255,0.18) inset, 0 10px 40px -10px rgba(0,0,0,0.10), 0 2px 12px ' + goldGlow + ', inset 0 1px 1px rgba(255,255,255,0.55), inset 0 -1px 2px rgba(0,0,0,0.06)'
-      : scrolled
-        ? isDark
-          ? '0 0 0 0.5px rgba(255,255,255,0.06) inset, 0 24px 70px -12px rgba(0,0,0,0.6), 0 12px 40px -10px ' + goldGlow + ', inset 0 1px 1px rgba(255,255,255,0.10), inset 0 -1px 2px rgba(0,0,0,0.4)'
-          : '0 0 0 0.5px rgba(255,255,255,0.14) inset, 0 24px 70px -12px rgba(0,0,0,0.15), 0 12px 40px -10px ' + goldGlow + ', inset 0 1px 1px rgba(255,255,255,0.45), inset 0 -1px 2px rgba(0,0,0,0.08)'
-        : isDark
-          ? '0 0 0 0.5px rgba(255,255,255,0.07) inset, 0 18px 55px -12px rgba(0,0,0,0.5), 0 8px 30px -10px ' + goldGlow + ', inset 0 1px 1px rgba(255,255,255,0.12), inset 0 -1px 2px rgba(0,0,0,0.38)'
-          : '0 0 0 0.5px rgba(255,255,255,0.16) inset, 0 18px 55px -12px rgba(0,0,0,0.12), 0 8px 30px -10px ' + goldGlow + ', inset 0 1px 1px rgba(255,255,255,0.50), inset 0 -1px 2px rgba(0,0,0,0.07)';
+        ? 'inset 0 1px 1px rgba(255,255,255,0.14), 0 8px 30px -12px rgba(0,0,0,0.45)'
+        : 'inset 0 1px 1px rgba(255,255,255,0.55), 0 8px 30px -12px rgba(0,0,0,0.12)'
+      : isDark
+        ? 'inset 0 1px 1px rgba(255,255,255,0.12), 0 18px 45px -14px rgba(0,0,0,0.55)'
+        : 'inset 0 1px 1px rgba(255,255,255,0.50), 0 18px 45px -14px rgba(0,0,0,0.16)';
 
-    // ─── Vidrio físico iOS 26: blur amplio + saturación + brightness ───
-    // Mientras más translúcida la capa, más se cuela el color del fondo con saturación extra.
+    // ─── Vidrio físico iOS 26: blur amplio + saturación moderada ───
+    // Saturación baja (165-180%) para que el contenido de debajo no ensucie el
+    // pill al scrollear: vidrio limpio con un toque de vida, no un arcoíris.
     // Mobile: blur reducido (~14-18px) para rendimiento en GPUs entry-level.
     const blurAmount = isMobile
       ? (scrolled || atTop ? 18 : 14)
-      : (scrolled || atTop ? 34 : 28);
+      : (scrolled || atTop ? 32 : 26);
     const saturateAmount = isMobile
-      ? '165%'
-      : `${atTop ? 210 : 200}%`;
-    const glassBlurFilter = `blur(${blurAmount}px) saturate(${saturateAmount}) brightness(${isMobile ? 105 : 108}%)`;
+      ? '150%'
+      : `${atTop ? 180 : 165}%`;
+    const glassBlurFilter = `blur(${blurAmount}px) saturate(${saturateAmount}) brightness(${isMobile ? 105 : 106}%)`;
 
     return { glassBg, glassBorder, glassShadow, glassBlurFilter };
   }, [atTop, scrolled, isDark, isMobile]);
@@ -306,8 +303,8 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
               className="absolute inset-0 pointer-events-none"
               style={{
                 background: isDark
-                  ? 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 45%)'
-                  : 'linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.04) 45%, transparent 70%)',
+                  ? 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 45%)'
+                  : 'linear-gradient(180deg, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0.03) 45%, transparent 70%)',
                 borderRadius: 'inherit',
               }}
               aria-hidden="true"
@@ -320,15 +317,15 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
               className="absolute pointer-events-none"
               style={{
                 top: '-100%',
-                left: '-10%',
-                width: '70%',
-                height: '300%',
-                background: `radial-gradient(circle at ${mousePos.x}% ${mousePos.y}%, rgba(255,255,255,${isHovering ? 0.45 : 0.22}) 0%, rgba(255,255,255,0.06) 35%, transparent 65%)`,
-                filter: 'blur(45px)',
+                left: '-12%',
+                width: '62%',
+                height: '260%',
+                background: `radial-gradient(circle at ${mousePos.x}% ${mousePos.y}%, rgba(255,255,255,${isHovering ? 0.28 : 0.13}) 0%, rgba(255,255,255,0.05) 35%, transparent 65%)`,
+                filter: 'blur(32px)',
                 borderRadius: 'inherit',
                 mixBlendMode: isDark ? 'screen' : 'soft-light',
                 transition: reducedMotion ? 'none' : isHovering ? 'none' : 'opacity 0.3s ease',
-                opacity: isHovering ? 1 : 0.55,
+                opacity: isHovering ? 1 : 0.45,
                 willChange: 'transform, opacity',
               }}
               aria-hidden="true"
@@ -341,8 +338,8 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
               className="absolute inset-0 pointer-events-none"
               style={{
                 background: isDark
-                  ? 'linear-gradient(135deg, rgba(255,255,255,0.22) 0%, transparent 22%, transparent 78%, rgba(255,255,255,0.18) 100%)'
-                  : 'linear-gradient(135deg, rgba(255,255,255,0.55) 0%, transparent 22%, transparent 78%, rgba(255,255,255,0.45) 100%)',
+                  ? 'linear-gradient(135deg, rgba(255,255,255,0.16) 0%, transparent 22%, transparent 78%, rgba(255,255,255,0.13) 100%)'
+                  : 'linear-gradient(135deg, rgba(255,255,255,0.45) 0%, transparent 22%, transparent 78%, rgba(255,255,255,0.35) 100%)',
                 borderRadius: 'inherit',
                 padding: '0.5px',
                 WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
@@ -359,8 +356,8 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
               className="absolute inset-0 pointer-events-none"
               style={{
                 background: isDark
-                  ? 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 40%, transparent 60%, rgba(255,255,255,0.04) 100%)'
-                  : 'linear-gradient(135deg, rgba(255,255,255,0.30) 0%, transparent 40%, transparent 60%, rgba(255,255,255,0.12) 100%)',
+                  ? 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 40%, transparent 60%, rgba(255,255,255,0.03) 100%)'
+                  : 'linear-gradient(135deg, rgba(255,255,255,0.22) 0%, transparent 40%, transparent 60%, rgba(255,255,255,0.10) 100%)',
                 borderRadius: 'inherit',
                 mask: 'linear-gradient(to bottom, black 0%, black 35%, transparent 55%, transparent 100%)',
                 WebkitMask: 'linear-gradient(to bottom, black 0%, black 35%, transparent 55%, transparent 100%)',
@@ -384,8 +381,30 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
             aria-label="Ir al inicio"
           >
             {logoUrl ? (
-              <div className="h-10 w-10 rounded-full overflow-hidden shrink-0 group-hover:scale-105 transition-transform duration-300" style={{ border: `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.3)'}` }}>
-                <CachedImage src={logoUrl} width={100} alt="Maison Rosas" wrapperClassName="w-full h-full" className="w-full h-full object-cover" priority />
+              <div
+                className="h-10 w-10 rounded-full overflow-hidden shrink-0 group-hover:scale-105 transition-transform duration-300"
+                style={{
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.3)'}`,
+                  // En dark mode el logo suele ser oscuro y se pierde contra el
+                  // vidrio: se monta sobre un disco crema y se contiene el logo,
+                  // así siempre queda visible sin distorsionar sus colores.
+                  ...(isDark
+                    ? {
+                        background: 'radial-gradient(circle at 35% 30%, #FFFDF6 0%, #F4EADA 55%, #E9D8C2 100%)',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.35), inset 0 1px 1px rgba(255,255,255,0.7)',
+                        padding: 5,
+                      }
+                    : {}),
+                }}
+              >
+                <CachedImage
+                  src={logoUrl}
+                  width={100}
+                  alt="Maison Rosas"
+                  wrapperClassName="w-full h-full"
+                  className={`w-full h-full ${isDark ? 'object-contain' : 'object-cover'}`}
+                  priority
+                />
               </div>
             ) : (
               <div className="p-2 rounded-full flex items-center justify-center group-hover:scale-105 transition-transform duration-300" style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)', color: textColor }}>
