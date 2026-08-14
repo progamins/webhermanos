@@ -51,7 +51,13 @@ function FAQ() {
       aria-label="Preguntas frecuentes"
     >
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="text-center max-w-3xl mx-auto mb-16">
+        <motion.div
+          className="text-center max-w-3xl mx-auto mb-16"
+          initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: 24, filter: 'blur(4px)' }}
+          whileInView={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0, filter: 'blur(0px)' }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={reducedMotion ? { duration: 0 } : { duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+        >
           <span className="text-[10px] tracking-[0.3em] uppercase opacity-75 text-brand-secondary dark:text-brand-300 block font-semibold">
             DESPEJA TUS DUDAS
           </span>
@@ -62,7 +68,7 @@ function FAQ() {
           <p className="text-sm font-light mt-5 max-w-xl mx-auto leading-relaxed" style={{ color: 'var(--theme-text-secondary)' }}>
             Todo lo que necesitas saber sobre el proceso artesanal de Carol y la coordinación comercial de Edwin.
           </p>
-        </div>
+        </motion.div>
 
         <div className="space-y-4" id="faq-accordion-group" role="region" aria-label="Acordeón de preguntas frecuentes">
           {FAQS.map((faq, index) => {
@@ -71,11 +77,15 @@ function FAQ() {
             const buttonId = `faq-trigger-${index}`;
 
             return (
-              <div
+              <motion.div
                 key={index}
                 className="rounded-[20px] overflow-hidden transition-all duration-300 border"
                 style={{ backgroundColor: 'var(--theme-surface-glass)', borderColor: 'var(--theme-border)' }}
                 id={`faq-item-${index}`}
+                initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: 18 }}
+                whileInView={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={reducedMotion ? { duration: 0 } : { duration: 0.45, delay: (index % 3) * 0.08, ease: [0.16, 1, 0.3, 1] }}
               >
                 <button
                   onClick={() => toggleAccordion(index)}
@@ -118,7 +128,7 @@ function FAQ() {
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </div>
+              </motion.div>
             );
           })}
         </div>
