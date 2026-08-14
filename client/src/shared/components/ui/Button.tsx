@@ -16,8 +16,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
+  // primary: destello de luz diagonal que barre el botón al pasar el cursor
+  // (premium sutil, solo compositor). El pseudo-elemento before se mueve con
+  // translateX dentro de overflow-hidden, sin tocar layout.
   primary:
-    'bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20 hover:shadow-xl hover:shadow-brand-500/30',
+    'relative overflow-hidden bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20 hover:shadow-xl hover:shadow-brand-500/30 before:absolute before:inset-y-0 before:left-0 before:w-1/2 before:-translate-x-[200%] before:skew-x-[-20deg] before:bg-gradient-to-r before:from-transparent before:via-white/25 before:to-transparent before:transition-transform before:duration-700 before:pointer-events-none hover:before:translate-x-[350%]',
   secondary:
     'border border-brand-300 dark:border-brand-700 text-brand-700 dark:text-brand-300 hover:bg-brand-50 dark:hover:bg-brand-950/30',
   ghost:

@@ -20,7 +20,7 @@ function FlavorTicker() {
             <span className="px-7 py-3.5 font-mono text-[11px] sm:text-xs font-semibold uppercase tracking-[0.3em] text-[#F6EDE2]">
               {flavor}
             </span>
-            <span className="text-[#E9A13B] text-sm leading-none">✦</span>
+            <span className="flavor-ticker-spark text-[#E9A13B] text-sm leading-none" style={{ animationDelay: `${(i % 8) * 0.35}s` }}>✦</span>
           </span>
         ))}
       </div>

@@ -478,6 +478,20 @@ section[id]:not(#inicio):not(#tracking), footer {
   .flavor-ticker-track { animation-duration: 26s; }
 }
 
+/* Destello dorado pulsante en los separadores ✦ del ticker (decorativo, solo compositor) */
+.flavor-ticker-spark {
+  display: inline-block;
+  animation: ticker-spark 2.8s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+@keyframes ticker-spark {
+  0%, 100% { opacity: 0.5; transform: scale(0.85) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.2) rotate(25deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flavor-ticker-spark { animation: none; }
+}
+
 /* Banda "El Keke de la Casa" — cacao profundo con degradado hacia guinda */
 .house-keke-band {
   background: linear-gradient(135deg, #2B1A12 0%, #3A2118 55%, #57241A 100%);

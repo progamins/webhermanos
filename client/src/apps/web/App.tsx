@@ -700,6 +700,13 @@ export default function App() {
             transition={{ duration: 0.5, ease: 'easeInOut' }}
             className="fixed inset-0 z-[9999] flex items-center justify-center entrance-container"
             style={{ backgroundColor: 'var(--theme-bg)' }}
+            role="presentation"
+            onClick={() => {
+              // Tocar/clic en cualquier parte salta la animación de entrada:
+              // la web se siente más ágil y el usuario nunca queda bloqueado.
+              try { localStorage.setItem(ENTRANCE_SEEN_KEY, 'true'); } catch {}
+              setShowEntrance(false);
+            }}
           >
             <div className="text-center entrance-content">
               {/* ─── Icono Cake con bounce CSS puro (GPU) ─── */}
