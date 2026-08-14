@@ -165,8 +165,8 @@ function Hero({ onViewCatalog, onViewHistory, config }: HeroProps) {
         <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
           <defs>
             <pattern id="hero-dots-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-              <circle cx="20" cy="20" r="1" fill="#B86B3D" />
-              <circle cx="0" cy="0" r="0.8" fill="#D6A34A" />
+              <circle cx="20" cy="20" r="1" fill="#C7442E" />
+              <circle cx="0" cy="0" r="0.8" fill="#E9A13B" />
             </pattern>
           </defs>
           <rect x="0" y="0" width="100%" height="100%" fill="url(#hero-dots-pattern)" />
@@ -202,14 +202,14 @@ function Hero({ onViewCatalog, onViewHistory, config }: HeroProps) {
               {config?.heroTitle ? (
                 <>
                   {config.heroTitle.split(' ').slice(0, -1).join(' ')}{' '}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 dark:from-brand-300 dark:via-brand-200 dark:to-brand-400 bg-[length:200%_100%] animate-gradient-shift block sm:inline">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary via-amber-500 to-amber-600 dark:from-brand-secondary dark:via-amber-400 dark:to-amber-500 bg-[length:200%_100%] animate-gradient-shift block sm:inline">
                     {config.heroTitle.split(' ').slice(-1)[0]}
                   </span>
                 </>
               ) : (
                 <>
                   El Arte de <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 dark:from-brand-300 dark:via-brand-200 dark:to-brand-400 bg-[length:200%_100%] animate-gradient-shift">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary via-amber-500 to-amber-600 dark:from-brand-secondary dark:via-amber-400 dark:to-amber-500 bg-[length:200%_100%] animate-gradient-shift">
                     Compartir
                   </span>
                 </>

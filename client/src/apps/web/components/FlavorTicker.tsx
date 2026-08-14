@@ -20,7 +20,7 @@ function FlavorTicker() {
             <span className="px-7 py-3.5 font-mono text-[11px] sm:text-xs font-semibold uppercase tracking-[0.3em] text-[#F6EDE2]">
               {flavor}
             </span>
-            <span className="text-[#D6A34A] text-sm leading-none">✦</span>
+            <span className="text-[#E9A13B] text-sm leading-none">✦</span>
           </span>
         ))}
       </div>

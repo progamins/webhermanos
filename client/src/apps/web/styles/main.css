@@ -20,20 +20,20 @@
   --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
-  --color-brand-bg: #FFF8ED;
-  --color-brand-primary: #D96B45;
-  --color-brand-secondary: #D6A34A;
-  --color-brand-50: #FDF1E9;
-  --color-brand-100: #FAE1D0;
-  --color-brand-200: #F3C4A4;
-  --color-brand-300: #E9A173;
-  --color-brand-400: #DF814E;
-  --color-brand-500: #D96B45;
-  --color-brand-600: #C0562F;
-  --color-brand-700: #9E4326;
-  --color-brand-800: #7E3620;
-  --color-brand-900: #5C2717;
-  --color-brand-950: #33130B;
+  --color-brand-bg: #FBF3E2;
+  --color-brand-primary: #C7442E;
+  --color-brand-secondary: #E9A13B;
+  --color-brand-50: #FDF0EA;
+  --color-brand-100: #FADDD1;
+  --color-brand-200: #F4BBA4;
+  --color-brand-300: #E98E6E;
+  --color-brand-400: #DD6445;
+  --color-brand-500: #C7442E;
+  --color-brand-600: #A93624;
+  --color-brand-700: #87291D;
+  --color-brand-800: #682017;
+  --color-brand-900: #4A1711;
+  --color-brand-950: #2B0D09;
 }
 
 @theme inline {
@@ -103,6 +103,27 @@ html, body {
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
+/* Backstop anti-overflow horizontal (la red anti-generic-UI): clip, no hidden,
+   para no romper layouts con position:sticky */
+body {
+  overflow-x: clip;
+}
+
+/* ─── Anti-FOUT: los titulares esperan a la fuente real antes de aparecer ─── */
+html.fonts-pending h1,
+html.fonts-pending h2,
+html.fonts-pending h3,
+html.fonts-pending .font-serif {
+  opacity: 0;
+}
+html.fonts-ready h1,
+html.fonts-ready h2,
+html.fonts-ready h3,
+html.fonts-ready .font-serif {
+  opacity: 1;
+  transition: opacity 0.5s ease;
+}
+
 /* Interactive elements */
 /* Interactive elements - transición más corta en mobile para ahorrar GPU */
 input, textarea, select, button, a, label, summary {
@@ -167,11 +188,11 @@ section[id]:not(#inicio):not(#tracking), footer {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(217, 107, 69, 0.35);
+  background: rgba(199, 68, 46, 0.35);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(217, 107, 69, 0.6);
+  background: rgba(199, 68, 46, 0.6);
 }
 
 /* ============= GLASS STYLES ============= */
@@ -289,7 +310,7 @@ section[id]:not(#inicio):not(#tracking), footer {
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   border: 1px solid rgba(255, 255, 255, 0.5);
   box-shadow: 
-    0 10px 40px -10px rgba(184, 107, 61, 0.14),
+    0 10px 40px -10px rgba(233, 161, 59, 0.16),
     0 1px 1px 0 rgba(255, 255, 255, 0.5) inset,
     0 -1px 3px 0 rgba(0, 0, 0, 0.01) inset;
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -320,15 +341,15 @@ section[id]:not(#inicio):not(#tracking), footer {
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .rose-glow-hover:hover {
-  box-shadow: 0 0 20px 0 rgba(217, 107, 69, 0.4);
-  border-color: rgba(217, 107, 69, 0.7) !important;
+  box-shadow: 0 0 20px 0 rgba(199, 68, 46, 0.4);
+  border-color: rgba(199, 68, 46, 0.7) !important;
   transform: translateY(-2px);
 }
 
 /* Liquid glass input */
 .liquid-glass-input {
-  background: rgba(255, 252, 247, 0.55);
-  border: 1px solid rgba(184, 107, 61, 0.28);
+  background: rgba(255, 253, 245, 0.55);
+  border: 1px solid rgba(233, 161, 59, 0.35);
   backdrop-filter: blur(8px);
   border-radius: 14px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -337,7 +358,7 @@ section[id]:not(#inicio):not(#tracking), footer {
 .liquid-glass-input:focus {
   background: rgba(255, 255, 255, 0.8);
   border-color: var(--color-brand-500);
-  box-shadow: 0 0 12px rgba(217, 107, 69, 0.25), inset 0 1px 2px rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 12px rgba(199, 68, 46, 0.25), inset 0 1px 2px rgba(255, 255, 255, 0.5);
   transform: translateY(-0.5px);
 }
 .dark .liquid-glass-input {
@@ -347,7 +368,7 @@ section[id]:not(#inicio):not(#tracking), footer {
 .dark .liquid-glass-input:focus {
   background: rgba(20, 18, 15, 0.8);
   border-color: var(--color-brand-400);
-  box-shadow: 0 0 12px rgba(217, 107, 69, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 12px rgba(199, 68, 46, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.05);
   transform: translateY(-0.5px);
 }
 
@@ -380,14 +401,14 @@ section[id]:not(#inicio):not(#tracking), footer {
 }
 
 .skeleton-shimmer {
-  background: linear-gradient(90deg, rgba(217, 107, 69, 0.06) 25%, rgba(217, 107, 69, 0.12) 50%, rgba(217, 107, 69, 0.06) 75%);
+  background: linear-gradient(90deg, rgba(199, 68, 46, 0.06) 25%, rgba(199, 68, 46, 0.12) 50%, rgba(199, 68, 46, 0.06) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite ease-in-out;
 }
 
 .img-skeleton {
-  background-color: rgba(217, 107, 69, 0.06);
-  background-image: linear-gradient(90deg, transparent 25%, rgba(217, 107, 69, 0.10) 50%, transparent 75%);
+  background-color: rgba(199, 68, 46, 0.06);
+  background-image: linear-gradient(90deg, transparent 25%, rgba(199, 68, 46, 0.10) 50%, transparent 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite ease-in-out;
   border-radius: inherit;
@@ -400,7 +421,7 @@ section[id]:not(#inicio):not(#tracking), footer {
 }
 .keke-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 24px 50px -18px rgba(58, 33, 24, 0.22), 0 8px 24px -12px rgba(217, 107, 69, 0.12);
+  box-shadow: 0 24px 50px -18px rgba(43, 26, 18, 0.22), 0 8px 24px -12px rgba(199, 68, 46, 0.12);
 }
 
 /* Zoom suave de la foto del keke al hover */
@@ -439,10 +460,10 @@ section[id]:not(#inicio):not(#tracking), footer {
 
 /* Ticker editorial de sabores — banda en chocolate profundo (el momento memorable) */
 .flavor-ticker {
-  background: #3A2118;
+  background: #2B1A12;
   overflow: hidden;
-  border-top: 1px solid rgba(214, 163, 74, 0.28);
-  border-bottom: 1px solid rgba(214, 163, 74, 0.28);
+  border-top: 1px solid rgba(233, 161, 59, 0.35);
+  border-bottom: 1px solid rgba(233, 161, 59, 0.35);
 }
 .flavor-ticker-track {
   display: flex;
@@ -457,9 +478,9 @@ section[id]:not(#inicio):not(#tracking), footer {
   .flavor-ticker-track { animation-duration: 26s; }
 }
 
-/* Banda "El Keke de la Casa" — fondo chocolate profundo con degradado cálido */
+/* Banda "El Keke de la Casa" — cacao profundo con degradado hacia guinda */
 .house-keke-band {
-  background: linear-gradient(135deg, #3A2118 0%, #462719 55%, #5A3022 100%);
+  background: linear-gradient(135deg, #2B1A12 0%, #3A2118 55%, #57241A 100%);
 }
 .house-keke-img {
   transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);

@@ -10,7 +10,7 @@
     <meta name="keywords" content="kekes, keke artesanal, keke peruano, pastelería, repostería, Sullana, Piura, keke de chocolate, keke de lúcuma, keke de plátano, Maison Rosas" />
     <meta name="author" content="Carol & Edwin Rosas Albines - Maison Rosas" />
     <meta name="robots" content="index, follow" />
-    <meta name="theme-color" content="#B86B3D" />
+    <meta name="theme-color" content="#C7442E" />
     <link rel="canonical" href="https://maisonrosas.com/" />
     <link rel="alternate" href="https://maisonrosas.com/" hreflang="es-PE" />
     <link rel="alternate" href="https://maisonrosas.com/" hreflang="x-default" />
@@ -38,6 +38,31 @@
 
     <!-- Dynamic Favicon (set by App.tsx from config) -->
     <link id="dynamic-favicon" rel="icon" />
+
+    <!-- Anti-FOUT: los titulares esperan a la fuente real (Playfair) antes de pintarse.
+         fonts-pending oculta h1-h3/.font-serif; fonts-ready los revela con fade.
+         Fail-safe de 2.5s por si la fuente falla (nunca dejar texto invisible). -->
+    <script>
+      (function() {
+        var root = document.documentElement;
+        root.classList.add('fonts-pending');
+        var revealed = false;
+        function reveal() {
+          if (revealed) return;
+          revealed = true;
+          root.classList.remove('fonts-pending');
+          root.classList.add('fonts-ready');
+        }
+        var failSafe = setTimeout(reveal, 2500);
+        if (document.fonts && document.fonts.ready) {
+          Promise.all([
+            document.fonts.load('600 1em \"Playfair Display\"'),
+            document.fonts.load('400 1em \"Plus Jakarta Sans\"'),
+            document.fonts.ready
+          ]).then(function() { clearTimeout(failSafe); reveal(); }).catch(reveal);
+        } else { reveal(); }
+      })();
+    </script>
 
     <!-- Google Fonts — Playfair Display (títulos serif editorial) + Plus Jakarta Sans (cuerpo sans). Máx 2 familias -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

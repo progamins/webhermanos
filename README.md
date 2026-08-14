@@ -69,7 +69,7 @@ YouTube/Loom y pega el enlace aquí, o guarda un `.mp4` en `media/` (ver
 
 Rediseño visual aplicado sobre la web existente (sin tocar arquitectura ni funcionalidad), con dirección **editorial premium**:
 
-- **Paleta cálida peruana**: crema `#FFF8ED`, blanco cálido `#FFFCF7`, chocolate `#3A2118`, cacao `#5A3022`, caramelo `#B86B3D`, dorado `#D6A34A` y frutal `#D96B45` (solo en CTAs y detalles destacados).
+- **Paleta "Cacao & Maracuyá"** (color world de una pastelería peruana, dos acentos vivos con oficio): cacao profundo `#2B1A12`, crema mantecosa `#FBF3E2`, **guinda** `#C7442E` solo para CTAs/acciones y **dorado maracuyá** `#E9A13B` para destacados, estrellas y precios.
 - **Tipografía**: Playfair Display (títulos serif editoriales) + Plus Jakarta Sans (cuerpo) — máximo 2 familias.
 - **Hero editorial**: portada tipo revista con el keke como protagonista, CTAs **Ver Kekes** y **Pedir Ahora** (WhatsApp).
 - **Ticker de sabores**: banda en chocolate profundo con los sabores desfilando en loop (marquee CSS, pausa al hover).

@@ -62,7 +62,7 @@ function HouseKeke({ product, whatsappNumber = '51902568187', onViewCatalog }: H
           {/* Orbe cálido decorativo */}
           <div
             className="absolute -top-24 -left-24 w-[380px] h-[380px] rounded-full blur-[100px] pointer-events-none"
-            style={{ background: 'rgba(217, 107, 69, 0.16)' }}
+            style={{ background: 'rgba(199, 68, 46, 0.18)' }}
             aria-hidden="true"
           />
 
@@ -92,8 +92,8 @@ function HouseKeke({ product, whatsappNumber = '51902568187', onViewCatalog }: H
                   className="absolute inset-0 bg-gradient-to-t from-[#3A2118]/50 via-transparent to-transparent pointer-events-none"
                   aria-hidden="true"
                 />
-                <span className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#3A2118]/70 backdrop-blur-sm border border-[#D6A34A]/40 text-[#F6EDE2] text-[10px] font-mono font-semibold uppercase tracking-[0.2em]">
-                  <Star className="h-3 w-3 text-[#D6A34A]" fill="currentColor" aria-hidden="true" />
+                <span className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#2B1A12]/75 backdrop-blur-sm border border-[#E9A13B]/50 text-[#F7EDDA] text-[10px] font-mono font-semibold uppercase tracking-[0.2em]">
+                  <Star className="h-3 w-3 text-[#E9A13B]" fill="currentColor" aria-hidden="true" />
                   La Casa
                 </span>
               </div>
@@ -107,7 +107,7 @@ function HouseKeke({ product, whatsappNumber = '51902568187', onViewCatalog }: H
               transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.55, delay: 0.2 }}
               className="lg:col-span-7 space-y-6 text-center lg:text-left"
             >
-              <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#D6A34A]/40 text-[#D6A34A] text-[10px] font-mono font-semibold uppercase tracking-[0.25em]">
+              <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#E9A13B]/50 text-[#E9A13B] text-[10px] font-mono font-semibold uppercase tracking-[0.25em]">
                 El Keke de la Casa
               </span>
 
@@ -120,8 +120,8 @@ function HouseKeke({ product, whatsappNumber = '51902568187', onViewCatalog }: H
               </p>
 
               <div className="flex items-center justify-center lg:justify-start gap-4 pt-2">
-                <span className="font-serif text-4xl font-semibold text-[#D6A34A] tabular-nums">{price}</span>
-                <span className="text-xs font-mono uppercase tracking-wider text-[#A98F78] border-l border-[#D6A34A]/30 pl-4">
+                <span className="font-serif text-4xl font-semibold text-[#E9A13B] tabular-nums">{price}</span>
+                <span className="text-xs font-mono uppercase tracking-wider text-[#A98F78] border-l border-[#E9A13B]/40 pl-4">
                   Horneado cada mañana
                 </span>
               </div>
@@ -131,7 +131,7 @@ function HouseKeke({ product, whatsappNumber = '51902568187', onViewCatalog }: H
                   href={`https://wa.me/${whatsappNumber}?text=${waText}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D96B45] text-white font-semibold text-sm sm:text-base px-8 py-3.5 transition-all duration-300 hover:bg-[#C0562F] hover:-translate-y-0.5 shadow-[0_10px_25px_-8px_rgba(217,107,69,0.6)]"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[#C7442E] text-white font-semibold text-sm sm:text-base px-8 py-3.5 transition-all duration-300 hover:bg-[#A93624] hover:-translate-y-0.5 shadow-[0_10px_25px_-8px_rgba(199,68,46,0.6)]"
                 >
                   <MessageCircle className="h-4 w-4" aria-hidden="true" />
                   Pedir este Keke

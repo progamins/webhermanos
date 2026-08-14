@@ -61,3 +61,6 @@ deploy-produccion.sh
 
 # Archivo basura generado por redirecciones de Windows (nunca commitear)
 _nul
+
+.claude/
+agent/

@@ -712,7 +712,7 @@ export default function App() {
               {/* ─── Título ─── */}
               <h1 className="font-serif text-4xl font-bold tracking-tight entrance-title"
                 style={{
-                  background: 'linear-gradient(135deg, #D96B45 0%, #D6A34A 50%, #D96B45 100%)',
+                  background: 'linear-gradient(135deg, #C7442E 0%, #E9A13B 50%, #C7442E 100%)',
                   backgroundSize: '200% 200%',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
