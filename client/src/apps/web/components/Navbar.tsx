@@ -44,6 +44,9 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
   // Ref espejo de `isOpen` para leerla dentro del scroll listener y del
   // MutationObserver (ambos con deps [] estables) sin re-suscribirlos.
   const isOpenRef = useRef(false);
+  // Ancho del viewport en px: la anchura del pill se anima numéricamente
+  // (Framer no interpola entre '100%' y 'min(calc(...))' → producía saltos).
+  const [vw, setVw] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 1280));
   // Throttle del mousemove con rAF: el evento dispara ~60-120 veces/seg y cada
   // setMousePos re-renderiza el navbar. Con rAF solo actualizamos 1 vez por frame.
   const mouseMoveRafRef = useRef<number | null>(null);
@@ -67,7 +70,12 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
         requestAnimationFrame(() => {
           const y = window.scrollY;
           setScrolled(y > 50);
-          setAtTop(y < 10);
+          // Histéresis en el umbral: al subir, el pill vuelve a barra solo al
+          // llegar muy arriba (y < 10); al bajar, la barra se despega solo al
+          // superar y > 70. Sin esto, un scroll lento alrededor del umbral
+          // alternaba los estados y el navbar temblaba.
+          if (y < 10) setAtTop(true);
+          else if (y > 70) setAtTop(false);
           ticking = false;
         });
         ticking = true;
@@ -81,6 +89,20 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
     return () => {
       document.body.style.overflow = '';
       document.body.style.touchAction = '';
+    };
+  }, []);
+
+  // Mantener `vw` fresco al rotar/redimensionar (throttled con rAF).
+  useEffect(() => {
+    let raf = 0;
+    const onResize = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => setVw(window.innerWidth));
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', onResize);
     };
   }, []);
 
@@ -260,36 +282,38 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
         animate={{
           opacity: navHidden ? 0 : 1,
           y: navHidden ? -20 : 0,
-          // ─── Centrado del pill flotante: delegado a Framer Motion (x: '-50%') ───
-          // Importante: si mezclamos `translate: '-50% 0'` (CSS) con el `transform`
-          // que Framer Motion escribe para animar `y`, hay una carrera que hace que
-          // al recargar/scroll rápido el nav "salte" hacia la izquierda (se pierde
-          // el translateX(-50%) de centrado). Centralizar aquí evita el conflicto.
-          x: atTop ? '0%' : '-50%',
+          // ─── Centrado permanente del pill: left: '50%' + x: '-50%' fijos ───
+          // 1) El centrado vive en Framer Motion (nunca en CSS `translate`): si
+          //    mezcláramos translateX(-50%) CSS con el transform que Framer escribe
+          //    para animar `y`, hay una carrera que al recargar/scroll rápido hace
+          //    que el nav "salte" a la izquierda. 2) Antes se animaban left y x
+          //    junto con width, y a mitad de transición el pill quedaba descentrado
+          //    (el translateX depende del ancho propio) → sacudida lateral. Con
+          //    left/x fijos solo animan width y top, siempre centrado.
+          x: '-50%',
           // ─── Posición del pill flotante ───
           // Mobile y desktop comparten el mismo mecanismo (spring) para que el nav
           // reaccione suavemente al pasar de "barra anclada al tope" (atTop=true) a
-          // "pill centrado flotante" (atTop=false). Antes desktop usaba transiciones
-          // CSS sobre `top/left/width/translate` — eso peleaba con Framer Motion al
-          // recargar+scroll rápido y producía saltos horizontales.
+          // "pill centrado flotante" (atTop=false).
           ...(isMobile ? {
             top: atTop ? 0 : 16,
-            left: atTop ? 0 : '50%',
-            width: atTop ? '100%' : 'min(calc(100% - 32px), 640px)',
+            left: '50%',
+            width: atTop ? vw : Math.min(vw - 32, 640),
           } : {
             top: atTop ? 0 : 20,
-            left: atTop ? '0%' : '50%',
-            width: atTop ? '100%' : 'min(1400px, calc(100vw - 40px))',
+            left: '50%',
+            width: atTop ? vw : Math.min(1400, vw - 40),
           }),
         }}
         transition={reducedMotion ? { duration: 0 } : {
           type: 'spring',
-          // Spring más amortiguado en mobile para evitar rebote visual del pill
-          // al cruzar el breakpoint del scroll (atTop ⇄ flotante) en pantallas
-          // chicas con inercia táctil activa.
-          stiffness: 400,
-          damping: isMobile ? 24 : 20,
-          mass: 0.6,
+          // Spring suave sin rebote: amortiguamiento cercano al crítico.
+          // El anterior (stiffness 400 / damping 20-24 / mass 0.6) oscilaba
+          // visiblemente al cruzar el umbral y en mobile se percibía como
+          // temblor al subir despacio.
+          stiffness: 320,
+          damping: isMobile ? 36 : 30,
+          mass: 0.8,
         }}
         onMouseMove={handleMouseMove}
         onMouseEnter={handleMouseEnter}
