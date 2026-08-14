@@ -166,8 +166,11 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
   );
 
   const isDark = theme === 'dark';
-  const textColor = isDark ? '#f0ede8' : '#3A2118';
-  const textMuted = isDark ? 'rgba(240,237,232,0.7)' : 'rgba(61,42,37,0.7)';
+  // Texto a opacidad plena y colores sólidos: el nav flota sobre secciones
+  // de cualquier tono (crema, cacao oscuro, fotos), así que la legibilidad
+  // no puede depender de semitransparencias que se funden con el fondo.
+  const textColor = isDark ? '#F7EDDA' : '#2B1A12';
+  const textMuted = isDark ? '#C9B29A' : '#6E5345';
 
   // ─── iOS 26 Liquid Glass: estilos memoizados ───
   // Se recalculaban en cada render (cada frame de scroll). Ahora solo cambian
@@ -179,31 +182,34 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
   const glassStyles = useMemo(() => {
     // ─── iOS 26 Liquid Glass: tinte translúcido mínimamente opaco ───
     // La saturación/brillo la aporta backdrop-filter; aquí solo damos el tinte.
+    // Al hacer scroll (pill flotante) el vidrio se vuelve casi opaco: el texto
+    // debe ser legible sobre CUALQUIER sección (incluida la banda de cacao).
     const glassBg = isDark
       ? atTop
-        ? 'linear-gradient(135deg, rgba(28,25,23,0.55), rgba(18,16,14,0.35))'
-        : 'linear-gradient(135deg, rgba(28,25,23,0.22), rgba(18,16,14,0.12))'
+        ? 'linear-gradient(135deg, rgba(28,25,23,0.62), rgba(18,16,14,0.42))'
+        : 'linear-gradient(135deg, rgba(32,19,13,0.88), rgba(24,15,10,0.80))'
       : atTop
-        ? 'linear-gradient(135deg, rgba(255,255,255,0.40), rgba(255,255,255,0.20))'
-        : 'linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06))';
+        ? 'linear-gradient(135deg, rgba(255,253,245,0.55), rgba(255,253,245,0.30))'
+        : 'linear-gradient(135deg, rgba(255,253,245,0.92), rgba(255,251,242,0.86))';
 
     // Borde specular dual: línea brillante + halo (refracción del borde del vidrio)
     const glassBorder = isDark
       ? atTop ? '0.5px solid rgba(255,255,255,0.35)' : '0.5px solid rgba(255,255,255,0.22)'
       : atTop ? '0.5px solid rgba(255,255,255,0.75)' : '0.5px solid rgba(255,255,255,0.50)';
 
-    // Sombra interna superior (highlight) + inferior (inner shadow) + drop + glow etéreo
+    // Sombra interna superior (highlight) + inferior (inner shadow) + drop + glow etéreo dorado
+    const goldGlow = isDark ? 'rgba(233, 161, 59, 0.06)' : 'rgba(233, 161, 59, 0.14)';
     const glassShadow = atTop
       ? isDark
         ? '0 0 0 0.5px rgba(255,255,255,0.08) inset, 0 10px 40px -10px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.14), inset 0 -1px 2px rgba(0,0,0,0.35)'
-        : '0 0 0 0.5px rgba(255,255,255,0.18) inset, 0 10px 40px -10px rgba(0,0,0,0.10), 0 2px 12pxrgba(214, 163, 74, 0.10), inset 0 1px 1px rgba(255,255,255,0.55), inset 0 -1px 2px rgba(0,0,0,0.06)'
+        : '0 0 0 0.5px rgba(255,255,255,0.18) inset, 0 10px 40px -10px rgba(0,0,0,0.10), 0 2px 12px ' + goldGlow + ', inset 0 1px 1px rgba(255,255,255,0.55), inset 0 -1px 2px rgba(0,0,0,0.06)'
       : scrolled
         ? isDark
-          ? '0 0 0 0.5px rgba(255,255,255,0.06) inset, 0 24px 70px -12px rgba(0,0,0,0.6), 0 12px 40px -10pxrgba(214, 163, 74, 0.06), inset 0 1px 1px rgba(255,255,255,0.10), inset 0 -1px 2px rgba(0,0,0,0.4)'
-          : '0 0 0 0.5px rgba(255,255,255,0.14) inset, 0 24px 70px -12px rgba(0,0,0,0.15), 0 12px 40px -10pxrgba(214, 163, 74, 0.12), inset 0 1px 1px rgba(255,255,255,0.45), inset 0 -1px 2px rgba(0,0,0,0.08)'
+          ? '0 0 0 0.5px rgba(255,255,255,0.06) inset, 0 24px 70px -12px rgba(0,0,0,0.6), 0 12px 40px -10px ' + goldGlow + ', inset 0 1px 1px rgba(255,255,255,0.10), inset 0 -1px 2px rgba(0,0,0,0.4)'
+          : '0 0 0 0.5px rgba(255,255,255,0.14) inset, 0 24px 70px -12px rgba(0,0,0,0.15), 0 12px 40px -10px ' + goldGlow + ', inset 0 1px 1px rgba(255,255,255,0.45), inset 0 -1px 2px rgba(0,0,0,0.08)'
         : isDark
-          ? '0 0 0 0.5px rgba(255,255,255,0.07) inset, 0 18px 55px -12px rgba(0,0,0,0.5), 0 8px 30px -10pxrgba(214, 163, 74, 0.05), inset 0 1px 1px rgba(255,255,255,0.12), inset 0 -1px 2px rgba(0,0,0,0.38)'
-          : '0 0 0 0.5px rgba(255,255,255,0.16) inset, 0 18px 55px -12px rgba(0,0,0,0.12), 0 8px 30px -10pxrgba(214, 163, 74, 0.10), inset 0 1px 1px rgba(255,255,255,0.50), inset 0 -1px 2px rgba(0,0,0,0.07)';
+          ? '0 0 0 0.5px rgba(255,255,255,0.07) inset, 0 18px 55px -12px rgba(0,0,0,0.5), 0 8px 30px -10px ' + goldGlow + ', inset 0 1px 1px rgba(255,255,255,0.12), inset 0 -1px 2px rgba(0,0,0,0.38)'
+          : '0 0 0 0.5px rgba(255,255,255,0.16) inset, 0 18px 55px -12px rgba(0,0,0,0.12), 0 8px 30px -10px ' + goldGlow + ', inset 0 1px 1px rgba(255,255,255,0.50), inset 0 -1px 2px rgba(0,0,0,0.07)';
 
     // ─── Vidrio físico iOS 26: blur amplio + saturación + brightness ───
     // Mientras más translúcida la capa, más se cuela el color del fondo con saturación extra.
@@ -410,9 +416,11 @@ function Navbar({ currentView, setCurrentView, logoUrl, theme = 'dark', onToggle
                   whileTap={{ scale: 0.95 }}
                   className="relative px-3 py-1.5 rounded-full text-sm font-medium tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 transition-all duration-200"
                   style={{
-                    color: active ? textColor : textMuted,
+                    // Activo = acento guinda (color con significado): texto y píldora
+                    // en guinda para distinguirlo de un vistazo del resto de ítems.
+                    color: active ? (isDark ? '#E2623F' : '#A93624') : textMuted,
                     background: active
-                      ? (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.25)')
+                      ? (isDark ? 'rgba(226,98,63,0.16)' : 'rgba(199,68,46,0.10)')
                       : 'transparent',
                     backdropFilter: active ? 'blur(4px)' : 'none',
                   }}
