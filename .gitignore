@@ -17,6 +17,9 @@ lighthouse-*.json
 uploads/
 server/uploads/
 
+# Dump local de la BD (contiene datos reales del negocio; el esquema se aplica vía migraciones)
+maison_rosas_database.sql
+
 # Sistema operativo / editor
 .DS_Store
 Thumbs.db
