@@ -22,9 +22,16 @@ Las secciones son:
 - Plantillas de GitHub Issues para reportes de bug y solicitudes de funcionalidad.
 - Licencia MIT (`LICENSE`).
 - Capturas reales de la web desplegada en `screenshots/` con script regenerable (`scripts/capture-screenshots.mjs`) y espacio para video demo en el README.
+- Plantilla de pull request (`.github/PULL_REQUEST_TEMPLATE.md`) y enlace a la política de seguridad en el centro de issues.
+- Social preview profesional (`assets/social-preview.png`).
 
 ### Changed
 - `README.md` rediseñado como presentación profesional: demo en vivo, stack por categorías, arquitectura (Mermaid), funcionalidades reales, API documentada, variables de entorno y sección de seguridad.
+
+### Changed
+- `docker-compose.yml`: eliminada la variable sin uso `GEMINI_API_KEY` y alineado el valor por defecto de `MYSQL_ROOT_PASSWORD` con el placeholder de `.env.example`.
+- `maison_rosas_database.sql` deja de versionarse (dump local con datos reales del negocio; el esquema se aplica vía migraciones).
+- `CONTRIBUTING.md`: actualizada la nota de licencia (MIT).
 
 ### Security
 - Eliminadas credenciales reales (contraseña de BD, contraseñas de roles y `ADMIN_SECRET_PATH`) que estaban expuestas en `.vercel.env.example`. El archivo ahora solo contiene placeholders.
