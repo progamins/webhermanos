@@ -52,5 +52,5 @@
 
 ## 📝 Notas
 
-- **Licencia:** el proyecto aún no tiene licencia definida. Antes de aceptar contribuciones externas, se definirá (ver README). Al enviar un PR aceptas que tu contribución se integre bajo la licencia que finalmente se elija.
+- **Licencia:** el proyecto se distribuye bajo la **Licencia MIT** (ver [LICENSE](LICENSE)). Al enviar un PR aceptas que tu contribución se integre bajo esa licencia.
 - Dudas sobre el proyecto: abre un issue con la etiqueta `question`.
