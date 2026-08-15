@@ -26,7 +26,7 @@ services:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rosas_root_2026}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-cambia_esta_root_password}
       MYSQL_DATABASE: ${DB_NAME:-maison_rosas}
     ports:
       - "${DB_PORT_PUBLISHED:-3306}:3306"
@@ -35,7 +35,7 @@ services:
       # Inicialización automática del esquema + tablas en el primer arranque.
       - ./server/src/migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-rosas_root_2026}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-cambia_esta_root_password}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -62,14 +62,13 @@ services:
       DB_HOST: db
       DB_PORT: 3306
       DB_USER: ${DB_USER:-root}
-      DB_PASSWORD: ${DB_PASSWORD:-${MYSQL_ROOT_PASSWORD:-rosas_root_2026}}
+      DB_PASSWORD: ${DB_PASSWORD:-${MYSQL_ROOT_PASSWORD:-cambia_esta_root_password}}
       DB_NAME: ${DB_NAME:-maison_rosas}
       # El resto de variables se inyecta desde .env automáticamente.
       NODE_ENV: production
       PORT: "3000"
       HOST: "0.0.0.0"
       APP_URL: ${APP_URL:-http://localhost:3000}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GOOGLE_MAPS_PLATFORM_KEY: ${GOOGLE_MAPS_PLATFORM_KEY:-}
       VITE_GA_MEASUREMENT_ID: ${VITE_GA_MEASUREMENT_ID:-}
       SMTP_USER: ${SMTP_USER:-}
