@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="110" viewBox="0 0 520 110" role="img" aria-label="Maison Rosas">
+  <defs>
+    <linearGradient id="g-dark" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#E9A13B"/>
+      <stop offset="60%" stop-color="#C7442E"/>
+      <stop offset="100%" stop-color="#E9A13B"/>
+    </linearGradient>
+    <linearGradient id="g-light" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#A16207"/>
+      <stop offset="60%" stop-color="#B91C1C"/>
+      <stop offset="100%" stop-color="#A16207"/>
+    </linearGradient>
+    <style>
+      text { fill: url(#g-dark); }
+      @media (prefers-color-scheme: light) {
+        text { fill: url(#g-light); }
+      }
+    </style>
+  </defs>
+  <text x="260" y="72" text-anchor="middle"
+        font-family="'Playfair Display', Georgia, 'Times New Roman', serif"
+        font-size="56" font-weight="700" letter-spacing="1">Maison Rosas</text>
+</svg>

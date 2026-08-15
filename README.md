@@ -1,22 +1,38 @@
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  MAISON ROSAS · webhermanos                                      ║
+  ║  E-commerce full-stack para una pastelería peruana               ║
+  ║  Mantenimiento: edita README.md y assets/ cuando cambie el repo  ║
+  ╚══════════════════════════════════════════════════════════════════╝
+-->
+
+<!-- ================= HERO ================= -->
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&height=170&section=header&color=0:2B1A12,45:7A2E1D,80:C7442E,100:E9A13B" width="100%" alt=""/>
+</p>
+
 <div align="center">
+  <img src="https://raw.githubusercontent.com/progamins/webhermanos/main/client/public/logo.png" width="140" alt="Logo Maison Rosas"/>
 
-<img src="https://raw.githubusercontent.com/progamins/webhermanos/main/client/public/logo.png" width="180" alt="Maison Rosas" />
+  <img src="assets/hero-title.svg" width="400" alt="Maison Rosas"/>
 
-# 🍰 Maison Rosas
+  <p>
+    <b>Kekes artesanales peruanos</b> — Tienda online + panel administrativo full-stack
+    para la pastelería familiar <b>Rosas Albines</b>.
+  </p>
 
-**Kekes artesanales peruanos** — Tienda online + panel administrativo full-stack para la pastelería familiar Rosas Albines.
+  <p>
+    <a href="https://webhermanos-client.vercel.app"><img src="https://img.shields.io/badge/Demo_En_Vivo-vercel.app-C7442E?style=flat-square&logo=vercel&logoColor=white" alt="Demo en vivo"/></a>
+    <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/Changelog-v1.1.0-E9A13B?style=flat-square&logo=git&logoColor=white" alt="Changelog"/></a>
+    <a href="docker/README.md"><img src="https://img.shields.io/badge/Docker-Listo-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker"/></a>
+  </p>
 
-[![Live Demo](https://img.shields.io/badge/Demo-En%20vivo-7C3AED?style=flat-square)](https://webhermanos-client.vercel.app)
-[![React 19](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=white)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Express](https://img.shields.io/badge/Express-4-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com)
-[![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?style=flat-square&logo=mysql&logoColor=white)](https://www.mysql.com)
-[![Docker](https://img.shields.io/badge/Docker-Listo-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com)
-
+  <p>
+    <font color="#C9A98F" size="2">🟢 En producción (Vercel) · Versión 1.1.0 · Licencia MIT</font>
+  </p>
 </div>
 
----
-
+<!-- ================= QUÉ ES ================= -->
 ## 📖 ¿Qué es Maison Rosas?
 
 Una **aplicación web completa** para una pastelería familiar real: los clientes exploran un catálogo de **kekes artesanales** con sabores peruanos (chocolate, lúcuma, maracuyá, plátano, zanahoria, naranja, canela y vainilla), hacen pedidos con seguimiento por código, y el equipo administra todo — pedidos, stock de cocina, galería, reseñas y la configuración de la tienda — desde un panel de administración con roles y seguridad reforzada.
@@ -26,10 +42,24 @@ Una **aplicación web completa** para una pastelería familiar real: los cliente
 - **Qué lo diferencia:** arquitectura completa (cliente + API + base de datos + Docker + despliegue), panel multi-rol con seguridad por ruta secreta, IP/MAC y sesiones, y modo offline PWA para la tienda.
 - **Objetivo:** servir como producto real en producción y como portafolio que demuestra desarrollo full-stack de punta a punta.
 
-**Estado:** 🟢 En producción (desplegado en Vercel) · **Versión:** 1.1.0 · **Changelog:** [CHANGELOG.md](CHANGELOG.md)
+<table>
+  <tr>
+    <td bgcolor="#1F1410" align="center" width="33%">
+      <b><font color="#FBF3E2">🏪 Tienda pública</font></b><br/>
+      <font color="#C9A98F" size="2">Catálogo, personalizador con precio validado en servidor, pedidos con OTP, PWA offline y SEO completo.</font>
+    </td>
+    <td bgcolor="#1F1410" align="center" width="33%">
+      <b><font color="#FBF3E2">🔐 Panel admin</font></b><br/>
+      <font color="#C9A98F" size="2">Roles (admin, analista, stock), dashboard con gráficos, pedidos y cocina con notificaciones en tiempo real (SSE).</font>
+    </td>
+    <td bgcolor="#1F1410" align="center" width="33%">
+      <b><font color="#FBF3E2">🛡️ Seguridad</font></b><br/>
+      <font color="#C9A98F" size="2">Ruta secreta, rate limiting, headers de hardening, anti-SSRF y precios siempre calculados en el servidor.</font>
+    </td>
+  </tr>
+</table>
 
----
-
+<!-- ================= DEMO ================= -->
 ## 🚀 Demo en vivo
 
 | Interfaz | URL | Descripción |
@@ -40,8 +70,7 @@ Una **aplicación web completa** para una pastelería familiar real: los cliente
 
 > El panel admin se sirve en una ruta aleatoria (definida por `ADMIN_SECRET_PATH`) y está protegido además por contraseña, token de sesión y, opcionalmente, filtros de IP/MAC.
 
----
-
+<!-- ================= CAPTURAS ================= -->
 ## 🖼️ Capturas reales
 
 <img src="screenshots/home.png" width="49%" alt="Vista principal — escritorio" />
@@ -63,8 +92,7 @@ YouTube/Loom y pega el enlace aquí, o guarda un `.mp4` en `media/` (ver
 [▶️ Ver video demo](https://www.youtube.com/watch?v=TU_ID)
 ```
 
----
-
+<!-- ================= IDENTIDAD ================= -->
 ## 🎨 Identidad y diseño
 
 Rediseño visual aplicado sobre la web existente (sin tocar arquitectura ni funcionalidad), con dirección **editorial premium**:
@@ -77,9 +105,15 @@ Rediseño visual aplicado sobre la web existente (sin tocar arquitectura ni func
 - **Cards de producto**: fotografía protagonista con zoom al hover, precio en caramelo, elevación suave y CTA claro.
 - Microinteracciones sutiles reutilizando `animations.css`, textura de grano casi imperceptible, mobile-first y modo oscuro.
 
----
-
+<!-- ================= TECH STACK ================= -->
 ## 🧰 Tech Stack
+
+<p>
+  <b>Frontend</b> — <img src="https://skillicons.dev/icons?i=ts,react,vite,tailwind" width="196" alt="TypeScript, React, Vite, Tailwind CSS"/><br/>
+  <b>Backend</b> — <img src="https://skillicons.dev/icons?i=nodejs,express" width="98" alt="Node.js, Express"/><br/>
+  <b>Database</b> — <img src="https://skillicons.dev/icons?i=mysql" width="48" alt="MySQL"/> <code>MySQL 8</code><br/>
+  <b>DevOps</b> — <img src="https://skillicons.dev/icons?i=docker,vercel,githubactions" width="148" alt="Docker, Vercel, GitHub Actions"/>
+</p>
 
 ### Frontend
 - **React 19** + **TypeScript 5** + **Vite 6**
@@ -103,8 +137,7 @@ Rediseño visual aplicado sobre la web existente (sin tocar arquitectura ni func
 - **Vercel** (frontend + funciones serverless) · **HostGator** (guía Apache/.htaccess)
 - **GitHub Actions** (CI: typecheck + build)
 
----
-
+<!-- ================= ARQUITECTURA ================= -->
 ## 🏗️ Arquitectura
 
 ```mermaid
@@ -129,8 +162,7 @@ flowchart LR
 - **Tiempo real:** SSE para notificaciones de pedidos nuevos y panel de cocina.
 - **Deployment:** `docker compose up` para producción autogestionada, o Vercel (estáticos + `api/index.ts` serverless).
 
----
-
+<!-- ================= ESTRUCTURA ================= -->
 ## 📂 Estructura del proyecto
 
 ```text
@@ -156,8 +188,7 @@ webhermanos/
 └── .env.example             # Plantilla de variables de entorno
 ```
 
----
-
+<!-- ================= FUNCIONALIDADES ================= -->
 ## ✨ Funcionalidades
 
 ### ✅ Implementado
@@ -189,8 +220,7 @@ webhermanos/
 - Capturas de pantalla oficiales del producto (ver sección Screenshots).
 - Decisiones de licencia y roadmap público (se gestionarán vía GitHub Issues).
 
----
-
+<!-- ================= INSTALACIÓN ================= -->
 ## 🛠️ Instalación
 
 ### Requisitos
@@ -237,8 +267,7 @@ npm run dev               # cliente en :5173 con proxy a la API en :3000
 | `npm run lint` | Typecheck de ambos workspaces |
 | `npm run db:migrate` / `npm run db:seed` | Migraciones / datos de ejemplo |
 
----
-
+<!-- ================= VARIABLES ================= -->
 ## 🔑 Variables de entorno
 
 Copia `.env.example` a `.env` (nunca se sube a GitHub). No se requieren claves para un arranque de prueba, pero la app exige algunos valores para el seed de roles.
@@ -264,8 +293,7 @@ Copia `.env.example` a `.env` (nunca se sube a GitHub). No se requieren claves p
 
 > 🔒 **Nunca** subas `.env` ni credenciales reales al repositorio. Si tienes secretos en el historial git, rótalos y purga el historial.
 
----
-
+<!-- ================= API ================= -->
 ## 📡 API
 
 Base: `/api`. Respuestas en JSON. El panel admin (`/api/admin/*`) requiere el header `x-admin-token`.
@@ -310,8 +338,7 @@ Base: `/api`. Respuestas en JSON. El panel admin (`/api/admin/*`) requiere el he
 | GET/DELETE/POST | `/api/admin/storage/*` | Gestión de almacenamiento (listar, borrar, migrar, deduplicar) |
 | POST | `/api/upload` | Subida de imágenes (multipart, token requerido) |
 
----
-
+<!-- ================= SEGURIDAD ================= -->
 ## 🔒 Seguridad
 
 Medidas implementadas en el código:
@@ -327,27 +354,32 @@ Medidas implementadas en el código:
 
 Para reportar una vulnerabilidad, consulta **[SECURITY.md](SECURITY.md)**.
 
----
-
+<!-- ================= CONTRIBUIR ================= -->
 ## 🤝 Contribuir
 
 ¿Quieres colaborar? Consulta **[CONTRIBUTING.md](CONTRIBUTING.md)** — incluye cómo reportar bugs, proponer funcionalidades y el flujo de trabajo con ramas.
 
 - Reporta bugs o pide features con las plantillas de **[GitHub Issues](https://github.com/progamins/webhermanos/issues)**.
 
----
-
+<!-- ================= LICENCIA ================= -->
 ## 📄 Licencia
 
 Distribuido bajo la **Licencia MIT** — consulta [LICENSE](LICENSE) para más detalles.
 
 > Permite usar, copiar, modificar y distribuir el código libremente, incluso con fines comerciales, siempre que se conserve el aviso de copyright original. Ideal para un proyecto de portafolio abierto a colaboración.
 
----
-
+<!-- ================= DOCUMENTACIÓN ================= -->
 ## 📚 Documentación adicional
 
 - 🐳 [docker/README.md](docker/README.md) — Guía Docker completa (backups, troubleshooting, Adminer)
 - 🌐 [README_DEPLOY_HOSTGATOR.md](README_DEPLOY_HOSTGATOR.md) — Despliegue en HostGator
 - 📜 [CHANGELOG.md](CHANGELOG.md) — Historial de versiones
 - 🛡️ [SECURITY.md](SECURITY.md) — Política de seguridad
+
+---
+
+<p align="center"><i>Hecho con 💜 y café desde Perú · Progamins</i></p>
+
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&height=120&section=footer&color=0:2B1A12,45:7A2E1D,80:C7442E,100:E9A13B" width="100%" alt=""/>
+</p>
