@@ -257,26 +257,56 @@ export class StorageService {
   }
 
   async deleteFile(url: string): Promise<boolean> {
+    const filename = path.basename(url);
+    const isExternalUrl = /^https?:\/\//.test(url);
+
+    // 1) Eliminar el registro de la tabla `uploads` (si existe). Sin esto, el
+    //    archivo seguía apareciendo en el listado (y en Vercel se persistía el
+    //    file_data en la BD) aunque se borrara el archivo físico — por eso el
+    //    panel mostraba "0 eliminados, N errores" y los archivos seguían ahí.
+    let recordDeleted = false;
+    try {
+      const upload = await uploadRepo.findByFilename(filename);
+      if (upload) {
+        await uploadRepo.delete(upload.id);
+        recordDeleted = true;
+      }
+    } catch {
+      /* no crítico */
+    }
+
+    // 2) Eliminar el archivo físico según el entorno.
+    let fileGone = false;
     if (isVercel) {
-      // En Vercel, eliminar el blob
+      if (isExternalUrl && process.env.BLOB_READ_WRITE_TOKEN) {
+        try {
+          const { del } = await getVercelBlob();
+          await del(url);
+          fileGone = true;
+        } catch (err) {
+          logger.error('Error al eliminar blob de Vercel', { service: 'StorageService', error: (err as Error)?.message });
+        }
+      } else {
+        // Fallback: archivo en /tmp (subido sin Blob)
+        try {
+          await fs.promises.unlink(path.join('/tmp', filename));
+          fileGone = true;
+        } catch {
+          /* el archivo no estaba en /tmp */
+        }
+      }
+    } else {
+      const filePath = path.join(this.uploadDir, filename);
       try {
-        const { del } = await getVercelBlob();
-        await del(url);
-        return true;
-      } catch (err) {
-        logger.error('Error al eliminar blob de Vercel', { service: 'StorageService', error: (err as Error)?.message });
-        return false;
+        await fs.promises.unlink(filePath);
+        fileGone = true;
+      } catch {
+        /* el archivo ya no existe en disco */
       }
     }
 
-    const filename = path.basename(url);
-    const filePath = path.join(this.uploadDir, filename);
-    try {
-      await fs.promises.unlink(filePath);
-      return true;
-    } catch {
-      return false;
-    }
+    // Se considera eliminado si ya no queda ni el archivo físico ni su registro.
+    return fileGone || recordDeleted;
   }
 
   async deleteByFilename(filename: string): Promise<boolean> {
