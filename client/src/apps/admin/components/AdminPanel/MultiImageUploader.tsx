@@ -6,6 +6,9 @@ import { showToast } from '../../../../shared/utils/toast';
 
 interface MultiImageUploaderProps {
   onUpload: (urls: string[]) => void;
+  /** Notifica cuando empieza/termina una subida para que el padre pueda
+      deshabilitar el guardado mientras hay archivos en vuelo. */
+  onUploadingChange?: (uploading: boolean) => void;
 }
 
 interface UploadItem {
@@ -27,7 +30,7 @@ function formatBytes(bytes: number): string {
 
 let uploadIdCounter = 0;
 
-export default function MultiImageUploader({ onUpload }: MultiImageUploaderProps) {
+export default function MultiImageUploader({ onUpload, onUploadingChange }: MultiImageUploaderProps) {
   const [items, setItems] = useState<UploadItem[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -56,6 +59,7 @@ export default function MultiImageUploader({ onUpload }: MultiImageUploaderProps
 
   const startUpload = async (allItems: UploadItem[]) => {
     setIsUploading(true);
+    onUploadingChange?.(true);
     const token = localStorage.getItem('maison_admin_token') || '';
     const uploadedUrls: string[] = [];
 
@@ -108,6 +112,10 @@ export default function MultiImageUploader({ onUpload }: MultiImageUploaderProps
               i.id === item.id ? { ...i, status: 'done' as const, url: data.imageUrl } : i
             ));
             uploadedUrls.push(data.imageUrl);
+            // 🔑 Comprometer la URL de inmediato en el padre. Antes se esperaba
+            //    1.5s (setTimeout) y si el usuario guardaba en ese lapso el
+            //    producto quedaba SIN imágenes aunque la subida se veía exitosa.
+            onUpload([data.imageUrl]);
           } else {
             throw new Error(data.error || 'Error de subida');
           }
@@ -124,14 +132,15 @@ export default function MultiImageUploader({ onUpload }: MultiImageUploaderProps
     }
 
     setIsUploading(false);
+    onUploadingChange?.(false);
 
     if (uploadedUrls.length > 0) {
       showToast(`${uploadedUrls.length} imagen(es) subida(s) correctamente`, 'success', '📸 Multi-subida');
-      // Clean up items after a brief delay
+      // Limpiar los ítems completados tras un breve delay (para que se vea el
+      // check verde) — las URLs YA se comprometieron en el padre (onUpload).
       setTimeout(() => {
-        setItems([]);
-        onUpload(uploadedUrls);
-      }, 1500);
+        setItems(prev => prev.filter(i => i.status !== 'done'));
+      }, 1200);
     }
   };
 

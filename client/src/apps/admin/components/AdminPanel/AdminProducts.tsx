@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Plus, Edit3, Trash2, ToggleLeft, ToggleRight, X, Package, Upload } from 'lucide-react';
+import { Plus, Edit3, Trash2, ToggleLeft, ToggleRight, X, Package, Upload, Image } from 'lucide-react';
 import { Product } from '../../../../shared/types';
 import { dbService } from '../../../../shared/services/dbService';
 import ImageUploader from './ImageUploader';
 import MultiImageUploader from './MultiImageUploader';
+import ImagePickerModal from './ImagePickerModal';
 import Barcode from '../../../../shared/components/Barcode';
 import { optimizeImageUrl } from '../../../../shared/utils/images';
 
@@ -25,6 +26,8 @@ export default function AdminProducts({ products, onRefreshData, showToast }: Ad
   const [prodDecorations, setProdDecorations] = useState('');
   const [prodPrepTime, setProdPrepTime] = useState('48 horas');
   const [prodImages, setProdImages] = useState<string[]>(['']);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const clearProductForm = () => {
     setProdName('');
@@ -265,7 +268,18 @@ export default function AdminProducts({ products, onRefreshData, showToast }: Ad
                   return [...existing, ...urls];
                 });
               }}
+              onUploadingChange={setUploading}
             />
+
+            {/* Elegir varias desde Almacenamiento o Galería (sin volver a subir) */}
+            <button
+              type="button"
+              onClick={() => setPickerOpen(true)}
+              className="w-full mt-2 py-2.5 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl text-[10px] font-mono text-zinc-400 hover:border-brand-300 hover:text-brand-500 transition-all cursor-pointer flex items-center justify-center space-x-1.5"
+            >
+              <Image className="h-3.5 w-3.5" />
+              <span>+ Elegir de Almacenamiento o Galería</span>
+            </button>
 
             {/* Botón para agregar desde URL */}
             <button
@@ -274,16 +288,31 @@ export default function AdminProducts({ products, onRefreshData, showToast }: Ad
               className="w-full mt-2 py-2.5 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl text-[10px] font-mono text-zinc-400 hover:border-brand-300 hover:text-brand-500 transition-all cursor-pointer flex items-center justify-center space-x-1.5"
             >
               <Upload className="h-3.5 w-3.5" />
-              <span>+ Agregar desde URL o Galería</span>
+              <span>+ Agregar desde URL</span>
             </button>
+
+            {/* Selector multi de almacenamiento/galería */}
+            <ImagePickerModal
+              isOpen={pickerOpen}
+              onClose={() => setPickerOpen(false)}
+              onSelect={() => {}}
+              multiple
+              onSelectMany={(urls) => {
+                setProdImages(prev => {
+                  const existing = prev.filter(u => u.trim());
+                  return [...existing, ...urls];
+                });
+                setPickerOpen(false);
+              }}
+            />
           </div>
           <div className="flex justify-end space-x-2 pt-4">
             <button type="button" onClick={() => { setEditingProduct(null); setIsCreatingProduct(false); clearProductForm(); }}
               className="px-4 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono font-bold uppercase tracking-wider text-zinc-500 hover:bg-zinc-50 cursor-pointer">
               Cancelar
             </button>
-            <button type="submit" className="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-mono font-bold uppercase tracking-wider cursor-pointer">
-              Guardar Pastel
+            <button type="submit" disabled={uploading} className="px-4 py-2 bg-brand-500 hover:bg-brand-600 disabled:bg-brand-300 text-white rounded-xl text-xs font-mono font-bold uppercase tracking-wider cursor-pointer disabled:cursor-not-allowed">
+              {uploading ? 'Subiendo imágenes…' : 'Guardar Pastel'}
             </button>
           </div>
         </form>

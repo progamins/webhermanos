@@ -10,6 +10,7 @@ import ImageUploader from './ImageUploader';
 import MultiImageUploader from './MultiImageUploader';
 import AdminGallery from './AdminGallery';
 import AdminImageManager from './AdminImageManager';
+import ImagePickerModal from './ImagePickerModal';
 import CacheStats from '../../../../shared/components/CacheStats';
 import { optimizeImageUrl } from '../../../../shared/utils/images';
 
@@ -333,6 +334,8 @@ function ProductImageManager({ products, onRefreshData, showToast }: {
   const [editing, setEditing] = useState<Product | null>(null);
   const [images, setImages] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const startEdit = (prod: Product) => {
     setEditing(prod);
@@ -422,16 +425,38 @@ function ProductImageManager({ products, onRefreshData, showToast }: {
           )}
 
           {/* Subida múltiple */}
-          <MultiImageUploader onUpload={(urls) => {
-            setImages(prev => [...prev.filter(u => u.trim()), ...urls]);
-          }} />
+          <MultiImageUploader
+            onUpload={(urls) => {
+              setImages(prev => [...prev.filter(u => u.trim()), ...urls]);
+            }}
+            onUploadingChange={setUploading}
+          />
+
+          {/* Elegir varias desde Almacenamiento o Galería (sin volver a subir) */}
+          <button type="button" onClick={() => setPickerOpen(true)}
+            className="w-full py-2.5 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl text-[10px] font-mono text-zinc-400 hover:border-brand-300 hover:text-brand-500 transition-all cursor-pointer flex items-center justify-center space-x-1.5">
+            <ImageIcon className="h-3.5 w-3.5" />
+            <span>+ Elegir de Almacenamiento o Galería</span>
+          </button>
 
           {/* Agregar desde URL */}
           <button type="button" onClick={() => setImages(prev => [...prev.filter(u => u.trim()), ''])}
             className="w-full py-2.5 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl text-[10px] font-mono text-zinc-400 hover:border-brand-300 hover:text-brand-500 transition-all cursor-pointer flex items-center justify-center space-x-1.5">
             <Upload className="h-3.5 w-3.5" />
-            <span>+ Agregar desde URL o Galería</span>
+            <span>+ Agregar desde URL</span>
           </button>
+
+          {/* Selector multi de almacenamiento/galería */}
+          <ImagePickerModal
+            isOpen={pickerOpen}
+            onClose={() => setPickerOpen(false)}
+            onSelect={() => {}}
+            multiple
+            onSelectMany={(urls) => {
+              setImages(prev => [...prev.filter(u => u.trim()), ...urls]);
+              setPickerOpen(false);
+            }}
+          />
 
           {images.some(u => !isValidImage(u)) && (
             <div className="space-y-2">
@@ -453,14 +478,19 @@ function ProductImageManager({ products, onRefreshData, showToast }: {
         </div>
 
         <div className="flex justify-end space-x-2 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+          {uploading && (
+            <span className="mr-auto self-center text-[10px] font-mono text-brand-500 animate-pulse">
+              Subiendo imágenes… espera a que terminen antes de guardar
+            </span>
+          )}
           <button onClick={cancelEdit}
             className="px-4 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono font-bold uppercase tracking-wider text-zinc-500 hover:bg-zinc-50 cursor-pointer">
             Cancelar
           </button>
-          <button onClick={handleSave} disabled={saving}
+          <button onClick={handleSave} disabled={saving || uploading}
             className="px-5 py-2 bg-brand-500 hover:bg-brand-600 disabled:bg-brand-400 text-white rounded-xl text-xs font-mono font-bold uppercase tracking-wider cursor-pointer flex items-center space-x-2">
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-            <span>Guardar Imágenes</span>
+            <span>{uploading ? 'Subiendo…' : 'Guardar Imágenes'}</span>
           </button>
         </div>
       </div>

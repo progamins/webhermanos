@@ -19,6 +19,10 @@ interface ImagePickerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (url: string) => void;
+  /** Modo multi-selección: permite elegir varias imágenes y asignarlas de una vez. */
+  multiple?: boolean;
+  /** Se llama (en modo múltiple) con todas las URLs seleccionadas al pulsar "Asignar". */
+  onSelectMany?: (urls: string[]) => void;
 }
 
 function formatBytes(bytes: number): string {
@@ -27,16 +31,27 @@ function formatBytes(bytes: number): string {
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
-export default function ImagePickerModal({ isOpen, onClose, onSelect }: ImagePickerModalProps) {
+/** ¿Es un archivo de imagen? Acepta content-type de imagen o extensión de imagen
+ *  (el content-type puede faltar o ser 'application/octet-stream' para archivos
+ *  registrados sin MIME correcto — la pestaña de Almacenamiento sí los muestra,
+ *  así que el selector también debe poder asignarlos). */
+function isImageFile(f: StorageFile): boolean {
+  if (f.contentType && f.contentType.startsWith('image/')) return true;
+  return /\.(jpe?g|png|webp|gif|svg|avif|ico|bmp)$/i.test(f.name || '');
+}
+
+export default function ImagePickerModal({ isOpen, onClose, onSelect, multiple = false, onSelectMany }: ImagePickerModalProps) {
   const [files, setFiles] = useState<StorageFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
+  const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!isOpen) return;
     setLoading(true);
     setSelectedUrl(null);
+    setSelectedUrls(new Set());
     setSearch('');
 
     const token = localStorage.getItem('maison_admin_token') || '';
@@ -47,7 +62,7 @@ export default function ImagePickerModal({ isOpen, onClose, onSelect }: ImagePic
       .then(json => {
         if (!json.success) return [];
         const imgs = (json.files || []).filter((f: StorageFile) =>
-          f.contentType.startsWith('image/') && f.downloadUrl
+          isImageFile(f) && f.downloadUrl
         );
         imgs.sort((a: StorageFile, b: StorageFile) => {
           return ((b.timeCreated || '') < (a.timeCreated || '') ? -1 : 1);
@@ -97,12 +112,28 @@ export default function ImagePickerModal({ isOpen, onClose, onSelect }: ImagePic
     : files;
 
   const handleSelect = (url: string) => {
+    if (multiple) {
+      setSelectedUrls(prev => {
+        const next = new Set(prev);
+        if (next.has(url)) next.delete(url);
+        else next.add(url);
+        return next;
+      });
+      return;
+    }
     setSelectedUrl(url);
     // Pequeño delay para mostrar el check antes de cerrar
     setTimeout(() => {
       onSelect(url);
       onClose();
     }, 200);
+  };
+
+  const handleAssign = () => {
+    const urls = [...selectedUrls];
+    if (urls.length === 0) return;
+    onSelectMany?.(urls);
+    onClose();
   };
 
   return (
@@ -137,7 +168,7 @@ export default function ImagePickerModal({ isOpen, onClose, onSelect }: ImagePic
                     Galería de Imágenes
                   </h3>
                   <p className="text-[10px] font-mono text-zinc-400">
-                    {files.length} imágenes disponibles · Selecciona una para usarla
+                    {files.length} imágenes disponibles · {multiple ? 'Selecciona varias para asignarlas' : 'Selecciona una para usarla'}
                   </p>
                 </div>
               </div>
@@ -186,7 +217,9 @@ export default function ImagePickerModal({ isOpen, onClose, onSelect }: ImagePic
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {filtered.map((file) => {
-                    const isSelected = selectedUrl === file.downloadUrl;
+                    const isSelected = multiple
+                      ? selectedUrls.has(file.downloadUrl!)
+                      : selectedUrl === file.downloadUrl;
                     return (
                       <motion.button
                         key={file.fullPath}
@@ -247,13 +280,25 @@ export default function ImagePickerModal({ isOpen, onClose, onSelect }: ImagePic
             <div className="flex items-center justify-between px-5 py-3 border-t border-zinc-100 dark:border-zinc-800 shrink-0 bg-zinc-50/50 dark:bg-zinc-950/50">
               <span className="text-[10px] font-mono text-zinc-400">
                 {filtered.length} de {files.length} imágenes
+                {multiple && selectedUrls.size > 0 ? ` · ${selectedUrls.size} seleccionada(s)` : ''}
               </span>
-              <button
-                onClick={onClose}
-                className="px-4 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all cursor-pointer"
-              >
-                Cancelar
-              </button>
+              <div className="flex items-center space-x-2">
+                {multiple && (
+                  <button
+                    onClick={handleAssign}
+                    disabled={selectedUrls.size === 0}
+                    className="px-4 py-2 bg-brand-500 hover:bg-brand-600 disabled:bg-brand-300 text-white rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider transition-all cursor-pointer disabled:cursor-not-allowed shadow-sm"
+                  >
+                    {selectedUrls.size > 0 ? `Asignar ${selectedUrls.size}` : 'Asignar'}
+                  </button>
+                )}
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+              </div>
             </div>
           </motion.div>
         </div>
