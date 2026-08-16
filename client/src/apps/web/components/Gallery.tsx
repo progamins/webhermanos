@@ -144,7 +144,7 @@ function Gallery({ galleryItems, loading = false }: GalleryProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              className="relative max-w-3xl w-full rounded-2xl overflow-hidden shadow-2xl"
+              className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl overflow-hidden shadow-2xl"
               style={{ backgroundColor: 'var(--theme-surface)' }}
             >
               <button
@@ -154,16 +154,17 @@ function Gallery({ galleryItems, loading = false }: GalleryProps) {
               >
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
-              <CachedImage
-                src={selectedItem.imageUrl}
-                width={1200}
-                alt={selectedItem.title || 'Galería'}
-                wrapperClassName="w-full aspect-video"
-                className="w-full h-full object-cover"
-                priority
-              />
+              <div className="relative flex-1 min-h-0 flex items-center justify-center bg-black/40 select-none">
+                <CachedImage
+                  src={selectedItem.imageUrl}
+                  width={1200}
+                  alt={selectedItem.title || 'Galería'}
+                  className="max-h-[55vh] max-w-full object-contain"
+                  priority
+                />
+              </div>
               {(selectedItem.title || selectedItem.description) && (
-                <div className="p-5 space-y-1">
+                <div className="p-5 space-y-1 overflow-y-auto">
                   {selectedItem.title && (
                     <h3 className="text-lg font-serif font-bold" style={{ color: 'var(--theme-text)' }}>{selectedItem.title}</h3>
                   )}
