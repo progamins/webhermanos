@@ -58,6 +58,7 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
     loadRoleStatus();
   }, []);
 
+  // Solo al montar — evita que un refresco de config borre ediciones en curso.
   useEffect(() => {
     if (config) {
       setSetWhatsapp(config.whatsappNumber);
@@ -81,7 +82,8 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
       setHeroReviewRole(config.heroReviewRole || '');
       setHeroReviewRating(config.heroReviewRating ?? 5);
     }
-  }, [config]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSaveConfig = async (e: React.FormEvent) => {
     e.preventDefault();

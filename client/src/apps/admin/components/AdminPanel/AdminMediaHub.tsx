@@ -38,10 +38,12 @@ export default function AdminMediaHub({ products, galleryItems, config, onRefres
   const [faviconUrl, setFaviconUrl] = useState(config.faviconUrl || '');
   const [savingIdentity, setSavingIdentity] = useState(false);
 
+  // Solo al montar — evita que un refresco de config borre ediciones en curso.
   useEffect(() => {
     setLogoUrl(config.logoUrl || '');
     setFaviconUrl(config.faviconUrl || '');
-  }, [config]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSaveIdentity = async (e: React.FormEvent) => {
     e.preventDefault();

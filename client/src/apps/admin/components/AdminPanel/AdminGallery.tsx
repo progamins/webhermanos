@@ -36,6 +36,10 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
   const [aboutTitle, setAboutTitle] = useState(config.aboutTitle || '');
   const [aboutDescription, setAboutDescription] = useState(config.aboutDescription || '');
 
+  // ⚠️ Solo se sincroniza con la config AL MONTAR. Antes dependía de [config],
+  //    así que cualquier refresco de datos (Sincronizar, guardar otro ítem…)
+  //    cambiaba la referencia de `config` y BORRABA la imagen recién elegida
+  //    en la portada — por eso "se previsualizaba 2s y se quitaba".
   useEffect(() => {
     if (config) {
       setHeroImage(config.heroImage || '');
@@ -46,7 +50,8 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
       setAboutTitle(config.aboutTitle || '');
       setAboutDescription(config.aboutDescription || '');
     }
-  }, [config]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const resetGalleryForm = (editing: GalleryItem | null) => {
     const withDefaults = {

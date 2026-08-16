@@ -4,6 +4,22 @@ import AdminPanel from './components/AdminPanel';
 import RateLimitBanner from './components/AdminPanel/RateLimitBanner';
 import type { Product, Order, Review, GalleryItem, AppConfig, AdminRole } from '../../shared/types';
 
+// Config por defecto con referencia ESTABLE: si la config del servidor aún no
+// cargó, se usa este objeto fijo (nunca un literal nuevo por render), para que
+// los useEffects que dependen de `config` no se disparen en cada render y
+// borren ediciones en curso del usuario (imágenes de portada, textos, etc.).
+const DEFAULT_ADMIN_CONFIG = {
+  whatsappNumber: '51902568187',
+  facebookUrl: '',
+  instagramUrl: '',
+  email: 'edwinraulrosasalbines@gmail.com',
+  address: 'Av. Ricardo Palma 213, Sullana',
+  openingHours: 'Lun-Sab 9:00-19:00',
+  seoTitle: 'Maison Rosas',
+  seoDescription: 'Pastelería fina',
+  maintenanceMode: false,
+};
+
 export default function AdminApp() {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -99,17 +115,7 @@ export default function AdminApp() {
       setOrders={setOrders}
       reviews={reviews}
       galleryItems={galleryItems}
-      config={config || {
-        whatsappNumber: '51902568187',
-        facebookUrl: '',
-        instagramUrl: '',
-        email: 'edwinraulrosasalbines@gmail.com',
-        address: 'Av. Ricardo Palma 213, Sullana',
-        openingHours: 'Lun-Sab 9:00-19:00',
-        seoTitle: 'Maison Rosas',
-        seoDescription: 'Pastelería fina',
-        maintenanceMode: false,
-      }}
+      config={config || DEFAULT_ADMIN_CONFIG}
       onRefreshData={handleRefreshData}
       onLoginSuccess={handleLoginSuccess}
       isLoggedIn={isLoggedIn}
