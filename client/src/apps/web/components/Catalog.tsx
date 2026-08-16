@@ -1,11 +1,12 @@
 import { memo, useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { useReducedMotion } from '../../../shared/hooks';
-import { Search, Clock, CheckCircle2, ChevronRight, ChevronLeft, SlidersHorizontal, Images, X } from 'lucide-react';
+import { useReducedMotion, useBrokenImages } from '../../../shared/hooks';
+import { Search, Clock, CheckCircle2, ChevronRight, ChevronLeft, SlidersHorizontal, Images, X, ImageOff } from 'lucide-react';
 import type { Product } from '../../../shared/types';
-import { optimizeImageUrl } from '../../../shared/utils/images';
+import { optimizeImageUrl, reportBrokenImage } from '../../../shared/utils/images';
 import { lazyImportPrewarm } from '../../../shared/utils/lazyImportPrewarm';
 import CachedImage from '../../../shared/components/CachedImage';
+import BrokenImageBadge from '../../../shared/components/BrokenImageBadge';
 import Skeleton from '../../../shared/components/ui/Skeleton';
 import EmptyState from '../../../shared/components/ui/EmptyState';
 import Badge from '../../../shared/components/ui/Badge';
@@ -43,6 +44,7 @@ function CatalogSkeleton() {
 
 function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps) {
   const reducedMotion = useReducedMotion();
+  const { isBroken, markBroken } = useBrokenImages();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
   const [galleryProductId, setGalleryProductId] = useState<string | null>(null);
@@ -209,6 +211,11 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
                     // Profundidad alterna: los impares van "más al fondo" (más
                     // arriba, ligeramente más chicos y con inclinación propia).
                     const back = i % 2 === 1;
+                    // Imagen actual de la tarjeta (portada o la elegida en la galería)
+                    const currentImgIndex = galleryProductId === product.id ? galleryImageIndex : 0;
+                    const currentSrc = (product.images && product.images[currentImgIndex]) || '';
+                    const brokenKey = `${product.id}:${currentSrc}`;
+                    const imgBroken = !!currentSrc && isBroken(brokenKey);
                     return (
                       <motion.div
                         key={product.id}
@@ -253,18 +260,42 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
                     aria-label={`Ver imágenes de ${product.name}`}
                     type="button"
                   >
-                    <CachedImage
-                      src={product.images?.[galleryProductId === product.id ? galleryImageIndex : 0]}
-                      width={600}
-                      alt={product.name}
-                      wrapperClassName="w-full h-full"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 keke-img-zoom"
-                      id={`catalog-img-${product.id}`}
-                    />
+                    {currentSrc ? (
+                      <CachedImage
+                        src={currentSrc}
+                        width={600}
+                        alt={product.name}
+                        wrapperClassName="w-full h-full"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 keke-img-zoom"
+                        id={`catalog-img-${product.id}`}
+                        onError={() => {
+                          markBroken(brokenKey);
+                          reportBrokenImage(currentSrc);
+                        }}
+                      />
+                    ) : (
+                      /* Aviso claro cuando el producto aún no tiene foto */
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-zinc-100 via-zinc-200/60 to-zinc-100 dark:from-zinc-900 dark:via-zinc-900/70 dark:to-zinc-950">
+                        <div className="w-11 h-11 rounded-full bg-white/80 dark:bg-zinc-800/80 border border-zinc-200/90 dark:border-zinc-700/60 shadow-sm flex items-center justify-center">
+                          <ImageOff className="w-5 h-5 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
+                        </div>
+                        <span className="text-[9px] font-mono tracking-widest text-zinc-400 dark:text-zinc-500 uppercase">
+                          Sin foto todavía
+                        </span>
+                      </div>
+                    )}
                   </button>
 
+                  {/* Aviso claro cuando la foto no pudo cargar */}
+                  {imgBroken && (
+                    <BrokenImageBadge
+                      label="Foto no disponible"
+                      className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10"
+                    />
+                  )}
+
                   {/* Contador de imágenes — siempre visible */}
-                  {product.images && product.images.length > 0 && (
+                  {!imgBroken && product.images && product.images.length > 0 && (
                     <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm text-white text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border border-white/15 shadow-md z-10">
                       <Images className="h-3 w-3" aria-hidden="true" />
                       <span>{(galleryProductId === product.id ? galleryImageIndex : 0) + 1}/{product.images.length}</span>
@@ -272,20 +303,22 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
                   )}
 
                   {/* Botón "Ver galería" — visible siempre en mobile, hover en desktop */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCarouselProduct(product);
-                      setCarouselStartIndex(galleryProductId === product.id ? galleryImageIndex : 0);
-                      setCarouselOpen(true);
-                    }}
-                    className="absolute bottom-3 left-3 opacity-100 sm:opacity-0 sm:group-hover/img:opacity-100 transition-opacity duration-300 px-3 py-1.5 bg-black/60 backdrop-blur-sm text-white text-[10px] font-mono font-bold rounded-full border border-white/15 flex items-center gap-1.5 hover:bg-black/70 shadow-md z-10"
-                    aria-label="Ver galería de imágenes"
-                    type="button"
-                  >
-                    <Images className="h-3.5 w-3.5" aria-hidden="true" />
-                    <span>{product.images && product.images.length > 1 ? 'Ver galería' : 'Ver imagen'}</span>
-                  </button>
+                  {!imgBroken && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCarouselProduct(product);
+                        setCarouselStartIndex(galleryProductId === product.id ? galleryImageIndex : 0);
+                        setCarouselOpen(true);
+                      }}
+                      className="absolute bottom-3 left-3 opacity-100 sm:opacity-0 sm:group-hover/img:opacity-100 transition-opacity duration-300 px-3 py-1.5 bg-black/60 backdrop-blur-sm text-white text-[10px] font-mono font-bold rounded-full border border-white/15 flex items-center gap-1.5 hover:bg-black/70 shadow-md z-10"
+                      aria-label="Ver galería de imágenes"
+                      type="button"
+                    >
+                      <Images className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span>{product.images && product.images.length > 1 ? 'Ver galería' : 'Ver imagen'}</span>
+                    </button>
+                  )}
 
                   {/* Hover overlay — solo en desktop */}
                   {product.stock && (
