@@ -11,6 +11,8 @@ interface StorageFile {
   timeCreated: string | null;
   updated: string | null;
   downloadUrl: string | null;
+  /** Origen: almacenamiento de archivos o imágenes ya existentes en la galería */
+  source?: 'storage' | 'gallery';
 }
 
 interface ImagePickerModalProps {
@@ -38,22 +40,56 @@ export default function ImagePickerModal({ isOpen, onClose, onSelect }: ImagePic
     setSearch('');
 
     const token = localStorage.getItem('maison_admin_token') || '';
-    fetch('/api/admin/storage/list', { headers: { 'x-admin-token': token } })
+
+    // 1) Archivos de Almacenamiento
+    const loadStorage = fetch('/api/admin/storage/list', { headers: { 'x-admin-token': token } })
       .then(r => r.json())
       .then(json => {
-        if (json.success) {
-          // Solo imágenes y ordenadas por fecha descendente
-          const imgs = (json.files || []).filter((f: StorageFile) =>
-            f.contentType.startsWith('image/') && f.downloadUrl
-          );
-          imgs.sort((a: StorageFile, b: StorageFile) => {
-            return ((b.timeCreated || '') < (a.timeCreated || '') ? -1 : 1);
-          });
-          setFiles(imgs);
-        }
+        if (!json.success) return [];
+        const imgs = (json.files || []).filter((f: StorageFile) =>
+          f.contentType.startsWith('image/') && f.downloadUrl
+        );
+        imgs.sort((a: StorageFile, b: StorageFile) => {
+          return ((b.timeCreated || '') < (a.timeCreated || '') ? -1 : 1);
+        });
+        return imgs.map((f: StorageFile) => ({ ...f, source: 'storage' as const }));
       })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .catch(() => []);
+
+    // 2) Imágenes que YA están en la galería (para reutilizarlas sin volver a subir)
+    const loadGallery = fetch('/api/gallery')
+      .then(r => r.json())
+      .then((json: any) => {
+        if (!Array.isArray(json)) return [];
+        return json
+          .filter((g: any) => g && typeof g.imageUrl === 'string' && g.imageUrl.trim())
+          .map((g: any) => ({
+            name: g.title || 'Imagen de la galería',
+            fullPath: g.imageUrl,
+            folder: 'gallery',
+            size: 0,
+            contentType: 'image/unknown',
+            timeCreated: g.date || null,
+            updated: null,
+            downloadUrl: g.imageUrl,
+            source: 'gallery' as const,
+          }));
+      })
+      .catch(() => []);
+
+    Promise.all([loadStorage, loadGallery]).then(([storageFiles, galleryFiles]) => {
+      // Dedupe por URL (prioridad: almacenamiento; la galería completa lo demás)
+      const seen = new Set<string>();
+      const merged: StorageFile[] = [];
+      for (const f of [...storageFiles, ...galleryFiles]) {
+        const key = f.downloadUrl || f.fullPath;
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        merged.push(f);
+      }
+      setFiles(merged);
+      setLoading(false);
+    });
   }, [isOpen]);
 
   const filtered = search.trim()
@@ -180,10 +216,19 @@ export default function ImagePickerModal({ isOpen, onClose, onSelect }: ImagePic
                           </div>
                         )}
 
-                        {/* Size badge */}
-                        <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/50 backdrop-blur-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
-                          <span className="text-[8px] font-mono text-white">{formatBytes(file.size)}</span>
-                        </div>
+                        {/* Size badge (solo almacenamiento) */}
+                        {file.source === 'storage' && file.size > 0 && (
+                          <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/50 backdrop-blur-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span className="text-[8px] font-mono text-white">{formatBytes(file.size)}</span>
+                          </div>
+                        )}
+
+                        {/* Origen: galería */}
+                        {file.source === 'gallery' && (
+                          <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 bg-brand-500/90 backdrop-blur-sm rounded-md">
+                            <span className="text-[7px] font-mono font-bold text-white uppercase tracking-wider">Galería</span>
+                          </div>
+                        )}
 
                         {/* Name tooltip */}
                         <div className="absolute inset-x-1.5 bottom-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
