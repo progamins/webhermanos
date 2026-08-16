@@ -98,6 +98,14 @@ export const diagLimiter = rateLimit({
   max: parseInt(process.env.DIAG_RATE_LIMIT || '60', 10),
 });
 
+// 📸 Reporte de imágenes rotas desde el navegador (POST /api/uploads/report-broken).
+//    Límite conservador: el reporte alimenta la limpieza automática y no debe
+//    permitir spam que envenene la lista de candidatas.
+export const reportBrokenLimiter = rateLimit({
+  ...limiterBase,
+  max: parseInt(process.env.REPORT_BROKEN_RATE_LIMIT || '30', 10),
+});
+
 // ═══════════════════════════════════════════════════════════════════════
 // 🔎 Diagnóstico: contadores actuales del solicitante en cada limitador.
 //
@@ -168,6 +176,13 @@ export const RATE_LIMITERS: RateLimiterDescriptor[] = [
     description: 'Endpoint de diagnóstico (/api/rate-limit)',
     limiter: diagLimiter,
     max: parseInt(process.env.DIAG_RATE_LIMIT || '60', 10),
+    windowMs: 60 * 1000,
+  },
+  {
+    name: 'reportBroken',
+    description: 'Reporte de imágenes rotas (/api/uploads/report-broken)',
+    limiter: reportBrokenLimiter,
+    max: parseInt(process.env.REPORT_BROKEN_RATE_LIMIT || '30', 10),
     windowMs: 60 * 1000,
   },
 ];

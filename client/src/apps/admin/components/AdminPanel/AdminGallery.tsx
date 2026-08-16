@@ -6,7 +6,7 @@ import { dbService } from '../../../../shared/services/dbService';
 import { useBrokenImages } from '../../../../shared/hooks';
 import BrokenImageBadge from '../../../../shared/components/BrokenImageBadge';
 import ImageUploader from './ImageUploader';
-import { optimizeImageUrl } from '../../../../shared/utils/images';
+import { optimizeImageUrl, reportBrokenImage } from '../../../../shared/utils/images';
 
 interface AdminGalleryProps {
   galleryItems: GalleryItem[];
@@ -293,7 +293,7 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="admin-gallery-list">
           {galleryItems.map((item) => (
             <div key={item.id} className="group relative rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 aspect-[4/3]">
-              <img src={optimizeImageUrl(item.imageUrl, 800)} alt={item.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" decoding="async" onError={() => markBroken(`${item.id}:${item.imageUrl}`)} />
+              <img src={optimizeImageUrl(item.imageUrl, 800)} alt={item.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" decoding="async" onError={() => { markBroken(`${item.id}:${item.imageUrl}`); reportBrokenImage(item.imageUrl); }} />
               {isBroken(`${item.id}:${item.imageUrl}`) && (
                 <BrokenImageBadge className="absolute top-2 left-2 z-10" />
               )}

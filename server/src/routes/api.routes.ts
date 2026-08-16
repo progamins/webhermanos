@@ -10,7 +10,7 @@ import { galleryService } from '../services/GalleryService.js';
 import { configService } from '../services/ConfigService.js';
 import { emailService } from '../services/EmailService.js';
 import { otpService } from '../services/OtpService.js';
-import { contactLimiter, apiLimiter, otpSendLimiter, otpVerifyLimiter, proxyLimiter, diagLimiter, getRateLimitUsage } from '../middleware/rateLimit.js';
+import { contactLimiter, apiLimiter, otpSendLimiter, otpVerifyLimiter, proxyLimiter, diagLimiter, reportBrokenLimiter, getRateLimitUsage } from '../middleware/rateLimit.js';
 import { isValidEmail, escapeHtml, isAllowedImageUrl, isPrivateHostname } from '../middleware/security.js';
 import { RealtimeService } from '../services/RealtimeService.js';
 import { calculatePrice } from '../services/PricingService.js';
@@ -457,6 +457,33 @@ router.get('/uploads/:filename', async (req, res) => {
   } catch (err: any) {
     logger.error('Error serving upload', { service: 'API', error: err?.message });
     return res.status(500).json({ error: 'Error al servir archivo.' });
+  }
+});
+
+// ─── Reporte de imágenes rotas desde el navegador ───
+// El cliente (galería/panel) envía las URLs cuyas <img> fallaron (onError),
+// para que el sweep de limpieza las considere rotas aunque pasen las
+// verificaciones del servidor (archivo corrupto que el navegador no puede
+// renderizar, proxy caído, etc.). Solo se tienen en cuenta tras 2 reportes.
+router.post('/uploads/report-broken', reportBrokenLimiter, async (req, res) => {
+  try {
+    const { urls } = req.body || {};
+    if (!Array.isArray(urls) || urls.length === 0) {
+      return res.status(400).json({ success: false, error: 'Se requiere una lista de urls.' });
+    }
+    const clean = urls
+      .filter((u): u is string => typeof u === 'string' && u.trim().length > 0 && u.trim().length < 500)
+      .map((u) => u.trim())
+      .slice(0, 20);
+    if (clean.length === 0) {
+      return res.status(400).json({ success: false, error: 'URLs inválidas.' });
+    }
+    const { reportBrokenImages } = await import('../services/ImageMaintenanceService.js');
+    await reportBrokenImages(clean);
+    res.json({ success: true, reported: clean.length });
+  } catch (err: any) {
+    logger.error('Report broken image error', { service: 'API', error: err?.message });
+    res.status(500).json({ success: false, error: 'Error al reportar la imagen.' });
   }
 });
 

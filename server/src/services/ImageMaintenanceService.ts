@@ -38,6 +38,7 @@ import {
   CakeStockRepository,
   OrderRepository,
   UploadRepository,
+  ConfigRepository,
 } from '../repositories/index.js';
 
 const productRepo = new ProductRepository();
@@ -45,15 +46,22 @@ const galleryRepo = new GalleryRepository();
 const stockRepo = new CakeStockRepository();
 const orderRepo = new OrderRepository();
 const uploadRepo = new UploadRepository();
+const configRepo = new ConfigRepository();
+
+// Clave en la tabla `config` donde se acumulan los reportes de imágenes rotas
+// enviados desde el navegador (ver reportBrokenImages).
+const BROKEN_REPORTS_KEY = 'broken_image_reports';
+
+// Extensiones de media NO-imagen que NUNCA deben marcarse como "imagen rota"
+// (p.ej. cake.lottie, video_login.mp4, vouchers PDF). Se validan por contenido.
+const MEDIA_EXTS = new Set(['.lottie', '.json', '.mp4', '.webm', '.mov', '.pdf']);
 
 const isVercel = process.env.VERCEL === 'true';
 
 // Directorios de assets estáticos del cliente (mismo patrón que app.ts)
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CLIENT_DIST = path.resolve(__dirname, '../../client/dist');
-const CLIENT_PUBLIC = path.resolve(__dirname, '../../client/public');
-
-// ─── Magic bytes de formatos de imagen conocidos ───
+const CLIENT_PUBLIC = path.resolve(__dirname, '../../client/public');// ─── Magic bytes de formatos de imagen conocidos ───
 // "Imágenes que no se reconozcan" = archivos cuyo contenido no coincide con
 // ningún formato de imagen válido (p.ej. un HTML de error salvado como .jpg).
 const IMAGE_MAGIC: Array<{ name: string; match: (buf: Buffer) => boolean }> = [
@@ -182,6 +190,48 @@ export class ImageMaintenanceService {
   // ═══════════════════════════════════════════════════════════════
   // 2. Validación
   // ═══════════════════════════════════════════════════════════════
+  /** Valida el contenido de media NO-imagen (lottie/json/video/pdf). */
+  private isMediaContentValid(ext: string, head: Buffer): { valid: boolean; reason?: string } {
+    const headStr = head.toString('utf8', 0, 64).trimStart();
+    if (ext === '.lottie' || ext === '.json') {
+      // .lottie puede ser un ZIP (formato comprimido) o JSON plano
+      const isZip = head.toString('ascii', 0, 2) === 'PK';
+      const isJson = headStr.startsWith('{') || headStr.startsWith('[') || headStr.startsWith('"');
+      return isZip || isJson
+        ? { valid: true }
+        : { valid: false, reason: 'contenido no reconocido (Lottie/JSON inválido)' };
+    }
+    if (ext === '.pdf') {
+      return headStr.startsWith('%PDF')
+        ? { valid: true }
+        : { valid: false, reason: 'PDF inválido' };
+    }
+    // Video/audio: contenedor MP4/MOV ('ftyp') o WebM/Matroska (EBML)
+    const isMp4 = head.toString('ascii', 4, 8) === 'ftyp';
+    const isEbml = head.length >= 4 && head[0] === 0x1A && head[1] === 0x45 && head[2] === 0xDF && head[3] === 0xA3;
+    return isMp4 || isEbml
+      ? { valid: true }
+      : { valid: false, reason: 'contenido no reconocido (video/audio inválido)' };
+  }
+
+  /** PNG truncado: el marcador IEND debe estar en los últimos 12 bytes. */
+  private async pngHasIend(filePath: string): Promise<boolean> {
+    try {
+      const stat = await fs.promises.stat(filePath);
+      if (stat.size < 12) return false;
+      const fd = await fs.promises.open(filePath, 'r');
+      try {
+        const tail = Buffer.alloc(12);
+        await fd.read(tail, 0, 12, stat.size - 12);
+        return tail.toString('ascii', 4, 8) === 'IEND';
+      } finally {
+        await fd.close();
+      }
+    } catch {
+      return false;
+    }
+  }
+
   private async isUploadValid(filename: string): Promise<{ valid: boolean; reason?: string }> {
     // En Vercel no hay FS persistente: validar contra la tabla uploads.
     if (isVercel) {
@@ -217,23 +267,40 @@ export class ImageMaintenanceService {
       return { valid: false, reason: 'no se pudo leer el archivo' };
     }
 
-    // Contenido con formato de imagen conocido → válido.
-    if (IMAGE_MAGIC.some((m) => m.match(head))) {
+    const ext = path.extname(filename).toLowerCase();
+
+    // 🎬 Media NO-imagen (lottie, video, voucher PDF): si su contenido es
+    //    coherente con su tipo, es VÁLIDA — nunca se marca como imagen rota.
+    //    (el usuario decide manualmente si quiere eliminarla).
+    if (MEDIA_EXTS.has(ext)) {
+      const media = this.isMediaContentValid(ext, head);
+      if (!media.valid) return media;
+      // Sin marca de contenido pero registrada como media → válida.
+      try {
+        const upload = await uploadRepo.findByFilename(filename);
+        if (upload?.mime_type) return { valid: true };
+      } catch { /* ignorar */ }
+      return media;
+    }
+
+    // Imagen: debe coincidir con un formato de imagen conocido.
+    const imageMatch = IMAGE_MAGIC.find((m) => m.match(head));
+    if (imageMatch) {
+      // PNG truncado (sin IEND al final) → el navegador no puede renderizarlo.
+      if (ext === '.png' && !(await this.pngHasIend(filePath))) {
+        return { valid: false, reason: 'PNG truncado (sin marcador IEND al final)' };
+      }
       return { valid: true };
     }
 
-    // Puede ser un archivo subido que NO es imagen (video/lottie para el hero):
-    // si la tabla uploads lo registra con mime no-imagen, se respeta.
+    // Contenido no reconocido: si la tabla uploads lo registra con algún mime,
+    // respetarlo (formato válido no listado). Sin registro y sin magic → roto.
     try {
       const upload = await uploadRepo.findByFilename(filename);
-      const mime = upload?.mime_type || '';
-      if (mime.startsWith('video/') || mime === 'application/json') {
-        return { valid: true };
-      }
+      if (upload?.mime_type) return { valid: true };
     } catch {
       /* ignorar */
     }
-
     return { valid: false, reason: 'contenido no reconocido (no es una imagen válida)' };
   }
 
@@ -279,9 +346,14 @@ export class ImageMaintenanceService {
     return attempt('GET');
   }
 
-  private async validateRef(ref: ImageRef): Promise<{ broken: boolean; reason?: string }> {
+  private async validateRef(ref: ImageRef, reportedBroken: Set<string>): Promise<{ broken: boolean; reason?: string }> {
     const url = ref.url;
     if (url.startsWith('data:')) return { broken: false };
+
+    // 📸 Reportada como rota desde el navegador (no carga en la web).
+    if (reportedBroken.has(url)) {
+      return { broken: true, reason: 'no carga en el navegador (reportada)' };
+    }
 
     // Upload local
     const uploadMatch = url.match(/^\/(?:api\/)?uploads\/(.+)$/) || (url.startsWith('/') ? null : url);
@@ -381,6 +453,36 @@ export class ImageMaintenanceService {
     }
   }
 
+  /** Carga las URLs reportadas como rotas desde el navegador (config). */
+  private async loadReportedBroken(): Promise<Set<string>> {
+    try {
+      const row = await configRepo.findByKey(BROKEN_REPORTS_KEY);
+      if (!row) return new Set();
+      const parsed = JSON.parse(row.config_value);
+      if (!Array.isArray(parsed)) return new Set();
+      // Solo se consideran rotas las reportadas al menos 2 veces (evita
+      // falsos positivos por errores de red transitorios).
+      return new Set(parsed.filter((r: any) => Number(r?.count) >= 2).map((r: any) => r?.url).filter(Boolean));
+    } catch {
+      return new Set();
+    }
+  }
+
+  /** Quita URLs de la lista de reportes (después de eliminarlas). */
+  private async clearReportedBroken(urls: string[]): Promise<void> {
+    try {
+      const row = await configRepo.findByKey(BROKEN_REPORTS_KEY);
+      if (!row) return;
+      const parsed = JSON.parse(row.config_value);
+      if (!Array.isArray(parsed)) return;
+      const remove = new Set(urls);
+      const remaining = parsed.filter((r: any) => !remove.has(r?.url));
+      await configRepo.upsert(BROKEN_REPORTS_KEY, remaining);
+    } catch {
+      /* no crítico */
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════
   // Sweep principal
   // ═══════════════════════════════════════════════════════════════
@@ -396,11 +498,14 @@ export class ImageMaintenanceService {
     const refs = await this.collectRefs();
     report.checked = refs.length;
 
+    // URLs reportadas como rotas desde el navegador
+    const reportedBroken = await this.loadReportedBroken();
+
     // Validar cada URL única una sola vez
     const uniqueUrls = [...new Set(refs.map((r) => r.url))];
     const results = await mapWithConcurrency(uniqueUrls, 5, async (url) => {
       const sample = refs.find((r) => r.url === url)!;
-      return { url, result: await this.validateRef(sample) };
+      return { url, result: await this.validateRef(sample, reportedBroken) };
     });
 
     const brokenByUrl = new Map<string, { broken: boolean; reason?: string }>();
@@ -424,6 +529,14 @@ export class ImageMaintenanceService {
 
     if (report.broken > 0) {
       await this.applyRemovals(refs, brokenMap, report);
+
+      // Limpiar de la lista de reportes las URLs que sí se eliminaron
+      if (!dryRun) {
+        const removedReported = brokenRefs.map((r) => r.url).filter((u) => reportedBroken.has(u));
+        if (removedReported.length > 0) {
+          await this.clearReportedBroken(removedReported);
+        }
+      }
     }
 
     // Registrar en el log de actividad (solo cuando hay cambios reales)
@@ -445,3 +558,34 @@ export class ImageMaintenanceService {
 }
 
 export const imageMaintenanceService = new ImageMaintenanceService();
+
+/**
+ * 📸 Registra URLs reportadas como rotas desde el navegador (onError de <img>).
+ * Se acumulan en la tabla `config` con un contador; el sweep solo considera
+ * rotas las reportadas ≥ 2 veces (evita falsos positivos por red transitoria).
+ */
+export async function reportBrokenImages(urls: string[]): Promise<void> {
+  try {
+    const row = await configRepo.findByKey(BROKEN_REPORTS_KEY);
+    let reports: Array<{ url: string; count: number }> = [];
+    if (row) {
+      const parsed = JSON.parse(row.config_value);
+      if (Array.isArray(parsed)) reports = parsed;
+    }
+    const byUrl = new Map(reports.map((r) => [r.url, r]));
+    for (const url of urls) {
+      if (!url || typeof url !== 'string') continue;
+      const existing = byUrl.get(url);
+      if (existing) {
+        existing.count = Math.min((existing.count || 1) + 1, 10);
+      } else {
+        byUrl.set(url, { url, count: 1 });
+      }
+    }
+    // Mantener la lista acotada (las más recientes primero)
+    const merged = [...byUrl.values()].slice(-1000);
+    await configRepo.upsert(BROKEN_REPORTS_KEY, merged);
+  } catch (err) {
+    logger.warn('Error guardando reporte de imagen rota', { service: 'ImageMaintenance', error: (err as Error)?.message });
+  }
+}

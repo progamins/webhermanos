@@ -124,6 +124,41 @@ export const HERO_IMG_PROPS = {
   decoding: 'async' as const,
 };
 
+// ─── Reporte de imágenes rotas al servidor ───
+// Cuando una <img> falla (onError), se reporta la URL original al endpoint
+// /api/uploads/report-broken. El sweep de limpieza del servidor considera
+// rotas las URLs reportadas ≥ 2 veces (dedupe + contador server-side), así
+// las imágenes que el navegador no puede renderizar terminan eliminándose
+// de la BD aunque existan en disco.
+const brokenReportQueue: string[] = [];
+let brokenReportTimer: ReturnType<typeof setTimeout> | null = null;
+const BROKEN_REPORT_DELAY_MS = 1500;
+
+/**
+ * Reporta una URL de imagen como rota (fire-and-forget, batch con debounce).
+ * Solo reporta uploads locales y URLs externas; ignora data: y assets estáticos.
+ */
+export function reportBrokenImage(url: string) {
+  if (!url) return;
+  const normalized = url.trim();
+  const isUpload = normalized.startsWith('/uploads/') || normalized.startsWith('/api/uploads/');
+  const isExternal = normalized.startsWith('http://') || normalized.startsWith('https://');
+  if (!isUpload && !isExternal) return;
+  if (brokenReportQueue.includes(normalized)) return;
+  brokenReportQueue.push(normalized);
+  if (brokenReportTimer) return;
+  brokenReportTimer = setTimeout(() => {
+    brokenReportTimer = null;
+    const urls = brokenReportQueue.splice(0, brokenReportQueue.length);
+    if (urls.length === 0) return;
+    fetch('/api/uploads/report-broken', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ urls }),
+    }).catch(() => { /* no crítico */ });
+  }, BROKEN_REPORT_DELAY_MS);
+}
+
 /**
  * Lee la calidad de compresión configurada por el admin desde localStorage.
  * Si no está configurada, devuelve el valor por defecto (0.8).

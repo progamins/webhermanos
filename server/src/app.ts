@@ -67,7 +67,7 @@ export function createApp() {
   //    Además, /api/rate-limit debe seguir siendo alcanzable justo cuando los
   //    demás limitadores están bloqueando (es el endpoint de diagnóstico).
   app.use('/api', (req, res, next) => {
-    if (req.path.startsWith('/admin') || req.path.startsWith('/image-proxy') || req.path.startsWith('/rate-limit')) return next();
+    if (req.path.startsWith('/admin') || req.path.startsWith('/image-proxy') || req.path.startsWith('/rate-limit') || req.path === '/uploads/report-broken') return next();
     return apiLimiter(req, res, next);
   });
   app.use('/api/admin', adminLimiter);

@@ -8,6 +8,7 @@ import CachedImage from '../../../shared/components/CachedImage';
 import BrokenImageBadge from '../../../shared/components/BrokenImageBadge';
 import EmptyState from '../../../shared/components/ui/EmptyState';
 import Skeleton from '../../../shared/components/ui/Skeleton';
+import { reportBrokenImage } from '../../../shared/utils/images';
 
 interface GalleryProps {
   galleryItems: GalleryItem[];
@@ -115,7 +116,10 @@ function Gallery({ galleryItems, loading = false }: GalleryProps) {
                   alt={item.title || 'Galería Maison Rosas'}
                   wrapperClassName="w-full h-full"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  onError={() => markBroken(`${item.id}:${item.imageUrl}`)}
+                  onError={() => {
+                    markBroken(`${item.id}:${item.imageUrl}`);
+                    reportBrokenImage(item.imageUrl);
+                  }}
                 />
                 {isBroken(`${item.id}:${item.imageUrl}`) && (
                   <BrokenImageBadge className="absolute top-3 left-3 z-10" />
