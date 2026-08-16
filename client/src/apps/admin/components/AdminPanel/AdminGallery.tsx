@@ -3,6 +3,8 @@ import { motion } from 'motion/react';
 import { Image, Plus, Edit3, Trash2, X, Sparkles } from 'lucide-react';
 import { GalleryItem, AppConfig } from '../../../../shared/types';
 import { dbService } from '../../../../shared/services/dbService';
+import { useBrokenImages } from '../../../../shared/hooks';
+import BrokenImageBadge from '../../../../shared/components/BrokenImageBadge';
 import ImageUploader from './ImageUploader';
 import { optimizeImageUrl } from '../../../../shared/utils/images';
 
@@ -14,6 +16,8 @@ interface AdminGalleryProps {
 }
 
 export default function AdminGallery({ galleryItems, config, onRefreshData, showToast }: AdminGalleryProps) {
+  const { isBroken, markBroken } = useBrokenImages();
+
   // Gallery Management
   const [newGalleryTitle, setNewGalleryTitle] = useState('');
   const [newGalleryCategory, setNewGalleryCategory] = useState('Bodas');
@@ -289,7 +293,10 @@ export default function AdminGallery({ galleryItems, config, onRefreshData, show
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="admin-gallery-list">
           {galleryItems.map((item) => (
             <div key={item.id} className="group relative rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 aspect-[4/3]">
-              <img src={optimizeImageUrl(item.imageUrl, 800)} alt={item.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" decoding="async" />
+              <img src={optimizeImageUrl(item.imageUrl, 800)} alt={item.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" decoding="async" onError={() => markBroken(`${item.id}:${item.imageUrl}`)} />
+              {isBroken(`${item.id}:${item.imageUrl}`) && (
+                <BrokenImageBadge className="absolute top-2 left-2 z-10" />
+              )}
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-brand-300 font-bold">{item.category}</span>
                 <h4 className="text-sm font-serif font-semibold text-white">{item.title}</h4>

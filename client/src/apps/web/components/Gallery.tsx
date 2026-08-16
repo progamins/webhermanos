@@ -3,8 +3,9 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Calendar, Layers, Eye } from 'lucide-react';
 import type { GalleryItem } from '../../../shared/types';
-import { useReducedMotion, useKeyboard } from '../../../shared/hooks';
+import { useReducedMotion, useKeyboard, useBrokenImages } from '../../../shared/hooks';
 import CachedImage from '../../../shared/components/CachedImage';
+import BrokenImageBadge from '../../../shared/components/BrokenImageBadge';
 import EmptyState from '../../../shared/components/ui/EmptyState';
 import Skeleton from '../../../shared/components/ui/Skeleton';
 
@@ -19,6 +20,7 @@ function Gallery({ galleryItems, loading = false }: GalleryProps) {
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
   const [activeTab, setActiveTab] = useState<string>('Todos');
   const reducedMotion = useReducedMotion();
+  const { isBroken, markBroken } = useBrokenImages();
 
   useKeyboard('Escape', () => setSelectedItem(null), !!selectedItem);
 
@@ -113,7 +115,11 @@ function Gallery({ galleryItems, loading = false }: GalleryProps) {
                   alt={item.title || 'Galería Maison Rosas'}
                   wrapperClassName="w-full h-full"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  onError={() => markBroken(`${item.id}:${item.imageUrl}`)}
                 />
+                {isBroken(`${item.id}:${item.imageUrl}`) && (
+                  <BrokenImageBadge className="absolute top-3 left-3 z-10" />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
                   <div className="text-white text-left">
                     <span className="text-xs font-serif font-semibold block truncate">{item.title}</span>
