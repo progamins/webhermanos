@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { dbService } from '../../shared/services/dbService';
 import AdminPanel from './components/AdminPanel';
+import RateLimitBanner from './components/AdminPanel/RateLimitBanner';
 import type { Product, Order, Review, GalleryItem, AppConfig, AdminRole } from '../../shared/types';
 
 export default function AdminApp() {
@@ -90,7 +91,9 @@ export default function AdminApp() {
   }
 
   return (
-    <AdminPanel
+    <>
+      <RateLimitBanner />
+      <AdminPanel
       products={products}
       orders={orders}
       setOrders={setOrders}
@@ -112,6 +115,7 @@ export default function AdminApp() {
       isLoggedIn={isLoggedIn}
       adminRole={adminRole}
       onLogout={handleLogout}
-    />
+      />
+    </>
   );
 }

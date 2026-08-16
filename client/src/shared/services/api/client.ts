@@ -55,7 +55,13 @@ async function request<T = any>(
         const data = await res.json();
         errorMsg = data.error || data.message || errorMsg;
       } catch { /* ignore */ }
-      throw new Error(errorMsg);
+      // Adjuntar status HTTP y Retry-After para que el request pool pueda
+      // reintentar con la espera correcta y avisar a la UI (banner de 429).
+      const err = new Error(errorMsg) as Error & { status?: number; retryAfter?: number };
+      err.status = res.status;
+      const retryAfter = Number(res.headers.get('retry-after'));
+      if (Number.isFinite(retryAfter) && retryAfter > 0) err.retryAfter = retryAfter;
+      throw err;
     }
 
     return res.json();

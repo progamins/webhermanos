@@ -3,7 +3,7 @@
  *
  * Problema que resuelve:
  * - El admin dispara ~8 requests al montar (products, orders, reviews, gallery,
- *   config, stock, kitchen, activity) → choca con el rate limit de 30/min del servidor.
+ *   config, stock, kitchen, activity) → choca con el rate limit del servidor.
  * - Requests GET idénticos disparados en paralelo duplican trabajo en el servidor.
  *
  * Solución (4 capas):
@@ -11,8 +11,10 @@
  * 2. **Deduplicación**: requests GET con la misma URL en vuelo comparten la misma Promise.
  * 3. **Cache TTL**: datos públicos (products, reviews, gallery, config) se cachean
  *    en memoria por unos segundos y se devuelven instantáneamente.
- * 4. **Retry con backoff**: reintenta automáticamente errores transitorios
- *    (red caída, 429, 5xx) hasta MAX_ATTEMPTS veces.
+ * 4. **Retry inteligente**: reintenta errores transitorios (red caída, 5xx) con
+ *    backoff exponencial + jitter. Para 429 respeta el header `Retry-After` del
+ *    servidor y NO martilla en silencio: si la espera es larga falla y emite el
+ *    evento `maison:ratelimited` para que la UI muestre un aviso persistente.
  */
 
 interface PooledTask {
@@ -29,6 +31,11 @@ const MAX_CONCURRENT = 5;        // máx. fetches simultáneos
 const CACHE_TTL_MS = 10_000;     // 10s para datos públicos
 const RETRY_DELAY_MS = 400;      // backoff base
 const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
+// 🚦 429: si el servidor pide esperar más de esto (Retry-After), NO reintentar
+// en silencio — se falla y el panel muestra el banner (el polling lo reintenta).
+const MAX_SILENT_RETRY_AFTER_MS = 5_000;
+// 429 con espera corta: como máximo 1 reintento diferido (evita martillar).
+const MAX_429_ATTEMPTS = 1;
 
 /**
  * Notifica el estado real de la red a la app (evento 'maison:network').
@@ -41,6 +48,44 @@ function notifyNetwork(online: boolean) {
   } catch {
     /* no crítico */
   }
+}
+
+/**
+ * Notifica que el servidor devolvió 429 (rate limit) para que la UI muestre
+ * un aviso persistente en vez de reintentar en silencio.
+ */
+function notifyRateLimited(retryAfterMs: number) {
+  try {
+    window.dispatchEvent(new CustomEvent('maison:ratelimited', { detail: { retryAfterMs } }));
+  } catch {
+    /* no crítico */
+  }
+}
+
+/** Notifica que las solicitudes volvieron a funcionar (oculta el aviso). */
+function notifyRateLimitCleared() {
+  try {
+    window.dispatchEvent(new CustomEvent('maison:ratelimited:clear'));
+  } catch {
+    /* no crítico */
+  }
+}
+
+/** Extrae el status HTTP de un error lanzado por el client (0 si no aplica). */
+function getStatus(err: unknown): number {
+  if (err && typeof err === 'object' && 'status' in err) {
+    const s = Number((err as any).status);
+    if (Number.isFinite(s)) return s;
+  }
+  const m = err instanceof Error ? err.message.match(/^(\d{3})/) : null;
+  return m ? Number(m[1]) : 0;
+}
+
+/** Extrae Retry-After (en ms) del error si el servidor lo indicó. */
+function getRetryAfterMs(err: unknown): number {
+  const ra = err && typeof err === 'object' ? (err as any).retryAfter : undefined;
+  const n = Number(ra);
+  return Number.isFinite(n) && n > 0 ? n * 1000 : 0;
 }
 
 class RequestPool {
@@ -158,15 +203,31 @@ class RequestPool {
   private async executeTask(task: PooledTask) {
     try {
       const result = await task.fn();
-      // Cualquier petición exitosa significa que hay red.
+      // Cualquier petición exitosa significa que hay red y que el rate limit se liberó.
       notifyNetwork(true);
+      notifyRateLimitCleared();
       task.resolve(result);
     } catch (err) {
-      // Retry solo para errores transitorios
-      const shouldRetry = task.attempts < task.maxAttempts && this.isRetryable(err);
+      const status = getStatus(err);
+      const retryAfterMs = getRetryAfterMs(err);
+
+      // 429 → aviso global para que el panel muestre el banner.
+      if (status === 429) {
+        notifyRateLimited(retryAfterMs > 0 ? retryAfterMs : 60_000);
+      }
+
+      // 🚦 429 con espera larga (o sin Retry-After): fallar ya. Reintentar en
+      //    silencio solo empeora la saturación; el polling del panel o la
+      //    próxima acción del usuario reintentará con el banner visible.
+      const silentRetryBlocked = status === 429 && (retryAfterMs <= 0 || retryAfterMs > MAX_SILENT_RETRY_AFTER_MS);
+      const maxAttempts = status === 429 ? MAX_429_ATTEMPTS : task.maxAttempts;
+
+      const shouldRetry = !silentRetryBlocked && task.attempts < maxAttempts && this.isRetryable(err);
       if (shouldRetry) {
         task.attempts++;
-        const delay = RETRY_DELAY_MS * task.attempts;
+        // Esperar lo que pida el servidor (Retry-After) o backoff exponencial con jitter.
+        const baseDelay = retryAfterMs > 0 ? retryAfterMs : RETRY_DELAY_MS * Math.pow(2, task.attempts - 1);
+        const delay = Math.min(baseDelay + baseDelay * 0.2 * Math.random(), 5_000);
         setTimeout(() => this.queue.unshift(task), delay);
         return; // no resolver aún
       }
@@ -186,6 +247,9 @@ class RequestPool {
       // 429 / 5xx
       const m = err.message.match(/^(\d{3})/);
       if (m) return RETRYABLE_STATUS.has(Number(m[1]));
+    }
+    if (err && typeof err === 'object' && 'status' in err) {
+      return RETRYABLE_STATUS.has(Number((err as any).status));
     }
     return false;
   }
