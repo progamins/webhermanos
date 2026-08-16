@@ -131,55 +131,54 @@ function Gallery({ galleryItems, loading = false }: GalleryProps) {
 
       {selectedItem && createPortal(
         <AnimatePresence>
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={selectedItem.title}>
+          <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label={selectedItem.title}>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
               onClick={() => setSelectedItem(null)}
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl overflow-hidden shadow-2xl"
-              style={{ backgroundColor: 'var(--theme-surface)' }}
+              className="relative w-full h-full bg-black select-none"
             >
+              <CachedImage
+                src={selectedItem.imageUrl}
+                width={1600}
+                alt={selectedItem.title || 'Galería'}
+                className="w-full h-full object-contain"
+                priority
+              />
               <button
                 onClick={() => setSelectedItem(null)}
-                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="absolute top-4 right-4 z-10 p-2.5 rounded-full bg-black/50 backdrop-blur-sm text-white hover:bg-black/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 aria-label="Cerrar"
               >
-                <X className="h-4 w-4" aria-hidden="true" />
+                <X className="h-5 w-5" aria-hidden="true" />
               </button>
-              <div className="relative flex-1 min-h-0 flex items-center justify-center bg-black/40 select-none">
-                <CachedImage
-                  src={selectedItem.imageUrl}
-                  width={1200}
-                  alt={selectedItem.title || 'Galería'}
-                  className="max-h-[55vh] max-w-full object-contain"
-                  priority
-                />
-              </div>
               {(selectedItem.title || selectedItem.description) && (
-                <div className="p-5 space-y-1 overflow-y-auto">
-                  {selectedItem.title && (
-                    <h3 className="text-lg font-serif font-bold" style={{ color: 'var(--theme-text)' }}>{selectedItem.title}</h3>
-                  )}
-                  {selectedItem.description && (
-                    <p className="text-sm" style={{ color: 'var(--theme-text-secondary)' }}>{selectedItem.description}</p>
-                  )}
-                  <div className="flex items-center gap-4 pt-2 text-[10px] font-mono" style={{ color: 'var(--theme-text-muted)' }}>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" aria-hidden="true" />
-                      {new Date(selectedItem.date).toLocaleDateString('es-PE')}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Layers className="h-3 w-3" aria-hidden="true" />
-                      {selectedItem.category}
-                    </span>
+                <div className="absolute inset-x-0 bottom-0 z-10 p-6 sm:p-8 bg-gradient-to-t from-black/85 via-black/45 to-transparent pointer-events-none">
+                  <div className="space-y-1 max-w-3xl">
+                    {selectedItem.title && (
+                      <h3 className="text-xl sm:text-2xl font-serif font-bold text-white drop-shadow">{selectedItem.title}</h3>
+                    )}
+                    {selectedItem.description && (
+                      <p className="text-sm sm:text-base text-white/85 leading-relaxed max-w-2xl">{selectedItem.description}</p>
+                    )}
+                    <div className="flex items-center gap-4 pt-2 text-[10px] sm:text-[11px] font-mono text-white/60">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
+                        {new Date(selectedItem.date).toLocaleDateString('es-PE')}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Layers className="h-3.5 w-3.5" aria-hidden="true" />
+                        {selectedItem.category}
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
