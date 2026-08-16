@@ -28,9 +28,14 @@ export const apiLimiter = rateLimit({
   max: parseInt(process.env.API_RATE_LIMIT || '60', 10),
 });
 
+// Panel admin: hace ~8 requests al montar (products, orders, stock, kitchen,
+// activity…) + polling de cocina cada 10s + actualizaciones de estado.
+// 30 req/min por IP era insuficiente y provocaba 429 en uso normal.
+// 300 req/min sigue acotado contra abuso y el admin ya está protegido por
+// token de sesión y (en producción) filtros de IP/MAC.
 export const adminLimiter = rateLimit({
   ...limiterBase,
-  max: parseInt(process.env.ADMIN_RATE_LIMIT || '30', 10),
+  max: parseInt(process.env.ADMIN_RATE_LIMIT || '300', 10),
 });
 
 export const contactLimiter = rateLimit({

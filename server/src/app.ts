@@ -58,7 +58,16 @@ export function createApp() {
   }));
 
   app.use(securityHeaders);
-  app.use('/api', apiLimiter);
+  // 🔒 El limiter global /api NO debe descontar las rutas que ya tienen su
+  //    propio rate limit específico (/api/admin → adminLimiter, /api/image-proxy
+  //    → proxyLimiter). Si contara, cada request se descontaría dos veces y los
+  //    límites se agotarían con la mitad del tráfico real: el panel admin hace
+  //    ~8 requests al montar + polling de cocina cada 10s y supera fácilmente
+  //    los 30 req/min del adminLimiter.
+  app.use('/api', (req, res, next) => {
+    if (req.path.startsWith('/admin') || req.path.startsWith('/image-proxy')) return next();
+    return apiLimiter(req, res, next);
+  });
   app.use('/api/admin', adminLimiter);
 
   // Request timeout for all API routes (30s)
