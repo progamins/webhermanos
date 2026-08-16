@@ -10,7 +10,7 @@ import { galleryService } from '../services/GalleryService.js';
 import { configService } from '../services/ConfigService.js';
 import { emailService } from '../services/EmailService.js';
 import { otpService } from '../services/OtpService.js';
-import { contactLimiter, apiLimiter, otpSendLimiter, otpVerifyLimiter, proxyLimiter } from '../middleware/rateLimit.js';
+import { contactLimiter, apiLimiter, otpSendLimiter, otpVerifyLimiter, proxyLimiter, diagLimiter, getRateLimitUsage } from '../middleware/rateLimit.js';
 import { isValidEmail, escapeHtml, isAllowedImageUrl, isPrivateHostname } from '../middleware/security.js';
 import { RealtimeService } from '../services/RealtimeService.js';
 import { calculatePrice } from '../services/PricingService.js';
@@ -20,6 +20,22 @@ const router = Router();
 // ─── Health ───
 router.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
+});
+
+// ─── Rate Limit Diagnostics ───
+// Público, pero solo muestra los contadores de la IP que hace la petición
+// (nunca los de otros usuarios). Útil para diagnosticar 429 en producción.
+router.get('/rate-limit', diagLimiter, async (req, res) => {
+  const forwarded = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim();
+  const ip = forwarded || req.ip || req.socket.remoteAddress || '127.0.0.1';
+  try {
+    const limiters = await getRateLimitUsage(ip);
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({ success: true, clientIp: ip, generatedAt: new Date().toISOString(), limiters });
+  } catch (err: any) {
+    logger.error('Rate limit diagnostics error', { service: 'API', error: err?.message });
+    res.status(500).json({ success: false, error: 'Error al consultar los contadores de rate limit.' });
+  }
 });
 
 // ─── Status / Diagnostics ───

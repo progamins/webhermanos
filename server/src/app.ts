@@ -60,12 +60,14 @@ export function createApp() {
   app.use(securityHeaders);
   // 🔒 El limiter global /api NO debe descontar las rutas que ya tienen su
   //    propio rate limit específico (/api/admin → adminLimiter, /api/image-proxy
-  //    → proxyLimiter). Si contara, cada request se descontaría dos veces y los
-  //    límites se agotarían con la mitad del tráfico real: el panel admin hace
-  //    ~8 requests al montar + polling de cocina cada 10s y supera fácilmente
-  //    los 30 req/min del adminLimiter.
+  //    → proxyLimiter, /api/rate-limit → diagLimiter). Si contara, cada request
+  //    se descontaría dos veces y los límites se agotarían con la mitad del
+  //    tráfico real: el panel admin hace ~8 requests al montar + polling de
+  //    cocina cada 10s y supera fácilmente los 30 req/min del adminLimiter.
+  //    Además, /api/rate-limit debe seguir siendo alcanzable justo cuando los
+  //    demás limitadores están bloqueando (es el endpoint de diagnóstico).
   app.use('/api', (req, res, next) => {
-    if (req.path.startsWith('/admin') || req.path.startsWith('/image-proxy')) return next();
+    if (req.path.startsWith('/admin') || req.path.startsWith('/image-proxy') || req.path.startsWith('/rate-limit')) return next();
     return apiLimiter(req, res, next);
   });
   app.use('/api/admin', adminLimiter);
