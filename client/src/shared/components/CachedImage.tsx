@@ -179,55 +179,45 @@ function CachedImage({
   // RENDER — condicionales sin hooks
   // ═══════════════════════════════════════════
 
+  // Placeholder base: degradado sutil + (opcional) icono de imagen rota.
+  // Se usa para src vacío, error y durante la transición de carga.
+  const renderPlaceholder = (broken: boolean) => (
+    <div
+      className={`relative overflow-hidden bg-gradient-to-br from-zinc-100 via-zinc-200/60 to-zinc-100 dark:from-zinc-900 dark:via-zinc-900/70 dark:to-zinc-950 ${broken ? 'flex flex-col items-center justify-center gap-2.5' : ''} ${wrapperClassName || className}`}
+      style={{
+        aspectRatio: height ? undefined : (style?.aspectRatio || '4/3'),
+        width: style?.width,
+        height: height || style?.height,
+        ...style,
+      }}
+    >
+      {broken && (
+        <div className="flex flex-col items-center justify-center gap-2.5 select-none">
+          <div className="w-11 h-11 rounded-full bg-white/80 dark:bg-zinc-800/80 border border-zinc-200/90 dark:border-zinc-700/60 shadow-sm flex items-center justify-center">
+            <ImageOff className="w-5 h-5 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
+          </div>
+          <span className="text-[9px] font-mono tracking-widest text-zinc-400 dark:text-zinc-500 uppercase">
+            Imagen no disponible
+          </span>
+        </div>
+      )}
+    </div>
+  );
+
   // Sin src → espacio vacío, sin layout shift si hay height
   if (!src) {
-    return (
-      <div
-        className={`relative overflow-hidden bg-zinc-100/30 dark:bg-zinc-900/30 ${wrapperClassName || className}`}
-        style={{
-          aspectRatio: height ? undefined : (style?.aspectRatio || '4/3'),
-          width: style?.width,
-          height: height || style?.height,
-          ...style,
-        }}
-      />
-    );
+    return renderPlaceholder(false);
   }
 
   // Estado de error
   if (error) {
-    return (
-      <div
-        className={`relative overflow-hidden bg-zinc-100 dark:bg-zinc-900 flex flex-col items-center justify-center gap-2 ${wrapperClassName || className}`}
-        style={{
-          aspectRatio: height ? undefined : (style?.aspectRatio || '4/3'),
-          width: style?.width,
-          height: height || style?.height,
-          ...style,
-        }}
-      >
-        <ImageOff className="w-5 h-5 text-zinc-300 dark:text-zinc-600" />
-        <span className="text-[9px] font-mono tracking-widest text-zinc-300 dark:text-zinc-600 uppercase">
-          Sin imagen
-        </span>
-      </div>
-    );
+    return renderPlaceholder(true);
   }
 
   // Nunca renderizar <img src=""> — si cachedSrc está vacío mostramos placeholder
   // (ocurre durante la transición: src pasa de "" a URL real pero cachedSrc aún es "").
   if (!cachedSrc) {
-    return (
-      <div
-        className={`relative overflow-hidden rounded-xl ${wrapperClassName || className}`}
-        style={{
-          aspectRatio: height ? undefined : (style?.aspectRatio || '4/3'),
-          width: style?.width,
-          height: height || style?.height,
-          ...style,
-        }}
-      />
-    );
+    return renderPlaceholder(false);
   }
 
   // ─── Render: imagen con carga inmediata ───

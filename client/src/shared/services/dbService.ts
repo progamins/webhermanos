@@ -241,6 +241,11 @@ export const dbService = {
     return api.admin.inlineUploadVoucher(orderId, file);
   },
 
+  // ─── Mantenimiento de imágenes ───
+  async cleanupBrokenImages(dryRun: boolean = false): Promise<any> {
+    return api.admin.cleanupBrokenImages(dryRun);
+  },
+
   // Upload image through the server API
   async uploadImageToStorage(file: File): Promise<string> {
     let fileToUpload = file;

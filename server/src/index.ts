@@ -8,6 +8,7 @@ import { createApp } from './app.js';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { imageMaintenanceService } from './services/ImageMaintenanceService.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -56,6 +57,23 @@ async function bootstrap() {
     logger.info(`📦 Admin: http://localhost:${env.PORT}/admin`, { service: 'Server' });
     logger.info('Press Ctrl+C to stop', { service: 'Server' });
   });
+
+  // 🧹 Limpieza automática de imágenes rotas (solo servidor persistente —
+  //    en Vercel serverless no hay proceso continuo; ahí se dispara desde
+  //    el panel admin con POST /api/admin/images/cleanup-broken).
+  //    Primera pasada a los 30s del arranque y luego cada 6 horas.
+  if (process.env.VERCEL !== 'true') {
+    const SWEEP_INTERVAL_MS = 6 * 60 * 60 * 1000;
+    const runSweep = async () => {
+      try {
+        await imageMaintenanceService.sweep({ dryRun: false });
+      } catch (err) {
+        logger.error('Error en limpieza programada de imágenes', { service: 'ImageMaintenance', error: (err as Error)?.message });
+      }
+    };
+    setTimeout(runSweep, 30_000);
+    setInterval(runSweep, SWEEP_INTERVAL_MS);
+  }
 }
 
 bootstrap().catch((err) => {

@@ -341,5 +341,19 @@ export const api = {
         body: formData,
       });
     },
+
+    // ─── Mantenimiento de imágenes ───
+    cleanupBrokenImages: (dryRun: boolean = false) =>
+      request<{
+        success: boolean;
+        dryRun: boolean;
+        checked: number;
+        broken: number;
+        removed: { products: number; gallery: number; stock: number; config: number; orders: number };
+        details: Array<{ source: string; id: string; field: string; url: string; reason: string }>;
+      }>('/admin/images/cleanup-broken', {
+        method: 'POST',
+        body: JSON.stringify({ dryRun }),
+      }),
   },
 };

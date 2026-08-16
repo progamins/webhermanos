@@ -187,10 +187,135 @@ export default function AdminMediaHub({ products, galleryItems, config, onRefres
         {activeTab === 'storage' && (
           <motion.div key="storage" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
             <CacheStats />
+            <BrokenImageCleaner onRefreshData={onRefreshData} showToast={showToast} />
             <AdminImageManager />
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   BrokenImageCleaner — detecta y elimina imágenes
+   rotas o no reconocidas de la base de datos
+   ═══════════════════════════════════════════════ */
+interface BrokenImageReport {
+  checked: number;
+  broken: number;
+  removed: { products: number; gallery: number; stock: number; config: number; orders: number };
+}
+
+function BrokenImageCleaner({ onRefreshData, showToast }: { onRefreshData: () => void; showToast: AdminMediaHubProps['showToast'] }) {
+  const [analyzing, setAnalyzing] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
+  const [report, setReport] = useState<BrokenImageReport | null>(null);
+  const [details, setDetails] = useState<Array<{ source: string; id: string; field: string; url: string; reason: string }>>([]);
+
+  const handleAnalyze = async () => {
+    setAnalyzing(true);
+    try {
+      const res = await dbService.cleanupBrokenImages(true); // dryRun: solo reporta
+      setReport({ checked: res.checked, broken: res.broken, removed: res.removed });
+      setDetails(res.details || []);
+      if (res.broken === 0) {
+        showToast(`Se verificaron ${res.checked} imágenes. No se encontraron rotas.`, 'success', '🧹 Verificación');
+      } else {
+        showToast(`${res.broken} imagen(es) rota(s) detectada(s).`, 'warning', '🧹 Análisis');
+      }
+    } catch {
+      showToast('Error al analizar las imágenes.', 'error', 'Error');
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const handleClean = async () => {
+    if (!report || report.broken === 0) return;
+    const total = report.removed.products + report.removed.gallery + report.removed.stock + report.removed.config + report.removed.orders;
+    if (!window.confirm(`¿Eliminar ${total} referencia(s) a imágenes rotas? Esta acción no se puede deshacer.`)) return;
+    setCleaning(true);
+    try {
+      const res = await dbService.cleanupBrokenImages(false);
+      const newTotal = res.removed.products + res.removed.gallery + res.removed.stock + res.removed.config + res.removed.orders;
+      setReport({ checked: res.checked, broken: res.broken, removed: res.removed });
+      setDetails(res.details || []);
+      onRefreshData();
+      showToast(`Se eliminaron ${newTotal} referencia(s) a imágenes rotas.`, 'success', '🧹 Limpieza');
+    } catch {
+      showToast('Error al limpiar las imágenes.', 'error', 'Error');
+    } finally {
+      setCleaning(false);
+    }
+  };
+
+  const removedTotal = report ? report.removed.products + report.removed.gallery + report.removed.stock + report.removed.config + report.removed.orders : 0;
+
+  return (
+    <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-100 dark:border-zinc-800/80 shadow-sm">
+      <h4 className="text-sm font-mono font-bold uppercase tracking-wider text-brand-500 mb-2 flex items-center">
+        <Sparkles className="h-4 w-4 mr-2" />
+        Limpieza automática de imágenes rotas
+      </h4>
+      <p className="text-xs text-zinc-500 mb-4 font-sans leading-relaxed max-w-2xl">
+        Detecta y elimina automáticamente de la base de datos las imágenes rotas o con contenido
+        no reconocido (archivos inexistentes, vacíos o que no son imágenes válidas). El servidor
+        también ejecuta esta limpieza de forma programada cada 6 horas.
+      </p>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          onClick={handleAnalyze}
+          disabled={analyzing || cleaning}
+          className="px-4 py-2 bg-brand-500 hover:bg-brand-600 disabled:bg-brand-300 text-white rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider cursor-pointer flex items-center gap-2"
+        >
+          {analyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+          <span>Analizar imágenes</span>
+        </button>
+
+        {report && report.broken > 0 && (
+          <button
+            onClick={handleClean}
+            disabled={cleaning || analyzing}
+            className="px-4 py-2 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider cursor-pointer flex items-center gap-2"
+          >
+            {cleaning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+            <span>Eliminar {removedTotal} referencia(s)</span>
+          </button>
+        )}
+      </div>
+
+      {report && (
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-5 gap-2">
+          {[
+            { label: 'Verificadas', value: report.checked, color: 'text-zinc-700 dark:text-zinc-300' },
+            { label: 'Rotas', value: report.broken, color: report.broken > 0 ? 'text-red-500' : 'text-emerald-500' },
+            { label: 'Productos', value: report.removed.products, color: 'text-zinc-700 dark:text-zinc-300' },
+            { label: 'Galería', value: report.removed.gallery, color: 'text-zinc-700 dark:text-zinc-300' },
+            { label: 'Otros', value: report.removed.stock + report.removed.config + report.removed.orders, color: 'text-zinc-700 dark:text-zinc-300' },
+          ].map((s) => (
+            <div key={s.label} className="bg-zinc-50 dark:bg-zinc-950 rounded-xl px-3 py-2.5 border border-zinc-100 dark:border-zinc-800">
+              <div className={`text-lg font-mono font-bold ${s.color}`}>{s.value}</div>
+              <div className="text-[9px] font-mono uppercase tracking-wider text-zinc-400">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {details.length > 0 && (
+        <div className="mt-4 max-h-40 overflow-y-auto rounded-xl border border-zinc-100 dark:border-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-800">
+          {details.slice(0, 10).map((d, i) => (
+            <div key={i} className="px-3 py-2 flex items-center gap-2 text-[10px] font-mono">
+              <span className="shrink-0 px-1.5 py-0.5 rounded bg-red-50 dark:bg-red-950/50 text-red-500 font-bold uppercase tracking-wider">{d.source}</span>
+              <span className="text-zinc-500 truncate flex-1">{d.url}</span>
+              <span className="shrink-0 text-zinc-400">{d.reason}</span>
+            </div>
+          ))}
+          {details.length > 10 && (
+            <div className="px-3 py-2 text-[10px] font-mono text-zinc-400">…y {details.length - 10} más</div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

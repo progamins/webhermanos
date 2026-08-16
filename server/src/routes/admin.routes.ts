@@ -20,6 +20,7 @@ import { stockService } from '../services/StockService.js';
 import { ActivityLogService } from '../services/ActivityService.js';
 import { storageService } from '../services/StorageService.js';
 import { emailService } from '../services/EmailService.js';
+import { imageMaintenanceService } from '../services/ImageMaintenanceService.js';
 
 const router = Router();
 
@@ -357,6 +358,19 @@ router.post('/stock', verifyAdminSession, asyncHandler(async (req, res) => {
 router.delete('/stock/:id', verifyAdminSession, asyncHandler(async (req, res) => {
   await stockService.delete(req.params.id);
   res.json({ success: true });
+}));
+
+// ─── IMAGE MAINTENANCE (limpieza automática de imágenes rotas) ───
+router.post('/images/cleanup-broken', verifyAdminSession, asyncHandler(async (req, res) => {
+  // dryRun: true → solo reporta qué se eliminaría, sin tocar la BD.
+  const dryRun = req.body?.dryRun === true;
+  try {
+    const report = await imageMaintenanceService.sweep({ dryRun });
+    res.json({ success: true, ...report });
+  } catch (err: any) {
+    logger.error('Image cleanup error', { service: 'Admin', error: err?.message });
+    res.status(500).json({ success: false, error: err.message || 'Error al limpiar imágenes rotas.' });
+  }
 }));
 
 // ─── STORAGE (Gestión de Archivos) ───
