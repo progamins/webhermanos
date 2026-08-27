@@ -6,6 +6,9 @@ let pool: mysql.Pool | null = null;
 
 export function getPool(): mysql.Pool {
   if (!pool) {
+    // TiDB Cloud requires SSL — detect by host pattern
+    const needsSSL = env.DB_HOST.includes('tidbcloud.com');
+
     pool = mysql.createPool({
       host: env.DB_HOST,
       port: env.DB_PORT,
@@ -17,6 +20,8 @@ export function getPool(): mysql.Pool {
       queueLimit: 0,
       charset: 'utf8mb4',
       timezone: '+00:00',
+      // SSL for TiDB Cloud (required)
+      ssl: needsSSL ? { rejectUnauthorized: true } : undefined,
       // Connection robustness
       connectTimeout: 10000,          // 10s timeout for initial connection
       maxIdle: 5,                     // Keep up to 5 idle connections
