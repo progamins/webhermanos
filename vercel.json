@@ -16,9 +16,17 @@
     { "source": "/admin-e8519439490710ed9e03cd308c980f9b/(.*)", "destination": "/admin.html" },
     { "source": "/diagnostico.html", "destination": "/diagnostico.html" },
     { "source": "/admin.html", "destination": "/index.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/(?!manifest\.json$|favicon\.svg$|robots\.txt$|sitemap\.xml$)(.*)", "destination": "/index.html" }
   ],
   "headers": [
+    {
+      "source": "/manifest.json",
+      "headers": [
+        { "key": "Content-Type", "value": "application/manifest+json" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    },
     {
       "source": "/(.*)\\.(js|css|woff2|jpg|jpeg|png|webp|gif|svg|ico)",
       "headers": [

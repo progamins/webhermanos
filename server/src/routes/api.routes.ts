@@ -511,37 +511,62 @@ router.get('/image-proxy', proxyLimiter, async (req, res) => {
       return res.status(403).json({ error: 'Dominio no permitido.' });
     }
 
-    // AbortController con timeout: evita que un origen lento cuelgue
-    // la función serverless (máx 30s en Vercel) y consuma cuota.
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+    // 🔒 Seguir redirects manualmente con validación de dominio.
+    // Unsplash y otros CDNs redirigen las URLs de imagen, así que necesitamos
+    // seguir los redirects pero validando que cada destino sea un dominio permitido
+    // y no una IP privada (anti-SSRF).
+    const MAX_REDIRECTS = 3;
+    let currentUrl = url;
+    let finalResponse: Response | null = null;
 
-    let response: Response;
-    try {
-      response = await fetch(url, {
-        headers: {
-          'User-Agent': 'MaisonRosas/1.0',
-          'Accept': 'image/*',
-        },
-        signal: controller.signal,
-        // 🔒 No seguir redirects: evita redirección a IPs privadas (SSRF
-        // via redirect) y reduce superficie de ataque.
-        redirect: 'manual',
-      });
-    } finally {
-      clearTimeout(timeout);
+    for (let i = 0; i <= MAX_REDIRECTS; i++) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      let fetchResponse: Response;
+
+      try {
+        fetchResponse = await fetch(currentUrl, {
+          headers: {
+            'User-Agent': 'MaisonRosas/1.0',
+            'Accept': 'image/*',
+          },
+          signal: controller.signal,
+          redirect: 'manual',
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
+
+      // Si no es redirect, guardar como respuesta final y salir
+      if (fetchResponse.status < 300 || fetchResponse.status >= 400) {
+        finalResponse = fetchResponse;
+        break;
+      }
+
+      // Obtener Location del redirect
+      const location = fetchResponse.headers.get('location');
+      if (!location) throw new Error('Redirect without Location header');
+
+      // Resolver URL relativa contra la URL actual
+      const redirectUrl = new URL(location, currentUrl).toString();
+
+      // 🔒 Validar que el destino del redirect sea seguro
+      const parsedRedirect = new URL(redirectUrl);
+      if (isPrivateHostname(parsedRedirect.hostname)) {
+        throw new Error('Redirect to private hostname (SSRF blocked)');
+      }
+      if (!isAllowedImageUrl(redirectUrl)) {
+        throw new Error(`Redirect to disallowed domain: ${parsedRedirect.hostname}`);
+      }
+
+      currentUrl = redirectUrl;
     }
 
-    // Si el origen responde con redirect, no lo seguimos: devolver 502
-    // (el cliente tiene fallback a URL directa en CachedImage).
-    if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400)) {
-      throw new Error(`Redirect not followed: ${response.status}`);
-    }
+    if (!finalResponse) throw new Error('No response received after redirects');
+    if (!finalResponse.ok) throw new Error(`Fetch failed: ${finalResponse.status}`);
 
-    if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
-
-    const buffer = Buffer.from(await response.arrayBuffer());
-    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    const buffer = Buffer.from(await finalResponse.arrayBuffer());
+    const contentType = finalResponse.headers.get('content-type') || 'image/jpeg';
     res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 'public, max-age=86400, immutable');
     res.send(buffer);
