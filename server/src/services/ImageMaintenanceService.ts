@@ -355,18 +355,19 @@ export class ImageMaintenanceService {
       return { broken: true, reason: 'no carga en el navegador (reportada)' };
     }
 
-    // Upload local
-    const uploadMatch = url.match(/^\/(?:api\/)?uploads\/(.+)$/) || (url.startsWith('/') ? null : url);
-    if (uploadMatch) {
-      const filename = typeof uploadMatch === 'string' ? uploadMatch : uploadMatch[1];
-      const result = await this.isUploadValid(filename);
-      return result.valid ? { broken: false } : { broken: true, reason: result.reason };
-    }
-
-    // URL externa
+    // URL externa (Unsplash, etc.) — verificar primero porque es más rápido
+    // y evita que URLs externas caigan en la validación de uploads.
     if (url.startsWith('http://') || url.startsWith('https://')) {
       const ok = await this.isExternalValid(url);
       return ok ? { broken: false } : { broken: true, reason: 'no responde o no es una imagen (HTTP)' };
+    }
+
+    // Upload local (/uploads/xxx o /api/uploads/xxx)
+    const uploadMatch = url.match(/^\/(?:api\/)?uploads\/(.+)$/);
+    if (uploadMatch) {
+      const filename = uploadMatch[1];
+      const result = await this.isUploadValid(filename);
+      return result.valid ? { broken: false } : { broken: true, reason: result.reason };
     }
 
     // Ruta raíz relativa (asset estático)
