@@ -571,14 +571,13 @@ router.get('/image-proxy', proxyLimiter, async (req, res) => {
     res.setHeader('Cache-Control', 'public, max-age=86400, immutable');
     res.send(buffer);
   } catch (err: any) {
-    // ❗ Estado 502 (no 200): así el navegador dispara onError en el <img> y
-    // el cliente puede reintentar con la URL directa (fallback de CachedImage).
-    // Si devolviéramos 200 + SVG, onError nunca se ejecutaría y el fallback
-    // quedaría inerte. El body SVG sirve de contenido útil si alguien lo consume.
+    // ✅ Estado 200 + SVG placeholder: el navegador carga el placeholder sin
+    // disparar onError. CachedImage muestra una imagen genérica en vez de romper
+    // el layout. El sweep del admin detecta y limpia estas URLs rotas de la BD.
     logger.warn('Image proxy error', { service: 'API', url, error: err?.message || String(err) });
     res.setHeader('Content-Type', 'image/svg+xml');
     res.setHeader('Cache-Control', 'no-cache');
-    res.status(502);
+    res.status(200);
     res.send(MISSING_IMAGE_SVG);
   }
 });
