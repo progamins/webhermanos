@@ -1,144 +1,184 @@
 # Asistente de Atención Automática
 
-Primera versión (básica) del asistente web de Maison Rosas: un widget flotante que
-saluda al cliente, muestra los **productos reales** de la base de datos, los
-**horarios**, el estado **ABIERTO/CERRADO** del negocio y deriva el pedido al
-**personalizador existente** o a **WhatsApp**.
+Sistema de atención automática de Maison Rosas con **el backend como fuente de
+verdad**: el navegador solo renderiza; la clasificación de intenciones, las
+respuestas, los productos, los horarios y el estado ABIERTO/CERRADO se resuelven
+en el servidor contra la base de datos real.
 
-Funciona 100 % con la arquitectura actual: **no** usa n8n, Docker para
-automatizaciones, APIs de WhatsApp/Meta, Twilio, bots externos ni IA de pago.
+No usa n8n, WhatsApp/Meta, Twilio ni IA de pago **todavía**, pero la arquitectura
+está preparada para integrarlos sin reescribir nada.
 
-## Cómo funciona
+## Arquitectura
 
 ```text
-Usuario → Widget (AssistantWidget/AssistantPanel)
+CLIENTE (navegador)
+  └─ AssistantWidget / AssistantPanel   ← UI delgada: renderiza AssistantReply
+        │  POST /api/assistant/message  { message | action, screen }
+        ▼
+BACKEND (Express)
+  ├─ routes/assistant.routes.ts         ← validación, sanitización, errores seguros
+  └─ services/assistant/
+       ├─ AutomationService.ts          ← orquestación + eventos (fuente de verdad)
+       ├─ AIProvider.ts                 ← interfaz desacoplada (hoy: reglas; mañana: NVIDIA)
+       ├─ intents.ts                    ← clasificador de intenciones (sin IA)
+       ├─ ResponseService.ts            ← respuestas estructuradas (puras, sin BD)
+       └─ types.ts                      ← contrato AssistantReply (sync con client)
              │
              ▼
-      attentionService.assistantRespond(screen, action, ctx)   ← botones
-      attentionService.assistantReplyText(text, ctx)            ← texto libre
-      (lógica pura: estado del negocio + respuestas predefinidas + intenciones)
-             │
-             ▼
-      APIs existentes del proyecto
-      GET  /api/products      → productos reales (con caché de 10 s)
-      GET  /api/config        → mensajes, WhatsApp, horarios
-      POST /api/orders        → vía el Customizer existente (sin duplicar lógica)
+      Servicios de negocio (ConfigService, ProductService) → MySQL 8
 ```
 
-- **Sin carrito duplicado:** al elegir "Personalizar y pedir" el asistente abre el
-  `Customizer` existente de la tienda, que usa el flujo real de pedidos
-  (`dbService.addOrder` → `POST /api/orders` con precio calculado por servidor).
-- **Sin números hardcodeados:** todo sale de `app_config` (`config.whatsappNumber`,
-  `assistantWelcomeMessage`, `assistantClosedMessage`, `assistantWhatsappMessage`,
-  `businessHours`). Los valores por defecto viven en `ConfigService.DEFAULT_CONFIG`
-  y en `attentionService` (mismos valores).
+Futuro (sin cambios en la lógica):
 
-## Texto libre (intenciones, sin IA)
+```text
+WhatsApp → Meta Cloud API → Webhook → n8n → POST /api/assistant/message
+                                                      ↓
+                                    AutomationService (misma lógica)
+```
 
-El asistente acepta mensajes escritos y los clasifica con un motor de intenciones
-local por palabras clave en español (`assistantReplyText`), con esta jerarquía:
+## API
 
-1. **Presentación** — "me llamo X" / "soy X" responde amable tratando al
-   visitante como "usuario" (no se recopila el nombre).
-2. **Producto específico** — si el texto menciona un producto por nombre, tag,
-   sabor o categoría, muestra su ficha (modo deducido: precios/pedido/catálogo).
-3. **Recomendaciones y ocasiones** — "¿qué me recomiendas?" y ocasiones
-   (boda, cumpleaños, infantil, aniversario, graduación) filtran el catálogo
-   por categoría si existe, o muestran los favoritos.
-4. **Info del negocio** — pagos (Yape/Plin/transferencia/efectivo), delivery,
-   dirección, tiempo de preparación/anticipación, personalización.
-5. **Catálogo** — precios, productos, horarios, WhatsApp, pedido.
-6. **Small talk** — saludos (con variante según hora del día), gracias,
-   despedidas, "¿quién eres?", "¿qué puedes hacer?", confirmaciones
-   ("ok", "perfecto"...).
-7. **Fallback amable** — lo que no entiende responde con variantes rotadas y
-   opciones de salida (productos/pedido/WhatsApp/menú). Nunca deja la
-   conversación muerta.
+### `POST /api/assistant/message`
 
-Trucos de "agente real": burbuja "Escribiendo…" con pausa aleatoria antes de
-cada respuesta, saludos según la hora del día, variantes rotadas, eco del
-mensaje del usuario y una pista en el menú de que se puede escribir libremente.
+Entrada única del asistente (texto libre **o** acción de botón).
 
-## Configuración
+```jsonc
+// Request
+{
+  "screen": { "id": "menu" | "products" | "product" | "hours", "mode"?, "productId"? },
+  "message": "¿cuánto cuesta un keke?",   // OPCIONAL — texto libre (máx. 500 chars)
+  "action":  { "type": "products" }        // OPCIONAL — acción del flujo (se requiere una de las dos)
+}
 
-En el panel admin → **Configuración de la Tienda → Atención Automática**:
+// Response
+{
+  "success": true,
+  "intent": "PRODUCT_PRICE",
+  "reply": {
+    "messages": [ { "id", "role": "bot|user", "text", "kind", "options": [{ "label", "action" }] } ],
+    "nextScreen": { "id": "product", "mode": "prices", "productId": "prod-1" },
+    "effect": { "type": "customize", "product": {…} } | { "type": "whatsapp", "url": "https://wa.me/…" }
+  }
+}
+```
 
-| Campo | Descripción |
-|---|---|
-| Activar/desactivar | `assistantEnabled` — oculta el widget por completo si está en `false` |
-| Mensaje de bienvenida | `assistantWelcomeMessage` |
-| Mensaje cuando cierra | `assistantClosedMessage` |
-| Mensaje de WhatsApp | `assistantWhatsappMessage` (texto predefinido del botón WhatsApp) |
-| Horario por día | `businessHours[]` — `{ day: 0-6 (Date.getDay), open: 'HH:MM', close: 'HH:MM' }`, `null`/sin horas = cerrado |
+El cliente ejecuta los `effect` (abrir el Customizer existente con el producto /
+abrir WhatsApp) y el `nextScreen` solo se usa para mantener el contexto entre
+mensajes. Rate limit: limitador global `/api` (60 req/min por IP).
 
-El estado ABIERTO/CERRADO se calcula en `attentionService.isBusinessOpen(config)`
-comparando la hora actual con `businessHours` del día. Si no hay `businessHours`
-configurados, se usan los mismos horarios que el texto `openingHours`
-(Lun–Sáb 09:00–19:00, Dom 10:00–14:00).
+## Intenciones (Fase 5)
+
+`classifyIntent()` detecta, sin IA, las intenciones canónicas:
+
+`GREETING` · `PRESENTATION` · `PRODUCT_SEARCH` · `PRODUCT_PRICE` · `OCCASION` ·
+`RECOMMENDATION` · `BUSINESS_HOURS` · `ORDER_CREATE` · `ORDER_STATUS` ·
+`HUMAN_SUPPORT` · `PAYMENT_INFO` · `DELIVERY_INFO` · `ADDRESS_INFO` ·
+`LEAD_TIME_INFO` · `CUSTOMIZATION_INFO` · `THANKS` · `GOODBYE` ·
+`WHO_ARE_YOU` · `HELP` · `ACKNOWLEDGMENT` · `UNKNOWN`
+
+Jerarquía: presentación → producto específico (nombre/tag/sabor/categoría) →
+ocasión/recomendación → info del negocio → catálogo/pedidos → small talk →
+`UNKNOWN` (fallback amable con salida a WhatsApp/menú; la conversación nunca
+queda muerta).
 
 ## Archivos
 
 | Archivo | Rol |
 |---|---|
-| `client/src/shared/services/attentionService.ts` | Lógica pura: estado del negocio, mensajes predefinidos, máquina de estados del flujo, motor de intenciones de texto libre, enlaces WhatsApp |
-| `client/src/apps/web/components/AssistantWidget/AssistantWidget.tsx` | Botón flotante + estado abierto/cerrado |
-| `client/src/apps/web/components/AssistantWidget/AssistantPanel.tsx` | Panel de chat (burbujas, opciones, carga/error, responsive) |
-| `client/src/apps/admin/components/AdminPanel/AdminSettings.tsx` | Sección "Atención Automática" |
-| `server/src/services/ConfigService.ts` | Valores por defecto de la config |
-| `client/src/shared/types.ts` / `server/src/lib/types.ts` | Tipos `assistant*` y `BusinessHourDay` |
+| `server/src/services/assistant/types.ts` | Contrato del asistente (lado servidor) |
+| `server/src/services/assistant/intents.ts` | Clasificador de intenciones (reglas en español) |
+| `server/src/services/assistant/ResponseService.ts` | Responde por intención/acción (pura, sin BD) |
+| `server/src/services/assistant/AIProvider.ts` | Interfaz `AIProvider` + `RuleBasedAIProvider` |
+| `server/src/services/assistant/AutomationService.ts` | Orquestación + eventos + `ASSISTANT_EVENTS` |
+| `server/src/services/assistant/core.ts` | Entry pura para bundle de pruebas/preview |
+| `server/src/routes/assistant.routes.ts` | `POST /api/assistant/message` |
+| `server/src/services/assistant/assistant.test.ts` | Tests (node:test) |
+| `client/src/shared/services/assistantService.ts` | Cliente del endpoint |
+| `client/src/apps/web/components/AssistantWidget/*` | UI delgada (botón + panel) |
+| `client/src/shared/services/attentionService.ts` | Solo helpers de UI (estado abierto/cerrado, ids) |
 
-## Preparación para el futuro (n8n / WhatsApp / IA)
+## Seguridad
 
-La arquitectura separa **lógica de negocio** de **UI**. El único punto de entrada
-es `assistantRespond(screen, action, ctx)` en `attentionService.ts`, con un
-contrato de mensajes estable:
+- Validación estricta del payload (screen/action/message), longitudes acotadas
+  (mensaje ≤ 500, ids ≤ 100) y sanitización de entradas en la ruta.
+- `assistantEnabled=false` (panel admin) → el servicio responde desactivado.
+- Errores seguros: `AutomationService` nunca filtra SQL/stack traces; la ruta
+  devuelve un mensaje amable y registra el detalle en logs.
+- El número de WhatsApp, mensajes y horarios salen de `app_config` (nunca
+  hardcodeados ni expuestos salvo lo que la propia tienda ya publica).
+- Rate limit global `/api` aplicado; sin credenciales en el repo.
 
-```ts
-// Entrada
-{ screen, action, ctx }
+## Observabilidad
 
-// Salida
-{
-  messages: AssistantMessage[],   // texto + opciones para el cliente
-  nextScreen: AssistantScreen,    // pantalla siguiente del flujo
-  effect?: { type: 'customize' } | { type: 'whatsapp' }   // efectos laterales
-}
-```
-
-### Conectar n8n más adelante
-
-1. Exponer un endpoint (p. ej. `POST /api/assistant/reply`) que reciba
-   `{ screen, action, ctx }` y devuelva un `AssistantReply`.
-2. En ese endpoint, n8n (o un webhook) puede enrutar la conversación a la misma
-   lógica local o a una IA/BD de conversaciones.
-3. Sustituir la llamada interna a `buildScreenMessages` por un `fetch` a ese
-   endpoint. **La UI no cambia.**
-
-### Conectar WhatsApp / Telegram más adelante
-
-- El flujo actual es *pull* (el cliente toca botones en la web). Con WhatsApp, el
-  flujo es *push* (el bot responde mensajes), pero el **contrato de respuestas es el
-  mismo**: se reutiliza `assistantRespond` alimentándolo con las opciones que elige
-  el cliente en el chat.
-- Los enlaces `wa.me` (botón "Hablar por WhatsApp") ya usan `config.whatsappNumber`;
-  una integración futura los reemplaza por mensajería programática sin tocar el
-  resto.
+`AutomationService.emit()` registra eventos estructurados (Winston, servicio
+`Assistant`): `message.received`, `intent.detected`, `product.queried`,
+`order.flow_started`, `human_support.requested`, `unknown.intent`, `error`.
+No se registra información sensible (mensajes completos, datos personales).
 
 ## Pruebas
 
-1. `npm run dev` y abrir http://localhost:5173
-2. Clic en el botón flotante (abajo a la derecha) → saludo + menú.
-3. "Ver productos" → lista real de la BD → detalle (nombre, precio, descripción,
-   disponibilidad, preparación) → "Personalizar y pedir" abre el Customizer.
-4. "Consultar precios" / "Realizar un pedido" → mismos productos con distinto foco.
-5. "Consultar horarios" → texto de `openingHours` + estado ABIERTO/CERRADO según
-   `businessHours`.
-6. "Hablar por WhatsApp" → abre `wa.me` con el número configurado.
-7. **Texto libre:** escribe "keke de chocolate" (ficha del producto), "cuánto
-   cuesta" (precios), "a qué hora atienden" (horarios), "buenas tardes"
-   (saludo según la hora), "un keke para una boda" (sugerencias por ocasión),
-   "qué me recomiendas", "gracias", "quién eres", "me llamo Juan" (responde
-   tratándote de "usuario") o cualquier frase fuera de contexto (fallback
-   amable con opciones).
-8. Panel admin → Configuración → Atención Automática: desactivar oculta el widget;
-   cambiar mensajes y horarios y recargar la tienda para ver los cambios.
+```bash
+npm run test --workspace=server
+```
+
+29 tests con `node:test` (sin dependencias nuevas; se compilan con esbuild):
+intenciones (saludos, precios, horarios, pedido, seguimiento, humano, ocasión,
+recomendación, desconocida…), respuestas (menú, productos reales con precios,
+ficha con disponibilidad, horarios, efecto customize, WhatsApp con número de
+config), fallback, asistente desactivado, `AIProvider` y `extractOrderData`.
+
+Pendientes (requieren MySQL): pruebas de integración de pedidos/productos
+reales y de los endpoints protegidos del admin.
+
+## Futura integración NVIDIA (DeepSeek)
+
+Ya existe la interfaz desacoplada:
+
+```ts
+interface AIProvider {
+  classifyIntent(text, products): IntentResult;
+  generateResponse(text, screen, ctx, classified): AssistantReply;
+  extractOrderData(text): { customerName, customerPhone } | null;
+}
+```
+
+Para conectar NVIDIA: crear `NvidiaAIProvider implements AIProvider` (usando la
+API key de NVIDIA, p. ej. DeepSeek Flash en build.nvidia.com) e inyectarla:
+
+```ts
+new AutomationService(new NvidiaAIProvider(process.env.NVIDIA_API_KEY));
+```
+
+Nada más cambia: la UI, las rutas, los eventos y la BD usan el mismo contrato.
+La IA queda aislada en su capa; no toca la lógica de pedidos.
+
+## Futura integración n8n
+
+- `AutomationService.emit()` es el punto de enganche: hoy loguea, mañana puede
+  notificar a n8n (`POST /api/integrations/events`) sin bloquear la respuesta.
+- Eventos candidatos: `order.created`, `order.updated`, `customer.message`,
+  `product.updated` (se emiten desde los servicios de negocio, no desde n8n).
+- n8n **no** tendrá reglas de negocio ni acceso directo a MySQL: todo pasa por
+  la API (fuente de verdad).
+
+## Futura integración WhatsApp
+
+```text
+WhatsApp → Meta Cloud API → Webhook → n8n → POST /api/assistant/message
+                                                      ↓
+                                     AutomationService → BD / AI → AssistantReply
+                                                      ↓
+                                                Meta Cloud API → WhatsApp
+```
+
+El contrato `AssistantReply` ya es agnóstico al canal; basta conectar el
+webhook y serializar la respuesta de vuelta. No se reescribe nada del sistema.
+
+## Producción (checklist)
+
+- [x] Build de cliente y servidor en CI.
+- [ ] Tests de integración con MySQL (pedidos, productos, endpoints admin).
+- [ ] Revisar CORS/`APP_URL` en el despliegue (Vercel ya sirve `/api` desde `api/index.ts`).
+- [ ] Si se activa IA: guardar `NVIDIA_API_KEY` como secret de Vercel (nunca en el repo).
+- [ ] Decidir retención de logs si se quiere persistir eventos del asistente.
+- [ ] Probar el asistente en móvil real (PWA) antes del despliegue.

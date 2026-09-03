@@ -9,7 +9,9 @@
     "start": "node dist/index.js",
     "lint": "tsc --noEmit",
     "db:migrate": "tsx src/migrations/run.ts",
-    "db:seed": "tsx src/seed.ts"
+    "db:seed": "tsx src/seed.ts",
+    "test": "esbuild src/services/assistant/assistant.test.ts --bundle --format=esm --platform=node --outfile=dist-tests/assistant.test.mjs && node --test dist-tests/assistant.test.mjs",
+    "build:assistant-core": "esbuild src/services/assistant/core.ts --bundle --format=esm --platform=node --outfile=dist-core/assistant-core.mjs"
   },
   "dependencies": {
     "@vercel/blob": "^2.6.1",

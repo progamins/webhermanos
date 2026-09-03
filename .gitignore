@@ -4,6 +4,10 @@ build/
 dist/
 **/*.tsbuildinfo
 
+# Bundles de prueba del servidor (esbuild + node:test)
+server/dist-tests/
+server/dist-core/
+
 # Cobertura y reportes pesados
 coverage/
 lighthouse-*.json

@@ -1,57 +1,60 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { motion } from 'motion/react';
 import { MessageCircle, X, Home, MessageSquareText, Send } from 'lucide-react';
-import type { AppConfig, Product } from '../../../../shared/types';
-import {
-  assistantRespond,
-  assistantReplyText,
-  assistantUid,
-  actionLabel,
-  isBusinessOpen,
-  type AssistantAction,
-  type AssistantContext,
-  type AssistantMessage,
-  type AssistantOption,
-  type AssistantReply,
-  type AssistantScreen,
-} from '../../../../shared/services/attentionService';
-import { dbService } from '../../../../shared/services/dbService';
+import type { AppConfig, AssistantAction, AssistantMessage, AssistantOption, AssistantReply, AssistantScreen, Product } from '../../../../shared/types';
+import { actionLabel, assistantUid, isBusinessOpen } from '../../../../shared/services/attentionService';
+import { sendAssistantMessage } from '../../../../shared/services/assistantService';
 import { Spinner } from '../../../../shared/components/ui';
 
 interface AssistantPanelProps {
   config: AppConfig;
-  initialProducts: Product[];
   onClose: () => void;
   onSelectCustomize: (product: Product) => void;
 }
 
 const MENU_ACTION: AssistantAction = { type: 'menu' };
 
-export default function AssistantPanel({ config, initialProducts, onClose, onSelectCustomize }: AssistantPanelProps) {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [productsLoaded, setProductsLoaded] = useState(initialProducts.length > 0);
-  const [productLoading, setProductLoading] = useState(false);
-  const [productError, setProductError] = useState(false);
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
+/** Respuesta local para cuando el backend no responde (nunca dejar el chat muerto). */
+function offlineReply(): AssistantReply {
+  return {
+    messages: [{
+      id: assistantUid('m'),
+      role: 'bot',
+      kind: 'error',
+      text: 'No pudimos conectarnos en este momento 🙏 Intenta de nuevo o escríbenos por WhatsApp.',
+      options: [
+        { label: '💬 Hablar por WhatsApp', action: { type: 'whatsapp' } },
+        { label: '🏠 Menú principal', action: { type: 'menu' } },
+      ],
+    }],
+    nextScreen: { id: 'menu' },
+  };
+}
+
+/**
+ * Panel del asistente — UI delgada: cada mensaje/acción se envía al backend
+ * (POST /api/assistant/message) y el panel solo renderiza el AssistantReply.
+ */
+export default function AssistantPanel({ config, onClose, onSelectCustomize }: AssistantPanelProps) {
   const screenRef = useRef<AssistantScreen>({ id: 'menu' });
-  const [messages, setMessages] = useState<AssistantMessage[]>(() =>
-    assistantRespond({ id: 'menu' }, MENU_ACTION, { config, products: initialProducts }).messages,
-  );
-
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const welcomeFetched = useRef(false);
+  const [messages, setMessages] = useState<AssistantMessage[]>([]);
   const [input, setInput] = useState('');
+  const scrollRef = useRef<HTMLDivElement>(null);
   const businessOpen = isBusinessOpen(config);
 
-  const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-
-  // Usar productos ya cargados por la App si el asistente se montó antes que ellos
+  // Bienvenida generada por el backend (única fuente de verdad)
   useEffect(() => {
-    if (initialProducts.length > 0 && !productsLoaded) {
-      setProducts(initialProducts);
-      setProductsLoaded(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialProducts]);
+    if (welcomeFetched.current) return;
+    welcomeFetched.current = true;
+    const typingId = assistantUid('typing');
+    setMessages([{ id: typingId, role: 'bot', kind: 'loading', text: '' }]);
+    sendAssistantMessage({ screen: { id: 'menu' }, action: MENU_ACTION })
+      .then((reply) => setMessages((prev) => [...prev.filter((m) => m.id !== typingId), ...reply.messages]))
+      .catch(() => setMessages((prev) => [...prev.filter((m) => m.id !== typingId), ...offlineReply().messages]));
+  }, []);
 
   // Scroll automático al último mensaje
   useEffect(() => {
@@ -68,88 +71,44 @@ export default function AssistantPanel({ config, initialProducts, onClose, onSel
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const buildCtx = (overrides?: Partial<AssistantContext>): AssistantContext => ({
-    config,
-    products,
-    productsLoaded,
-    productLoading,
-    productError,
-    ...overrides,
-  });
-
-  const loadProducts = async () => {
-    setProductLoading(true);
-    setProductError(false);
-    try {
-      const list = await dbService.getProducts();
-      setProducts(list);
-      setProductsLoaded(true);
-      const reply = assistantRespond(
-        screenRef.current,
-        { type: 'reload' },
-        buildCtx({ products: list, productsLoaded: true, productLoading: false, productError: false }),
-      );
-      setMessages((prev) => [...prev.filter((m) => m.kind !== 'loading'), ...reply.messages]);
-    } catch {
-      setProductError(true);
-      setProductsLoaded(true);
-      const reply = assistantRespond(
-        screenRef.current,
-        { type: 'reload' },
-        buildCtx({ products: [], productsLoaded: true, productLoading: false, productError: true }),
-      );
-      setMessages((prev) => [...prev.filter((m) => m.kind !== 'loading'), ...reply.messages]);
-    } finally {
-      setProductLoading(false);
-    }
-  };
-
-  /**
-   * Aplica una respuesta del motor: eco del usuario → burbuja "escribiendo…" →
-   * pequeña pausa (simula tiempo de escritura de un agente real) → mensajes del
-   * bot → carga diferida de productos si la pantalla los necesita → efectos.
-   */
-  const applyReply = async (reply: AssistantReply, echo?: AssistantMessage) => {
+  /** Intercambio completo: eco → "escribiendo…" → backend → burbujas/efectos. */
+  const exchange = async (payload: { message?: string; action?: AssistantAction }, echo?: AssistantMessage) => {
     const typingId = assistantUid('typing');
-    const pending: AssistantMessage[] = [];
-    if (echo) pending.push(echo);
-    pending.push({ id: typingId, role: 'bot', kind: 'loading', text: '' });
-    setMessages((prev) => [...prev, ...pending]);
+    setMessages((prev) => [...prev, ...(echo ? [echo] : []), { id: typingId, role: 'bot', kind: 'loading', text: '' }]);
 
-    await sleep(350 + Math.random() * 500);
+    // Simular tiempo de escritura (agente real)
+    await sleep(350 + Math.random() * 450);
 
-    screenRef.current = reply.nextScreen;
-    setMessages((prev) => [...prev.filter((m) => m.id !== typingId), ...reply.messages]);
+    try {
+      const reply = await sendAssistantMessage({ screen: screenRef.current, ...payload });
+      screenRef.current = reply.nextScreen;
+      setMessages((prev) => [...prev.filter((m) => m.id !== typingId), ...reply.messages]);
 
-    // La pantalla necesita productos y aún no se intentó cargarlos → cargar
-    if (reply.requiresProducts && !productsLoaded && !productLoading) {
-      await loadProducts();
-    }
-
-    // Efectos laterales (abrir personalizador / WhatsApp) — la UI solo ejecuta
-    if (reply.effect?.type === 'customize') {
-      onClose();
-      onSelectCustomize(reply.effect.product);
-      return;
-    }
-    if (reply.effect?.type === 'whatsapp') {
-      window.open(reply.effect.url, '_blank', 'noopener');
+      // Efectos laterales (abrir personalizador / WhatsApp) — la UI solo ejecuta
+      if (reply.effect?.type === 'customize') {
+        onClose();
+        onSelectCustomize(reply.effect.product);
+        return;
+      }
+      if (reply.effect?.type === 'whatsapp') {
+        window.open(reply.effect.url, '_blank', 'noopener');
+      }
+    } catch {
+      setMessages((prev) => [...prev.filter((m) => m.id !== typingId), ...offlineReply().messages]);
     }
   };
 
-  const handleAction = async (action: AssistantAction, optionLabel?: string) => {
-    const reply = assistantRespond(screenRef.current, action, buildCtx());
+  const handleAction = (action: AssistantAction, optionLabel?: string) => {
     const echoText = optionLabel || actionLabel(action);
-    await applyReply(reply, echoText ? userMessage(echoText) : undefined);
+    exchange({ action }, echoText ? userMessage(echoText) : undefined);
   };
 
-  const handleSendText = async (e?: FormEvent) => {
+  const handleSendText = (e?: FormEvent) => {
     e?.preventDefault();
     const text = input.trim();
     if (!text) return;
     setInput('');
-    const reply = assistantReplyText(text, buildCtx());
-    await applyReply(reply, userMessage(text));
+    exchange({ message: text }, userMessage(text));
   };
 
   return (
@@ -321,7 +280,12 @@ function MessageBubble({ message, onAction }: MessageBubbleProps) {
   );
 }
 
-function OptionChip({ option, onAction }: { option: AssistantOption; onAction: MessageBubbleProps['onAction'] }) {
+interface OptionChipProps {
+  option: AssistantOption;
+  onAction: MessageBubbleProps['onAction'];
+}
+
+function OptionChip({ option, onAction }: OptionChipProps) {
   return (
     <button
       type="button"

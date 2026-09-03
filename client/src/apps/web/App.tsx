@@ -847,7 +847,6 @@ export default function App() {
         <Suspense fallback={null}>
           <AssistantWidget
             config={config}
-            initialProducts={products}
             onSelectCustomize={handleSelectCustomize}
           />
         </Suspense>

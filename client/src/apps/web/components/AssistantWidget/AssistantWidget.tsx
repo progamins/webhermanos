@@ -7,15 +7,15 @@ import AssistantPanel from './AssistantPanel';
 
 interface AssistantWidgetProps {
   config: AppConfig | null;
-  initialProducts: Product[];
   onSelectCustomize: (product: Product) => void;
 }
 
 /**
  * Botón flotante + panel del asistente de atención automática.
  * Se oculta por completo si la config tiene assistantEnabled = false.
+ * El motor vive en el backend; aquí solo se abre/cierra el panel.
  */
-export default function AssistantWidget({ config, initialProducts, onSelectCustomize }: AssistantWidgetProps) {
+export default function AssistantWidget({ config, onSelectCustomize }: AssistantWidgetProps) {
   const [open, setOpen] = useState(false);
 
   if (!config || config.assistantEnabled === false) return null;
@@ -28,7 +28,6 @@ export default function AssistantWidget({ config, initialProducts, onSelectCusto
         {open && (
           <AssistantPanel
             config={config}
-            initialProducts={initialProducts}
             onClose={() => setOpen(false)}
             onSelectCustomize={onSelectCustomize}
           />

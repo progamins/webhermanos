@@ -127,6 +127,13 @@ export const api = {
       body: JSON.stringify({ name, email, message }),
     }),
 
+  // ─── Assistant (atención automática — el backend es la fuente de verdad) ───
+  assistantMessage: (payload: { message?: string; action?: any; screen?: any }) =>
+    request<{ success: boolean; reply: any; intent?: string }>('/assistant/message', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
   // ─── Image Proxy ───
   getImageProxyUrl: (url: string) => `/api/image-proxy?url=${encodeURIComponent(url)}`,
 

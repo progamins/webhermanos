@@ -12,6 +12,7 @@ import { env } from './config/env.js';
 import adminRoutes from './routes/admin.routes.js';
 import apiRoutes from './routes/api.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
+import assistantRoutes from './routes/assistant.routes.js';
 import {
   isIPAllowed,
   isMACAllowed,
@@ -298,6 +299,7 @@ export function createApp() {
 
   // ─── API Routes ───
   app.use('/api', apiRoutes);
+  app.use('/api', assistantRoutes);
   app.use('/api/admin', adminRoutes);
   app.use('/api/upload', uploadRoutes);
 

@@ -102,6 +102,51 @@ export interface BusinessHourDay {
   close: string | null;
 }
 
+// ─── Asistente (contrato con el backend — mantener en sync con
+//     server/src/services/assistant/types.ts) ───
+export type ProductListMode = 'catalog' | 'prices' | 'order';
+
+export type AssistantScreen =
+  | { id: 'menu' }
+  | { id: 'products'; mode: ProductListMode }
+  | { id: 'product'; mode: ProductListMode; productId: string }
+  | { id: 'hours' };
+
+export type AssistantAction =
+  | { type: 'menu' }
+  | { type: 'products' }
+  | { type: 'prices' }
+  | { type: 'order' }
+  | { type: 'hours' }
+  | { type: 'whatsapp' }
+  | { type: 'product'; productId: string; mode: ProductListMode }
+  | { type: 'orderProduct'; productId: string }
+  | { type: 'whatsappProduct'; productId: string }
+  | { type: 'back' }
+  | { type: 'reload' };
+
+export interface AssistantOption {
+  label: string;
+  action: AssistantAction;
+}
+
+export interface AssistantMessage {
+  id: string;
+  role: 'bot' | 'user';
+  text?: string;
+  options?: AssistantOption[];
+  kind?: 'normal' | 'loading' | 'error' | 'empty';
+}
+
+export interface AssistantReply {
+  /** Mensajes del bot que se agregan al hilo (con sus opciones). */
+  messages: AssistantMessage[];
+  nextScreen: AssistantScreen;
+  /** Efecto lateral que la UI debe ejecutar (abrir personalizador / WhatsApp). */
+  effect?: { type: 'customize'; product: Product } | { type: 'whatsapp'; url: string };
+  requiresProducts?: boolean;
+}
+
 export interface AppConfig {
   whatsappNumber: string; // e.g., "+51999999999"
 
