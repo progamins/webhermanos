@@ -140,65 +140,45 @@ function History({ config }: HistoryProps) {
             {MILESTONES.map((milestone, index) => {
               const Icon = milestone.icon;
               const isEven = index % 2 === 0;
+              // Contenido ÚNICO por hito: antes se renderizaba 2-3 veces (móvil +
+              // ambas columnas desktop) y solo se ocultaba con CSS — duplicaba texto
+              // en el DOM para lectores de pantalla y SEO. Ahora hay una sola copia
+              // que cambia de layout por breakpoint.
               return (
                 <motion.div
                   key={milestone.year}
                   variants={itemVariants}
-                  className={`relative md:flex md:items-start md:gap-8 ${isEven ? '' : 'md:flex-row-reverse'}`}
+                  className={`relative flex items-start gap-4 md:flex md:items-start md:gap-8 ${isEven ? '' : 'md:flex-row-reverse'}`}
                 >
-                  <div className={`hidden md:flex md:w-1/2 ${isEven ? 'justify-end text-right' : 'justify-start text-left'}`}>
-                    <div className="p-6">
-                      <span className="text-[11px] font-mono font-bold uppercase tracking-widest" style={{ color: 'var(--theme-brand-primary)' }}>
+                  {/* Nodo — primero en móvil (junto al texto), centrado en la línea en desktop */}
+                  <div className="order-first md:order-none flex items-center justify-center shrink-0">
+                    <div
+                      className="w-10 h-10 md:w-[38px] md:h-[38px] rounded-full border-2 flex items-center justify-center shadow-md"
+                      style={{ borderColor: 'var(--theme-brand-primary)' }}
+                    >
+                      <Icon className="h-4 w-4" style={{ color: 'var(--theme-brand-primary)' }} aria-hidden="true" />
+                    </div>
+                  </div>
+
+                  {/* Contenido ÚNICO por hito: una sola copia en el DOM que cambia de
+                      layout por breakpoint (antes se renderizaba 2-3 veces oculto por
+                      CSS, duplicando texto para lectores de pantalla y SEO) */}
+                  <div className={`flex-1 md:w-1/2 min-w-0 ${isEven ? 'md:text-right' : 'md:text-left'}`}>
+                    <div className="p-5 md:p-6 rounded-2xl md:rounded-none border md:border-0 shadow-sm md:shadow-none bg-[var(--theme-surface-glass)] md:bg-transparent" style={{ borderColor: 'var(--theme-border)' }}>
+                      <span className="text-[10px] md:text-[11px] font-mono font-bold uppercase tracking-widest" style={{ color: 'var(--theme-brand-primary)' }}>
                         {milestone.year}
                       </span>
-                      <h3 className="text-lg font-serif font-bold mt-1" style={{ color: 'var(--theme-text)' }}>
+                      <h3 className="text-base md:text-lg font-serif font-bold mt-1" style={{ color: 'var(--theme-text)' }}>
                         {milestone.title}
                       </h3>
-                      <p className="text-xs leading-relaxed mt-2 font-light" style={{ color: 'var(--theme-text-secondary)' }}>
+                      <p className="text-xs leading-relaxed mt-1 md:mt-2 font-light" style={{ color: 'var(--theme-text-secondary)' }}>
                         {milestone.description}
                       </p>
                     </div>
                   </div>
 
-                  <div className="hidden md:flex items-start justify-center shrink-0">
-                    <div className="w-[38px] h-[38px] rounded-full border-2 flex items-center justify-center shadow-md" style={{ backgroundColor: 'var(--theme-surface)', borderColor: 'var(--theme-brand-primary)' }}>
-                      <Icon className="h-4 w-4" style={{ color: 'var(--theme-brand-primary)' }} aria-hidden="true" />
-                    </div>
-                  </div>
-
-                  <div className="md:hidden flex items-start gap-4 p-5 rounded-2xl border shadow-sm"
-                    style={{ backgroundColor: 'var(--theme-surface-glass)', borderColor: 'var(--theme-border)' }}>
-                    <div className="w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0" style={{ borderColor: 'var(--theme-brand-primary)' }}>
-                      <Icon className="h-4 w-4" style={{ color: 'var(--theme-brand-primary)' }} aria-hidden="true" />
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-widest" style={{ color: 'var(--theme-brand-primary)' }}>
-                        {milestone.year}
-                      </span>
-                      <h3 className="text-base font-serif font-bold mt-0.5" style={{ color: 'var(--theme-text)' }}>
-                        {milestone.title}
-                      </h3>
-                      <p className="text-xs leading-relaxed mt-1 font-light" style={{ color: 'var(--theme-text-secondary)' }}>
-                        {milestone.description}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className={`hidden md:flex md:w-1/2 ${isEven ? 'justify-start text-left' : 'justify-end text-right'}`}>
-                    {!isEven && (
-                      <div className="p-6">
-                        <span className="text-[11px] font-mono font-bold uppercase tracking-widest" style={{ color: 'var(--theme-brand-primary)' }}>
-                          {milestone.year}
-                        </span>
-                        <h3 className="text-lg font-serif font-bold mt-1" style={{ color: 'var(--theme-text)' }}>
-                          {milestone.title}
-                        </h3>
-                        <p className="text-xs leading-relaxed mt-2 font-light" style={{ color: 'var(--theme-text-secondary)' }}>
-                          {milestone.description}
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                  {/* Espaciador desktop — mantiene el nodo centrado en la línea */}
+                  <div className="hidden md:block md:w-1/2" aria-hidden="true" />
                 </motion.div>
               );
             })}

@@ -322,6 +322,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
               <button
                 onClick={() => setStatusNotification(null)}
                 className="p-1 hover:bg-white/10 rounded-full transition-colors shrink-0 cursor-pointer"
+                aria-label="Cerrar aviso de estado"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -379,6 +380,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                     onClick={() => handleTrackByCode()}
                     disabled={loading}
                     className="absolute right-2 top-2 p-1.5 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition-colors"
+                    aria-label="Buscar pedido por código"
                   >
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                   </button>
@@ -418,6 +420,7 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                     onClick={handleRequestOtp}
                     disabled={loading}
                     className="absolute right-2 top-2 p-1.5 bg-brand-500 hover:bg-brand-600 disabled:bg-brand-400 text-white rounded-lg transition-colors"
+                    aria-label="Enviar código por correo"
                   >
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
                   </button>
@@ -558,6 +561,29 @@ export default function OrderTracking({ onBackToHome }: OrderTrackingProps) {
                       Cod: {selectedOrder.trackingCode}
                     </span>
                   </div>
+
+                  {/* Barra de progreso — el cliente ve de un vistazo en qué etapa va su keke */}
+                  {!isCancelled && currentStepIndex >= 0 && (
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="inline-flex items-center gap-2 text-[11px] font-mono font-bold uppercase tracking-wider text-brand-700 dark:text-brand-300">
+                          <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" aria-hidden="true" />
+                          <span>{filteredSteps[currentStepIndex]?.title || selectedOrder.status}</span>
+                        </span>
+                        <span className="text-[11px] font-mono font-bold tabular-nums" style={{ color: 'var(--theme-text-secondary)' }}>
+                          {Math.round(((currentStepIndex + 1) / filteredSteps.length) * 100)}%
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(((currentStepIndex + 1) / filteredSteps.length) * 100)} aria-label="Progreso del pedido">
+                        <motion.div
+                          className="h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-secondary"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.max(6, Math.round(((currentStepIndex + 1) / filteredSteps.length) * 100))}%` }}
+                          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   {/* CANCELLED BANNER */}
                   {isCancelled ? (

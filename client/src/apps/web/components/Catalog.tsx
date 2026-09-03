@@ -1,7 +1,7 @@
 import { memo, useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { useReducedMotion, useBrokenImages } from '../../../shared/hooks';
-import { Search, Clock, CheckCircle2, ChevronRight, ChevronLeft, SlidersHorizontal, Images, X, ImageOff } from 'lucide-react';
+import { Search, Clock, CheckCircle2, ChevronRight, ChevronLeft, SlidersHorizontal, Images, X, Cake } from 'lucide-react';
 import type { Product } from '../../../shared/types';
 import { optimizeImageUrl, reportBrokenImage } from '../../../shared/utils/images';
 import { lazyImportPrewarm } from '../../../shared/utils/lazyImportPrewarm';
@@ -274,14 +274,19 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
                         }}
                       />
                     ) : (
-                      /* Aviso claro cuando el producto aún no tiene foto */
-                      <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-zinc-100 via-zinc-200/60 to-zinc-100 dark:from-zinc-900 dark:via-zinc-900/70 dark:to-zinc-950">
-                        <div className="w-11 h-11 rounded-full bg-white/80 dark:bg-zinc-800/80 border border-zinc-200/90 dark:border-zinc-700/60 shadow-sm flex items-center justify-center">
-                          <ImageOff className="w-5 h-5 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
+                      /* Placeholder de marca cuando el producto aún no tiene foto */
+                      <div className="keke-photo-placeholder w-full h-full flex flex-col items-center justify-center gap-3 overflow-hidden">
+                        <div className="keke-photo-ring">
+                          <Cake className="w-6 h-6 text-brand-500 dark:text-brand-300" aria-hidden="true" />
                         </div>
-                        <span className="text-[9px] font-mono tracking-widest text-zinc-400 dark:text-zinc-500 uppercase">
-                          Sin foto todavía
-                        </span>
+                        <div className="relative z-[1] text-center">
+                          <span className="block text-[9px] font-mono tracking-[0.2em] uppercase text-brand-700/80 dark:text-brand-200/70 font-bold">
+                            Foto próximamente
+                          </span>
+                          <span className="block text-[9px] mt-1 text-[var(--theme-text-muted)] font-light">
+                            Hecho a mano por Carol
+                          </span>
+                        </div>
                       </div>
                     )}
                   </button>
@@ -345,20 +350,20 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
                       <h3 className="text-base font-serif font-light group-hover:text-brand-secondary transition-colors leading-snug" style={{ color: 'var(--theme-text)' }}>
                         {product.name}
                       </h3>
-                      <span className="keke-price font-serif italic shrink-0">
-                        S/. {Math.round(Number(product.basePrice))}
+                      <span className="keke-price font-serif italic shrink-0 whitespace-nowrap">
+                        Desde S/. {Math.round(Number(product.basePrice))}
                       </span>
                       </div>
                       <p className="text-xs font-light line-clamp-3 leading-relaxed" style={{ color: 'var(--theme-text-secondary)' }}>
                         {product.description}
                       </p>
-                      <div className="flex items-center space-x-4 text-[10px] text-zinc-400 font-mono">
+                      <div className="flex items-center space-x-4 text-[10px] font-mono" style={{ color: 'var(--theme-text-muted)' }}>
                         <span className="flex items-center space-x-1">
                           <Clock className="h-3 w-3 text-brand-secondary" aria-hidden="true" />
                           <span>{product.preparationTime}</span>
                         </span>
                         <span className="flex items-center space-x-1">
-                          <CheckCircle2 className="h-3 w-3 text-emerald-500" aria-hidden="true" />
+                          <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
                           <span>Personalizable</span>
                         </span>
                       </div>

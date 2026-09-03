@@ -34,6 +34,25 @@
   --color-brand-800: #682017;
   --color-brand-900: #4A1711;
   --color-brand-950: #2B0D09;
+
+  /* ─── Neutros cálidos ───
+   * La escala zinc por defecto de Tailwind son grises fríos (azulados) que
+   * chocan con la paleta crema/cacao de la marca. La re-mapeamos a una escala
+   * de arena/taupe/cacao para que TODOS los usos existentes de zinc-* en el
+   * storefront (bordes, superficies, iconos, texto apagado) se vuelvan cálidos
+   * sin tocar componente por componente. Solo aplica a la web: el admin tiene
+   * su propio tema con grises neutros a propósito. */
+  --color-zinc-50: #FBF6EC;
+  --color-zinc-100: #F6EEDF;
+  --color-zinc-200: #ECE0CA;
+  --color-zinc-300: #DCC9A8;
+  --color-zinc-400: #B89C7B;
+  --color-zinc-500: #927658;
+  --color-zinc-600: #735A41;
+  --color-zinc-700: #59442F;
+  --color-zinc-800: #42311F;
+  --color-zinc-900: #2B1A12;
+  --color-zinc-950: #1E120B;
 }
 
 @theme inline {
@@ -438,6 +457,47 @@ section[id]:not(#inicio):not(#tracking), footer {
   color: var(--theme-brand-primary);
   font-weight: 700;
   font-size: 1.125rem;
+}
+
+/* Placeholder de producto sin foto — vitrina cálida de pastelería, no un gris genérico.
+   Degradados suaves de crema/arena con tintes guinda y dorado + grano sutil. */
+.keke-photo-placeholder {
+  position: relative;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(233, 161, 59, 0.14) 0%, transparent 60%),
+    radial-gradient(90% 80% at 85% 100%, rgba(199, 68, 46, 0.10) 0%, transparent 55%),
+    linear-gradient(160deg, var(--theme-bg-alt) 0%, var(--theme-surface) 55%, var(--theme-bg-alt) 100%);
+}
+.dark .keke-photo-placeholder {
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(226, 98, 63, 0.10) 0%, transparent 60%),
+    radial-gradient(90% 80% at 85% 100%, rgba(233, 161, 59, 0.06) 0%, transparent 55%),
+    linear-gradient(160deg, #241610 0%, #2A1A12 55%, #332015 100%);
+}
+.keke-photo-placeholder::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.55;
+  background-image: radial-gradient(var(--theme-dot) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.keke-photo-placeholder .keke-photo-ring {
+  position: relative;
+  z-index: 1;
+  width: 64px;
+  height: 64px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--theme-surface);
+  border: 1px solid var(--theme-border);
+  box-shadow: 0 8px 20px -8px rgba(43, 26, 18, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+}
+.dark .keke-photo-placeholder .keke-photo-ring {
+  box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.08);
 }
 
 /* Textura de grano sutil estilo papel artesanal (casi imperceptible) */
