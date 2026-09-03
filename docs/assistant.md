@@ -14,8 +14,9 @@ automatizaciones, APIs de WhatsApp/Meta, Twilio, bots externos ni IA de pago.
 Usuario → Widget (AssistantWidget/AssistantPanel)
              │
              ▼
-      attentionService.assistantRespond(screen, action, ctx)
-      (lógica pura: estado del negocio + respuestas predefinidas)
+      attentionService.assistantRespond(screen, action, ctx)   ← botones
+      attentionService.assistantReplyText(text, ctx)            ← texto libre
+      (lógica pura: estado del negocio + respuestas predefinidas + intenciones)
              │
              ▼
       APIs existentes del proyecto
@@ -31,6 +32,32 @@ Usuario → Widget (AssistantWidget/AssistantPanel)
   `assistantWelcomeMessage`, `assistantClosedMessage`, `assistantWhatsappMessage`,
   `businessHours`). Los valores por defecto viven en `ConfigService.DEFAULT_CONFIG`
   y en `attentionService` (mismos valores).
+
+## Texto libre (intenciones, sin IA)
+
+El asistente acepta mensajes escritos y los clasifica con un motor de intenciones
+local por palabras clave en español (`assistantReplyText`), con esta jerarquía:
+
+1. **Presentación** — "me llamo X" / "soy X" responde amable tratando al
+   visitante como "usuario" (no se recopila el nombre).
+2. **Producto específico** — si el texto menciona un producto por nombre, tag,
+   sabor o categoría, muestra su ficha (modo deducido: precios/pedido/catálogo).
+3. **Recomendaciones y ocasiones** — "¿qué me recomiendas?" y ocasiones
+   (boda, cumpleaños, infantil, aniversario, graduación) filtran el catálogo
+   por categoría si existe, o muestran los favoritos.
+4. **Info del negocio** — pagos (Yape/Plin/transferencia/efectivo), delivery,
+   dirección, tiempo de preparación/anticipación, personalización.
+5. **Catálogo** — precios, productos, horarios, WhatsApp, pedido.
+6. **Small talk** — saludos (con variante según hora del día), gracias,
+   despedidas, "¿quién eres?", "¿qué puedes hacer?", confirmaciones
+   ("ok", "perfecto"...).
+7. **Fallback amable** — lo que no entiende responde con variantes rotadas y
+   opciones de salida (productos/pedido/WhatsApp/menú). Nunca deja la
+   conversación muerta.
+
+Trucos de "agente real": burbuja "Escribiendo…" con pausa aleatoria antes de
+cada respuesta, saludos según la hora del día, variantes rotadas, eco del
+mensaje del usuario y una pista en el menú de que se puede escribir libremente.
 
 ## Configuración
 
@@ -53,7 +80,7 @@ configurados, se usan los mismos horarios que el texto `openingHours`
 
 | Archivo | Rol |
 |---|---|
-| `client/src/shared/services/attentionService.ts` | Lógica pura: estado del negocio, mensajes predefinidos, máquina de estados del flujo, enlaces WhatsApp |
+| `client/src/shared/services/attentionService.ts` | Lógica pura: estado del negocio, mensajes predefinidos, máquina de estados del flujo, motor de intenciones de texto libre, enlaces WhatsApp |
 | `client/src/apps/web/components/AssistantWidget/AssistantWidget.tsx` | Botón flotante + estado abierto/cerrado |
 | `client/src/apps/web/components/AssistantWidget/AssistantPanel.tsx` | Panel de chat (burbujas, opciones, carga/error, responsive) |
 | `client/src/apps/admin/components/AdminPanel/AdminSettings.tsx` | Sección "Atención Automática" |
@@ -107,5 +134,11 @@ contrato de mensajes estable:
 5. "Consultar horarios" → texto de `openingHours` + estado ABIERTO/CERRADO según
    `businessHours`.
 6. "Hablar por WhatsApp" → abre `wa.me` con el número configurado.
-7. Panel admin → Configuración → Atención Automática: desactivar oculta el widget;
+7. **Texto libre:** escribe "keke de chocolate" (ficha del producto), "cuánto
+   cuesta" (precios), "a qué hora atienden" (horarios), "buenas tardes"
+   (saludo según la hora), "un keke para una boda" (sugerencias por ocasión),
+   "qué me recomiendas", "gracias", "quién eres", "me llamo Juan" (responde
+   tratándote de "usuario") o cualquier frase fuera de contexto (fallback
+   amable con opciones).
+8. Panel admin → Configuración → Atención Automática: desactivar oculta el widget;
    cambiar mensajes y horarios y recargar la tienda para ver los cambios.

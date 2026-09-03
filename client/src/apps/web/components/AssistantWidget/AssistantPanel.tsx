@@ -1,15 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { motion } from 'motion/react';
-import { MessageCircle, X, Home, MessageSquareText } from 'lucide-react';
+import { MessageCircle, X, Home, MessageSquareText, Send } from 'lucide-react';
 import type { AppConfig, Product } from '../../../../shared/types';
 import {
   assistantRespond,
+  assistantReplyText,
+  assistantUid,
   actionLabel,
   isBusinessOpen,
   type AssistantAction,
   type AssistantContext,
   type AssistantMessage,
   type AssistantOption,
+  type AssistantReply,
   type AssistantScreen,
 } from '../../../../shared/services/attentionService';
 import { dbService } from '../../../../shared/services/dbService';
@@ -36,7 +39,10 @@ export default function AssistantPanel({ config, initialProducts, onClose, onSel
   );
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [input, setInput] = useState('');
   const businessOpen = isBusinessOpen(config);
+
+  const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
   // Usar productos ya cargados por la App si el asistente se montó antes que ellos
   useEffect(() => {
@@ -98,12 +104,27 @@ export default function AssistantPanel({ config, initialProducts, onClose, onSel
     }
   };
 
-  const handleAction = async (action: AssistantAction, optionLabel?: string) => {
-    const reply = assistantRespond(screenRef.current, action, buildCtx());
-    const echo = optionLabel || actionLabel(action);
+  /**
+   * Aplica una respuesta del motor: eco del usuario → burbuja "escribiendo…" →
+   * pequeña pausa (simula tiempo de escritura de un agente real) → mensajes del
+   * bot → carga diferida de productos si la pantalla los necesita → efectos.
+   */
+  const applyReply = async (reply: AssistantReply, echo?: AssistantMessage) => {
+    const typingId = assistantUid('typing');
+    const pending: AssistantMessage[] = [];
+    if (echo) pending.push(echo);
+    pending.push({ id: typingId, role: 'bot', kind: 'loading', text: '' });
+    setMessages((prev) => [...prev, ...pending]);
+
+    await sleep(350 + Math.random() * 500);
 
     screenRef.current = reply.nextScreen;
-    setMessages((prev) => [...prev, ...(echo ? [userMessage(echo)] : []), ...reply.messages]);
+    setMessages((prev) => [...prev.filter((m) => m.id !== typingId), ...reply.messages]);
+
+    // La pantalla necesita productos y aún no se intentó cargarlos → cargar
+    if (reply.requiresProducts && !productsLoaded && !productLoading) {
+      await loadProducts();
+    }
 
     // Efectos laterales (abrir personalizador / WhatsApp) — la UI solo ejecuta
     if (reply.effect?.type === 'customize') {
@@ -113,13 +134,22 @@ export default function AssistantPanel({ config, initialProducts, onClose, onSel
     }
     if (reply.effect?.type === 'whatsapp') {
       window.open(reply.effect.url, '_blank', 'noopener');
-      return;
     }
+  };
 
-    // La pantalla necesita productos y aún no se intentó cargarlos → cargar
-    if (reply.requiresProducts && !productsLoaded && !productLoading) {
-      await loadProducts();
-    }
+  const handleAction = async (action: AssistantAction, optionLabel?: string) => {
+    const reply = assistantRespond(screenRef.current, action, buildCtx());
+    const echoText = optionLabel || actionLabel(action);
+    await applyReply(reply, echoText ? userMessage(echoText) : undefined);
+  };
+
+  const handleSendText = async (e?: FormEvent) => {
+    e?.preventDefault();
+    const text = input.trim();
+    if (!text) return;
+    setInput('');
+    const reply = assistantReplyText(text, buildCtx());
+    await applyReply(reply, userMessage(text));
   };
 
   return (
@@ -167,6 +197,37 @@ export default function AssistantPanel({ config, initialProducts, onClose, onSel
           <MessageBubble key={m.id} message={m} onAction={handleAction} />
         ))}
       </div>
+
+      {/* ─── Entrada de texto libre ─── */}
+      <form
+        onSubmit={handleSendText}
+        className="px-3 pt-2.5 pb-0 shrink-0"
+        style={{ backgroundColor: 'var(--theme-surface)' }}
+      >
+        <div
+          className="flex items-center gap-2 rounded-full border px-3.5 py-2.5 transition-colors focus-within:border-brand-300"
+          style={{ borderColor: 'var(--theme-border)', backgroundColor: 'var(--theme-bg)' }}
+        >
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Escribe tu consulta…"
+            aria-label="Escribe tu consulta"
+            enterKeyHint="send"
+            className="flex-1 min-w-0 bg-transparent text-xs outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+            style={{ color: 'var(--theme-text)' }}
+          />
+          <button
+            type="submit"
+            aria-label="Enviar mensaje"
+            className="p-1.5 rounded-full bg-brand-500 hover:bg-brand-600 text-white transition-colors shrink-0 cursor-pointer disabled:opacity-40"
+            disabled={!input.trim()}
+          >
+            <Send className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </form>
 
       {/* ─── Acciones rápidas ─── */}
       <div
@@ -242,7 +303,7 @@ function MessageBubble({ message, onAction }: MessageBubbleProps) {
         {message.kind === 'loading' ? (
           <span className="flex items-center gap-2">
             <Spinner size="sm" />
-            <span className="animate-pulse">Un momento…</span>
+            <span className="animate-pulse">{message.text ? 'Un momento…' : 'Escribiendo…'}</span>
           </span>
         ) : (
           message.text
@@ -277,8 +338,7 @@ function OptionChip({ option, onAction }: { option: AssistantOption; onAction: M
   );
 }
 
-// ids únicos por sesión del panel
-let msgSeq = 0;
+// Mensaje del usuario (eco) — id único garantizado
 function userMessage(text: string): AssistantMessage {
-  return { id: `u-${++msgSeq}`, role: 'user', text };
+  return { id: assistantUid('u'), role: 'user', text };
 }
