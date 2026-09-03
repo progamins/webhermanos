@@ -23,6 +23,23 @@ const DEFAULT_CONFIG = {
   faviconUrl: '',
   heroImage: '',
   aboutImage: '',
+
+  // ─── Atención Automática (asistente web) ───
+  // Horarios estructurados por día (Date.getDay(): 0 = Domingo ... 6 = Sábado).
+  // Reflejan exactamente el texto de openingHours: Lun-Sáb 9:00-19:00, Dom 10:00-14:00.
+  assistantEnabled: true,
+  assistantWelcomeMessage: '¡Hola! 👋 Bienvenido(a) a Maison Rosas. ¿En qué podemos ayudarte?',
+  assistantClosedMessage: 'Actualmente estamos fuera de horario 😴 Puedes dejar tu pedido por WhatsApp y te atenderemos apenas estemos disponibles.',
+  assistantWhatsappMessage: 'Hola Carol y Edwin 🍰 Vengo de la web de Maison Rosas y me gustaría hacer una consulta.',
+  businessHours: [
+    { day: 1, open: '09:00', close: '19:00' },
+    { day: 2, open: '09:00', close: '19:00' },
+    { day: 3, open: '09:00', close: '19:00' },
+    { day: 4, open: '09:00', close: '19:00' },
+    { day: 5, open: '09:00', close: '19:00' },
+    { day: 6, open: '09:00', close: '19:00' },
+    { day: 0, open: '10:00', close: '14:00' },
+  ],
 };
 
 export class ConfigService {

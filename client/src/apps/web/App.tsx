@@ -52,6 +52,7 @@ const Reviews = lazy(() => import('./components/Reviews'));
 const FAQ = lazy(() => import('./components/FAQ'));
 const Contact = lazy(() => import('./components/Contact'));
 const OrderTracking = lazy(() => import('./components/OrderTracking'));
+const AssistantWidget = lazy(() => import('./components/AssistantWidget/AssistantWidget'));
 
 const ENTRANCE_SEEN_KEY = 'maison_entrance_seen';
 
@@ -839,6 +840,18 @@ export default function App() {
       </footer>
 
       <TermsAndPrivacy isOpen={legalModal.isOpen} onClose={() => setLegalModal({ ...legalModal, isOpen: false })} initialTab={legalModal.tab} />
+
+      {/* Asistente de Atención Automática — se monta tras la animación de entrada,
+          reutiliza los productos ya cargados y abre el Customizer existente para pedidos */}
+      {!showEntrance && (
+        <Suspense fallback={null}>
+          <AssistantWidget
+            config={config}
+            initialProducts={products}
+            onSelectCustomize={handleSelectCustomize}
+          />
+        </Suspense>
+      )}
 
       <Toaster position="top-right" richColors closeButton toastOptions={{ duration: 4000 }} />
     </div>

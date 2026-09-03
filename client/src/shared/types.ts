@@ -93,8 +93,24 @@ export interface GalleryItem {
   description?: string;
 }
 
+export interface BusinessHourDay {
+  /** Día de la semana según Date.getDay(): 0 = Domingo ... 6 = Sábado */
+  day: number;
+  /** Hora de apertura 'HH:MM' (24h) o null si el día está cerrado */
+  open: string | null;
+  /** Hora de cierre 'HH:MM' (24h) o null si el día está cerrado */
+  close: string | null;
+}
+
 export interface AppConfig {
   whatsappNumber: string; // e.g., "+51999999999"
+
+  // ─── Atención Automática (asistente web) ───
+  assistantEnabled?: boolean; // Mostrar/ocultar el asistente
+  assistantWelcomeMessage?: string; // Mensaje de bienvenida del asistente
+  assistantClosedMessage?: string; // Mensaje cuando el negocio está cerrado
+  assistantWhatsappMessage?: string; // Texto predefinido del botón "Hablar por WhatsApp"
+  businessHours?: BusinessHourDay[]; // Horarios estructurados por día (para estado ABIERTO/CERRADO)
   facebookUrl: string;
   instagramUrl: string;
   email: string;

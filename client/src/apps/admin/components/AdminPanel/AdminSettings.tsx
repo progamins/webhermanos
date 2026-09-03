@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-import { Cake, Wrench, ToggleLeft, ToggleRight, Clock, Eye, X, Edit3, Shield, Key, Send, CheckCircle, AlertCircle } from 'lucide-react';
-import { AppConfig } from '../../../../shared/types';
+import { Cake, Wrench, ToggleLeft, ToggleRight, Clock, Eye, X, Edit3, Shield, Key, Send, CheckCircle, AlertCircle, Bot, MessageCircle } from 'lucide-react';
+import { AppConfig, BusinessHourDay } from '../../../../shared/types';
 import { dbService } from '../../../../shared/services/dbService';
+import { DEFAULT_BUSINESS_HOURS, DEFAULT_ASSISTANT_MESSAGES, DAY_LABELS } from '../../../../shared/services/attentionService';
 
 interface AdminSettingsProps {
   config: AppConfig;
@@ -33,6 +34,14 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
   const [heroReviewAuthor, setHeroReviewAuthor] = useState(config.heroReviewAuthor || '');
   const [heroReviewRole, setHeroReviewRole] = useState(config.heroReviewRole || '');
   const [heroReviewRating, setHeroReviewRating] = useState(config.heroReviewRating ?? 5);
+  // ─── Atención Automática ───
+  const [assistantEnabled, setAssistantEnabled] = useState(config.assistantEnabled !== false);
+  const [assistantWelcomeMessage, setAssistantWelcomeMessage] = useState(config.assistantWelcomeMessage || DEFAULT_ASSISTANT_MESSAGES.welcome);
+  const [assistantClosedMessage, setAssistantClosedMessage] = useState(config.assistantClosedMessage || DEFAULT_ASSISTANT_MESSAGES.closed);
+  const [assistantWhatsappMessage, setAssistantWhatsappMessage] = useState(config.assistantWhatsappMessage || DEFAULT_ASSISTANT_MESSAGES.whatsapp);
+  const [businessHours, setBusinessHours] = useState<BusinessHourDay[]>(
+    config.businessHours && config.businessHours.length > 0 ? config.businessHours : DEFAULT_BUSINESS_HOURS,
+  );
   const [showPreview, setShowPreview] = useState(false);
   // Role password management
   const [analystPassword, setAnalystPassword] = useState('');
@@ -81,9 +90,21 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
       setHeroReviewAuthor(config.heroReviewAuthor || '');
       setHeroReviewRole(config.heroReviewRole || '');
       setHeroReviewRating(config.heroReviewRating ?? 5);
+      setAssistantEnabled(config.assistantEnabled !== false);
+      setAssistantWelcomeMessage(config.assistantWelcomeMessage || DEFAULT_ASSISTANT_MESSAGES.welcome);
+      setAssistantClosedMessage(config.assistantClosedMessage || DEFAULT_ASSISTANT_MESSAGES.closed);
+      setAssistantWhatsappMessage(config.assistantWhatsappMessage || DEFAULT_ASSISTANT_MESSAGES.whatsapp);
+      setBusinessHours(config.businessHours && config.businessHours.length > 0 ? config.businessHours : DEFAULT_BUSINESS_HOURS);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const updateDay = (day: number, patch: Partial<BusinessHourDay>) => {
+    setBusinessHours((prev) => {
+      if (!prev.some((h) => h.day === day)) return [...prev, { day, open: null, close: null, ...patch }];
+      return prev.map((h) => (h.day === day ? { ...h, ...patch } : h));
+    });
+  };
 
   const handleSaveConfig = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,7 +129,13 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
       heroReviewRole,
       heroReviewRating,
       logoUrl,
-      faviconUrl
+      faviconUrl,
+      // ─── Atención Automática ───
+      assistantEnabled,
+      assistantWelcomeMessage,
+      assistantClosedMessage,
+      assistantWhatsappMessage,
+      businessHours
     };
     try {
       await dbService.saveConfig(newConfig);
@@ -377,6 +404,121 @@ export default function AdminSettings({ config, onRefreshData, showToast }: Admi
                         </p>
                       )}
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Atención Automática */}
+        <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 mt-6">
+          <div className="bg-brand-50/30 dark:bg-brand-950/10 border border-brand-200/60 dark:border-brand-900/30 rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-brand-100 dark:bg-brand-950/30 rounded-lg">
+                  <Bot className="h-4 w-4 text-brand-600 dark:text-brand-400" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-serif font-bold text-zinc-900 dark:text-white">Atención Automática</h4>
+                  <p className="text-[10px] text-zinc-500 font-sans">Asistente web con respuestas predefinidas: saluda al cliente, muestra productos reales, horarios y estado ABIERTO/CERRADO, y deriva pedidos al personalizador o a WhatsApp.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAssistantEnabled(!assistantEnabled)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                  assistantEnabled
+                    ? 'bg-brand-500 text-white shadow-md hover:bg-brand-600'
+                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-200'
+                }`}
+              >
+                {assistantEnabled ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+                <span>{assistantEnabled ? 'Activado' : 'Desactivado'}</span>
+              </button>
+            </div>
+
+            {assistantEnabled && (
+              <div className="space-y-4">
+                {/* Mensajes predefinidos */}
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <MessageCircle className="h-3.5 w-3.5 text-brand-500" />
+                    <span className="text-[10px] font-mono uppercase text-zinc-500 font-semibold">Mensajes del asistente</span>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-mono uppercase text-zinc-400 mb-1">Mensaje de bienvenida</label>
+                    <textarea
+                      value={assistantWelcomeMessage}
+                      onChange={(e) => setAssistantWelcomeMessage(e.target.value)}
+                      rows={2}
+                      className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-800 dark:text-white resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-mono uppercase text-zinc-400 mb-1">Mensaje cuando el negocio está cerrado</label>
+                    <textarea
+                      value={assistantClosedMessage}
+                      onChange={(e) => setAssistantClosedMessage(e.target.value)}
+                      rows={2}
+                      className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-800 dark:text-white resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-mono uppercase text-zinc-400 mb-1">Mensaje para el botón "Hablar por WhatsApp"</label>
+                    <input
+                      type="text"
+                      value={assistantWhatsappMessage}
+                      onChange={(e) => setAssistantWhatsappMessage(e.target.value)}
+                      className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-800 dark:text-white"
+                    />
+                    <p className="text-[9px] text-zinc-400 mt-1">El número es el mismo de WhatsApp del negocio (configurado arriba{setWhatsapp ? `: +${setWhatsapp}` : ''}).</p>
+                  </div>
+                </div>
+
+                {/* Horario por día (ABIERTO/CERRADO) */}
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-3.5 w-3.5 text-brand-500" />
+                    <span className="text-[10px] font-mono uppercase text-zinc-500 font-semibold">Horario por día (ABIERTO / CERRADO)</span>
+                  </div>
+                  <p className="text-[10px] text-zinc-400">El asistente usa estos horarios para indicar si el negocio está atendiendo.</p>
+                  <div className="space-y-1.5">
+                    {DAY_LABELS.map((label, day) => {
+                      const item = businessHours.find((h) => h.day === day) || { day, open: null, close: null };
+                      const closed = !item.open || !item.close;
+                      return (
+                        <div key={day} className="flex items-center gap-2">
+                          <span className="w-20 text-[10px] font-mono text-zinc-500 shrink-0">{label}</span>
+                          <input
+                            type="time"
+                            value={item.open || ''}
+                            disabled={closed}
+                            onChange={(e) => updateDay(day, { open: e.target.value || null })}
+                            className="flex-1 min-w-0 px-2 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-lg text-[11px] font-mono text-zinc-800 dark:text-white disabled:opacity-40"
+                          />
+                          <span className="text-[10px] text-zinc-400">–</span>
+                          <input
+                            type="time"
+                            value={item.close || ''}
+                            disabled={closed}
+                            onChange={(e) => updateDay(day, { close: e.target.value || null })}
+                            className="flex-1 min-w-0 px-2 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-lg text-[11px] font-mono text-zinc-800 dark:text-white disabled:opacity-40"
+                          />
+                          <label className="flex items-center gap-1 text-[10px] text-zinc-400 ml-auto shrink-0 cursor-pointer whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              checked={closed}
+                              onChange={(e) =>
+                                updateDay(day, e.target.checked ? { open: null, close: null } : { open: '09:00', close: '19:00' })
+                              }
+                              className="accent-brand-500"
+                            />
+                            Cerrado
+                          </label>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

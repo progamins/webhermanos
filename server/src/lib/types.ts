@@ -285,8 +285,24 @@ export interface ActivityLog {
 }
 
 // ─── Config ───
+export interface BusinessHourDay {
+  /** Día de la semana según Date.getDay(): 0 = Domingo ... 6 = Sábado */
+  day: number;
+  /** Hora de apertura 'HH:MM' (24h) o null si el día está cerrado */
+  open: string | null;
+  /** Hora de cierre 'HH:MM' (24h) o null si el día está cerrado */
+  close: string | null;
+}
+
 export interface AppConfig {
   whatsappNumber: string;
+
+  // ─── Atención Automática (asistente web) ───
+  assistantEnabled?: boolean;
+  assistantWelcomeMessage?: string;
+  assistantClosedMessage?: string;
+  assistantWhatsappMessage?: string;
+  businessHours?: BusinessHourDay[];
   facebookUrl: string;
   instagramUrl: string;
   email: string;
