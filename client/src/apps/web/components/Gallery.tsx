@@ -1,4 +1,4 @@
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Calendar, Layers, Eye } from 'lucide-react';
@@ -15,7 +15,6 @@ interface GalleryProps {
   loading?: boolean;
 }
 
-const CATEGORIES = ['Todos', 'Kekes Clásicos', 'Kekes Frutales', 'Kekes Peruanos'] as const;
 
 function Gallery({ galleryItems, loading = false }: GalleryProps) {
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
@@ -24,6 +23,18 @@ function Gallery({ galleryItems, loading = false }: GalleryProps) {
   const { isBroken, markBroken } = useBrokenImages();
 
   useKeyboard('Escape', () => setSelectedItem(null), !!selectedItem);
+
+  // Categorías disponibles = las que REALMENTE tienen fotos publicadas (en
+  // orden de aparición), para que una categoría nueva creada desde el panel
+  // admin (ej: "Bodas", "Cumpleaños") obtenga su chip automáticamente.
+  const availableCategories = useMemo(() => {
+    const seen: string[] = [];
+    for (const item of galleryItems) {
+      const cat = item.category;
+      if (cat && cat.trim() && !seen.includes(cat)) seen.push(cat);
+    }
+    return seen;
+  }, [galleryItems]);
 
   const filteredItems = galleryItems.filter((item) =>
     activeTab === 'Todos' || item.category === activeTab
@@ -59,25 +70,26 @@ function Gallery({ galleryItems, loading = false }: GalleryProps) {
           </p>
         </div>
 
-        <div className="flex justify-start md:justify-center gap-2 overflow-x-auto pb-4 mb-12 px-4 md:px-0 scrollbar-none snap-x snap-mandatory" id="gallery-tabs" role="tablist" aria-label="Filtrar galería por categoría">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActiveTab(cat)}
-              className={`shrink-0 snap-start px-5 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
-                activeTab === cat
-                  ? 'bg-brand-500 text-white shadow-md'
-                  : 'border hover:border-brand-500/50'
-              }`}
-              style={activeTab !== cat ? { borderColor: 'var(--theme-border)', color: 'var(--theme-text-secondary)' } : undefined}
-              role="tab"
-              aria-selected={activeTab === cat}
-              id={`gallery-tab-${cat}`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
+        {galleryItems.length > 0 && (
+          <div className="flex justify-start md:justify-center gap-2 overflow-x-auto pb-4 mb-12 px-4 md:px-0 scrollbar-none snap-x snap-mandatory" id="gallery-tabs" role="group" aria-label="Filtrar galería por categoría">
+            {['Todos', ...availableCategories].map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveTab(cat)}
+                className={`shrink-0 snap-start px-5 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
+                  activeTab === cat
+                    ? 'bg-brand-500 text-white shadow-md'
+                    : 'border hover:border-brand-500/50'
+                }`}
+                style={activeTab !== cat ? { borderColor: 'var(--theme-border)', color: 'var(--theme-text-secondary)' } : undefined}
+                aria-pressed={activeTab === cat}
+                data-category={cat}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
 
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">

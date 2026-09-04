@@ -28,9 +28,11 @@ interface CatalogProps {
   loading?: boolean;
 }
 
-const CATEGORIES = ['Todos', 'Kekes Clásicos', 'Kekes Frutales', 'Kekes Peruanos'] as const;
-// Orden de las repisas de la vitrina (mismas categorías del filtro, sin "Todos").
-const SHELF_ORDER = ['Kekes Clásicos', 'Kekes Frutales', 'Kekes Peruanos'] as const;
+// Orden preferido de las repisas de la vitrina (cuando esas categorías existan
+// en los datos). Las categorías reales del catálogo se derivan de los productos
+// (ver availableCategories) para que el filtro NUNCA quede desincronizado de
+// lo que el panel admin publica (ej: "Cumpleaños", "Bodas", "Especiales").
+const SHELF_ORDER: readonly string[] = ['Kekes Clásicos', 'Kekes Frutales', 'Kekes Peruanos'] as const;
 
 function CatalogSkeleton() {
   return (
@@ -85,7 +87,7 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
           product.tags?.some((tag) => normalize(tag).includes(q));
         const matchesCategory =
           selectedCategory === 'Todos' ||
-          normalize(product.category) === normalize(selectedCategory);
+          normalize(product.category?.trim() || SHELF_ORDER[0]) === normalize(selectedCategory);
         return matchesSearch && matchesCategory && product.active !== false;
       }),
     [products, searchTerm, selectedCategory, normalize]
@@ -114,6 +116,35 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
     setSearchTerm('');
     setSelectedCategory('Todos');
   }, []);
+
+  // Categorías disponibles = las que REALMENTE tienen productos activos, en el
+  // mismo orden que las repisas (SHELF_ORDER primero, el resto alfabético).
+  // Mismo criterio de agrupación que `shelves`: categoría vacía → SHELF_ORDER[0].
+  const availableCategories = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of products) {
+      if (p.active === false) continue;
+      set.add(p.category?.trim() || SHELF_ORDER[0]);
+    }
+    const known = SHELF_ORDER.filter((c) => set.has(c));
+    const rest = [...set].filter((c) => !SHELF_ORDER.includes(c)).sort((a, b) => a.localeCompare(b, 'es'));
+    return [...known, ...rest];
+  }, [products]);
+
+  const hasActiveFilters = !!searchTerm || selectedCategory !== 'Todos';
+  const showEmptyStateAction = products.length > 0 && hasActiveFilters;
+  const emptyTitle =
+    products.length === 0
+      ? 'Aún no hay kekes publicados'
+      : searchTerm
+        ? `Sin resultados para «${searchTerm.trim()}»`
+        : 'No encontramos kekes para mostrar';
+  const emptyDescription =
+    products.length === 0
+      ? 'Carol está horneando nuevas creaciones. Vuelve a visitarnos pronto.'
+      : selectedCategory !== 'Todos'
+        ? `Ningún keke coincide con tu búsqueda en «${selectedCategory}». Prueba con otra palabra o revisa «Todos».`
+        : 'Prueba con otra palabra: "chocolate", "lúcuma" o "vainilla".';
 
   return (
     <section id="catalogo" className="py-24 bg-transparent relative overflow-hidden">
@@ -147,28 +178,29 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
             />
           </div>
 
-          <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-none" id="catalog-category-filter" role="tablist" aria-label="Filtrar por categoría">
-            <SlidersHorizontal className="h-4 w-4 text-zinc-500 hidden sm:block shrink-0" aria-hidden="true" />
-            <div className="flex space-x-2">
-              {CATEGORIES.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-5 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
-                    selectedCategory === category
-                      ? 'bg-brand-500 text-white shadow-md'
-                      : 'border text-zinc-600 dark:text-zinc-400 hover:border-brand-500/50'
-                  }`}
-                  style={selectedCategory !== category ? { borderColor: 'var(--theme-border)' } : undefined}
-                  role="tab"
-                  aria-selected={selectedCategory === category}
-                  id={`filter-category-${category}`}
-                >
-                  {category}
-                </button>
-              ))}
+          {products.length > 0 && (
+            <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-none" id="catalog-category-filter" role="group" aria-label="Filtrar por categoría">
+              <SlidersHorizontal className="h-4 w-4 text-zinc-500 hidden sm:block shrink-0" aria-hidden="true" />
+              <div className="flex space-x-2">
+                {['Todos', ...availableCategories].map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`px-5 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
+                      selectedCategory === category
+                        ? 'bg-brand-500 text-white shadow-md'
+                        : 'border text-zinc-600 dark:text-zinc-400 hover:border-brand-500/50'
+                    }`}
+                    style={selectedCategory !== category ? { borderColor: 'var(--theme-border)' } : undefined}
+                    aria-pressed={selectedCategory === category}
+                    data-category={category}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {loading ? (
@@ -176,9 +208,9 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
         ) : filteredProducts.length === 0 ? (
           <EmptyState
             icon={<Search className="h-5 w-5 text-zinc-400" />}
-            title="No encontramos kekes para tu búsqueda"
-            description='Prueba buscando por "chocolate", "lúcuma" o seleccionando otra categoría.'
-            action={{ label: 'Restablecer Filtros', onClick: handleClearFilters }}
+            title={emptyTitle}
+            description={emptyDescription}
+            {...(showEmptyStateAction ? { action: { label: 'Restablecer Filtros', onClick: handleClearFilters } } : {})}
           />
         ) : (
           <div className="space-y-24" id="catalog-products-grid" aria-label="Lista de productos">
