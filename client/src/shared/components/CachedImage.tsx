@@ -62,19 +62,29 @@ function CachedImage({
   // URL efectiva para srcSet: si hay fallback directo, usar esa en lugar de la proxy
   const srcSetUrl = fallbackUrl || localUrl;
 
-  // srcSet responsive — 3 resoluciones: effectiveWidth, 2x, y 320px (mobile mínimo)
+  // srcSet responsive — 3 resoluciones: 320px (mobile mínimo), effectiveWidth y 2x.
+  // optimizeImageUrl reescribe el ancho DENTRO del proxy (/api/image-proxy) para
+  // generar variantes reales. Si varias resoluciones colapsan al mismo archivo
+  // (ej. upload local sin redimensionar) se deduplican; si solo queda una, no se
+  // emite srcSet (el navegador usa src directamente) para no etiquetar en falso.
   const srcSet = useMemo(() => {
     if (!sizes || !src) return undefined;
-    const resolutions = [
-      optimizeImageUrl(srcSetUrl, Math.min(effectiveWidth, 320)),
-      optimizeImageUrl(srcSetUrl, effectiveWidth),
-      optimizeImageUrl(srcSetUrl, effectiveWidth * 2),
+    const candidates = [
+      { w: 320, url: optimizeImageUrl(srcSetUrl, 320) },
+      ...(effectiveWidth > 320
+        ? [{ w: effectiveWidth, url: optimizeImageUrl(srcSetUrl, effectiveWidth) }]
+        : []),
+      { w: effectiveWidth * 2, url: optimizeImageUrl(srcSetUrl, effectiveWidth * 2) },
     ];
-    const widths: (string | null)[] = ['320w', effectiveWidth > 320 ? `${effectiveWidth}w` : null, `${effectiveWidth * 2}w`];
-    return resolutions
-      .map((url, i) => widths[i] ? `${url} ${widths[i]}` : null)
-      .filter(Boolean)
-      .join(', ');
+    const seen = new Set<string>();
+    const unique: { w: number; url: string }[] = [];
+    for (const c of candidates) {
+      if (seen.has(c.url)) continue;
+      seen.add(c.url);
+      unique.push(c);
+    }
+    if (unique.length < 2) return undefined;
+    return unique.map((c) => `${c.url} ${c.w}w`).join(', ');
   }, [srcSetUrl, effectiveWidth, sizes, src]);
 
   // Verificar en background si está en MemoryCache o IndexedDB

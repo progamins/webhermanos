@@ -83,13 +83,29 @@ export function optimizeImageUrl(url: string, width: number = 600): string {
     url = `/api/uploads/${url}`;
   }
 
-  // ✅ Rutas locales del mismo origen (incluyendo /api/uploads/ y /api/image-proxy):
-  //    ya son archivos optimizados (webp), no se tocan. IMPORTANTE: esto evita que
-  //    una URL de proxy (/api/image-proxy?url=...) que CONTENGA 'images.unsplash.com'
-  //    en el parámetro url= sea malinterpretada por el bloque de Unsplash de abajo
-  //    (encodeURIComponent NO codifica letras/puntos, así que la URL literalmente
-  //    contiene el dominio). Sin este guard, split('?')[0] devolvería '/api/image-proxy'
-  //    y se perdería el parámetro url=, causando un 400.
+  // ✅ Rutas locales del mismo origen: ya son archivos optimizados (webp),
+  //    no se tocan. IMPORTANTE: esto evita que una URL de proxy
+  //    (/api/image-proxy?url=...) que CONTENGA 'images.unsplash.com'
+  //    en el parámetro url= sea malinterpretada por el bloque de Unsplash de
+  //    abajo (encodeURIComponent NO codifica letras/puntos, así que la URL
+  //    literalmente contiene el dominio). Sin este guard, split('?')[0]
+  //    devolvería '/api/image-proxy' y se perdería el parámetro url=,
+  //    causando un 400.
+
+  // 🔁 URL de proxy local (/api/image-proxy?url=...): el ancho/calidad se
+  //    reescribe DENTRO del target envuelto (ej. Unsplash). Así el srcSet
+  //    genera variantes reales (320/480/960) en vez de 3 copias de la misma
+  //    URL con el ancho horneado en el dato (bug: la galería descargaba
+  //    w=800 para tarjetas de ~180px). Targets no redimensionables se
+  //    devuelven sin cambios.
+  if (url.startsWith('/api/image-proxy')) {
+    const target = extractProxyTarget(url);
+    if (!target) return url;
+    const optimizedTarget = optimizeImageUrl(target, width);
+    if (optimizedTarget === target) return url; // no resizable → igual
+    return `/api/image-proxy?url=${encodeURIComponent(optimizedTarget)}`;
+  }
+
   if (url.startsWith('/')) return url;
 
   const optimalWidth = getOptimalWidth(width);
