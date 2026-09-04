@@ -35,6 +35,7 @@ import { requestPool } from '../../shared/services/api/requestPool';
 import { imageMemoryCache } from '../../shared/utils/imageMemoryCache';
 import { preloadImages } from '../../shared/utils/imageCache';
 import { getLocalImageUrl } from '../../shared/utils/images';
+import { coherentImagesForProduct, coherentImageForGalleryTitle } from '../../shared/utils/kekeImages';
 import { Toaster } from '../../shared/components/ui';
 import SectionSkeleton from '../../shared/components/SectionSkeleton';
 
@@ -349,7 +350,16 @@ export default function App() {
       const [productsResult, reviewsResult, galleryResult, configResult] = results;
 
       if (productsResult.status === 'fulfilled') {
-        setProducts(productsResult.value);
+        // 🎂 Coherencia de imágenes: si el nombre indica un sabor y la foto
+        // actual es stock equivocado, se muestra la foto verificada del sabor
+        // (las fotos reales subidas por el admin nunca se tocan).
+        const coherentProducts = productsResult.value.map((p) => ({
+          ...p,
+          images: coherentImagesForProduct(p.name, p.images),
+        }));
+        setProducts(coherentProducts);
+        // Reemplazar aquí también alimenta el prewarm con las URLs correctas.
+        productsResult.value = coherentProducts;
       } else {
         console.warn('[API] Error al cargar productos, sección oculta:', productsResult.reason);
       }
@@ -361,7 +371,12 @@ export default function App() {
       }
 
       if (galleryResult.status === 'fulfilled') {
-        setGalleryItems(galleryResult.value);
+        const coherentGallery = galleryResult.value.map((g) => ({
+          ...g,
+          imageUrl: coherentImageForGalleryTitle(g.title, g.imageUrl),
+        }));
+        setGalleryItems(coherentGallery);
+        galleryResult.value = coherentGallery;
       } else {
         console.warn('[API] Error al cargar galería, sección oculta:', galleryResult.reason);
       }
