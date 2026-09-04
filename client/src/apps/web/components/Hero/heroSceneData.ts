@@ -48,6 +48,8 @@ export interface HeroTile {
   src?: string;
   label?: string;
   Icon?: LucideIcon;
+  /** Cargar de inmediato (solo la primera foto visible al entrar). */
+  eager?: boolean;
 }
 
 const img = (photoId: string, w: number) =>
@@ -155,10 +157,10 @@ const PHOTO = (
  */
 const DESKTOP_SET: TileSet = {
   depth: [
-    PHOTO('p-choco', KEKE_PHOTOS.chocolate, 5, 12, 190, { z: -560, driftX: -130, driftY: -45, scaleIn: 0.62, scaleMid: 0.97, scaleOut: 1.26, blurIn: 5, rot: 3, fadeOut: 0.9 }),
+    PHOTO('p-choco', KEKE_PHOTOS.chocolate, 5, 12, 190, { z: -560, driftX: -130, driftY: -45, scaleIn: 0.62, scaleMid: 0.97, scaleOut: 1.26, blurIn: 5, rot: 3, fadeOut: 0.9, eager: true }),
     PHOTO('p-vainilla', KEKE_PHOTOS.vainilla, 84, 10, 170, { z: -480, driftX: 150, driftY: -30, scaleIn: 0.66, scaleMid: 0.99, scaleOut: 1.24, blurIn: 4, rot: -3, fadeOut: 0.92 }),
-    PHOTO('p-maracuya', KEKE_PHOTOS.maracuya, 6, 68, 175, { z: -520, driftX: -160, driftY: 55, scaleIn: 0.6, scaleMid: 0.96, scaleOut: 1.3, blurIn: 5, rot: 4, fadeIn: 0.04, fadeOut: 0.9 }),
-    PHOTO('p-lucuma', KEKE_PHOTOS.lucuma, 86, 66, 185, { z: -600, driftX: 175, driftY: 70, scaleIn: 0.58, scaleMid: 0.94, scaleOut: 1.32, blurIn: 6, rot: -2, fadeIn: 0.05, fadeOut: 0.88 }),
+    PHOTO('p-maracuya', KEKE_PHOTOS.maracuya, 6, 68, 175, { z: -520, driftX: -160, driftY: 55, scaleIn: 0.6, scaleMid: 0.96, scaleOut: 1.3, blurIn: 5, rot: 4, fadeOut: 0.9 }),
+    PHOTO('p-lucuma', KEKE_PHOTOS.lucuma, 86, 66, 185, { z: -600, driftX: 175, driftY: 70, scaleIn: 0.58, scaleMid: 0.94, scaleOut: 1.32, blurIn: 6, rot: -2, fadeOut: 0.88 }),
     PHOTO('p-platano', KEKE_PHOTOS.platano, 43, 84, 150, { z: -380, driftX: -60, driftY: 130, scaleIn: 0.68, scaleMid: 1.0, scaleOut: 1.14, blurIn: 3, rot: 2, fadeOut: 0.82 }),
     WORD('w-amor', 'Hecho con amor', 75, 34, { driftX: 165, driftY: -25, scaleIn: 0.72, scaleMid: 1.0, scaleOut: 1.12, blurIn: 2, fadeIn: 0.07, fadeOut: 0.85, rot: 2 }),
     WORD('w-sabor', 'Sabor que se recuerda', 10, 40, { driftX: -150, driftY: 15, scaleIn: 0.74, scaleMid: 1.0, scaleOut: 1.1, blurIn: 2, fadeIn: 0.1, fadeOut: 0.84, rot: -2 }),
@@ -182,9 +184,9 @@ const DESKTOP_SET: TileSet = {
  */
 const MOBILE_SET: TileSet = {
   depth: [
-    PHOTO('p-choco', KEKE_PHOTOS.chocolate, 3, 6, 104, { z: -300, driftX: -70, driftY: -40, scaleIn: 0.78, scaleMid: 1.02, scaleOut: 1.2, blurIn: 3, rot: 2, fadeOut: 0.86 }),
-    PHOTO('p-lucuma', KEKE_PHOTOS.lucuma, 76, 8, 96, { z: -280, driftX: 85, driftY: -35, scaleIn: 0.8, scaleMid: 1.03, scaleOut: 1.22, blurIn: 3, rot: -2, fadeIn: 0.04, fadeOut: 0.88 }),
-    PHOTO('p-maracuya', KEKE_PHOTOS.maracuya, 3, 72, 92, { z: -260, driftX: -80, driftY: 90, scaleIn: 0.8, scaleMid: 1.0, scaleOut: 1.16, blurIn: 3, rot: 3, fadeIn: 0.06, fadeOut: 0.82 }),
+    PHOTO('p-choco', KEKE_PHOTOS.chocolate, 3, 6, 104, { z: -300, driftX: -70, driftY: -40, scaleIn: 0.78, scaleMid: 1.02, scaleOut: 1.2, blurIn: 3, rot: 2, fadeOut: 0.86, eager: true }),
+    PHOTO('p-lucuma', KEKE_PHOTOS.lucuma, 76, 8, 96, { z: -280, driftX: 85, driftY: -35, scaleIn: 0.8, scaleMid: 1.03, scaleOut: 1.22, blurIn: 3, rot: -2, fadeOut: 0.88 }),
+    PHOTO('p-maracuya', KEKE_PHOTOS.maracuya, 3, 72, 92, { z: -260, driftX: -80, driftY: 90, scaleIn: 0.8, scaleMid: 1.0, scaleOut: 1.16, blurIn: 3, rot: 3, fadeOut: 0.82 }),
     WORD('w-amor', 'Hecho con amor', 56, 82, { z: -120, driftX: 130, driftY: 80, scaleIn: 0.8, scaleMid: 1.02, scaleOut: 1.18, blurIn: 1, fadeIn: 0.1, fadeOut: 0.8, rot: 2, fs: 11 }),
     WORD('w-momentos', 'Momentos dulces', 62, 38, { z: -90, driftX: 160, driftY: -20, scaleIn: 0.82, scaleMid: 1.04, scaleOut: 1.2, blurIn: 1, fadeIn: 0.14, fadeOut: 0.72, rot: -2, fs: 10 }),
     TAG('t-candy', Candy, 6, 32, 34, { z: -60, driftX: -110, driftY: -60, scaleIn: 0.75, scaleMid: 1.05, scaleOut: 1.25, rot: -12, fadeIn: 0.12, fadeOut: 0.8 }),

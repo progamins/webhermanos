@@ -53,7 +53,8 @@ function TileVisual({ def }: { def: HeroTile }) {
         <img
           src={def.src}
           alt=""
-          loading="lazy"
+          loading={def.eager ? 'eager' : 'lazy'}
+          {...(def.eager ? { fetchPriority: 'high' as const } : {})}
           decoding="async"
           draggable={false}
           referrerPolicy="no-referrer"
@@ -138,7 +139,9 @@ const MotionTile = memo(function MotionTile({ def, progress }: MotionTileProps) 
         z: def.z,
         opacity,
         filter: blur,
-        willChange: 'transform, opacity',
+        // will-change acotado a las fotos (capas grandes); los chips pequeños
+        // se animan igual de fluido sin promover capa propia por tile.
+        ...(def.variant === 'photo' ? { willChange: 'transform' as const } : {}),
       }}
       aria-hidden="true"
     >
