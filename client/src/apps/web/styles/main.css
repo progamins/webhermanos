@@ -711,3 +711,17 @@ section[id]:not(#inicio):not(#tracking), footer {
 .hero-tile-photo img {
   backface-visibility: hidden;
 }
+
+/* Flotación ambiental sutil de los tiles del HERO (fotos y frases). Vive en el
+ * contenido interno (el wrapper de Motion controla el scroll), es solo
+ * translate/rotate pequeño en GPU y se detiene con prefers-reduced-motion
+ * gracias a la guarda global. En móvil se omite para priorizar rendimiento. */
+@keyframes hero-float-soft {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-5px) rotate(0.4deg); }
+}
+@media (min-width: 768px) {
+  .hero-tile-float {
+    animation: hero-float-soft 6.5s ease-in-out infinite;
+  }
+}

@@ -50,6 +50,9 @@ export interface HeroTile {
   Icon?: LucideIcon;
   /** Cargar de inmediato (solo la primera foto visible al entrar). */
   eager?: boolean;
+  /** Ventana de actividad dentro del recorrido global (ej: [0.08, 0.68] hace
+   *  que la pieza solo se mueva durante esa franja — coreografía escalonada). */
+  phase?: [number, number];
 }
 
 const img = (photoId: string, w: number) =>
@@ -161,20 +164,20 @@ const DESKTOP_SET: TileSet = {
     PHOTO('p-vainilla', KEKE_PHOTOS.vainilla, 84, 10, 170, { z: -480, driftX: 150, driftY: -30, scaleIn: 0.66, scaleMid: 0.99, scaleOut: 1.24, blurIn: 4, rot: -3, fadeOut: 0.92 }),
     PHOTO('p-maracuya', KEKE_PHOTOS.maracuya, 6, 68, 175, { z: -520, driftX: -160, driftY: 55, scaleIn: 0.6, scaleMid: 0.96, scaleOut: 1.3, blurIn: 5, rot: 4, fadeOut: 0.9 }),
     PHOTO('p-lucuma', KEKE_PHOTOS.lucuma, 86, 66, 185, { z: -600, driftX: 175, driftY: 70, scaleIn: 0.58, scaleMid: 0.94, scaleOut: 1.32, blurIn: 6, rot: -2, fadeOut: 0.88 }),
-    PHOTO('p-platano', KEKE_PHOTOS.platano, 43, 84, 150, { z: -380, driftX: -60, driftY: 130, scaleIn: 0.68, scaleMid: 1.0, scaleOut: 1.14, blurIn: 3, rot: 2, fadeOut: 0.82 }),
-    WORD('w-amor', 'Hecho con amor', 75, 34, { driftX: 165, driftY: -25, scaleIn: 0.72, scaleMid: 1.0, scaleOut: 1.12, blurIn: 2, fadeIn: 0.07, fadeOut: 0.85, rot: 2 }),
-    WORD('w-sabor', 'Sabor que se recuerda', 10, 40, { driftX: -150, driftY: 15, scaleIn: 0.74, scaleMid: 1.0, scaleOut: 1.1, blurIn: 2, fadeIn: 0.1, fadeOut: 0.84, rot: -2 }),
-    WORD('w-momentos', 'Momentos dulces', 13, 78, { driftX: -110, driftY: 100, scaleIn: 0.7, scaleMid: 0.97, scaleOut: 1.06, blurIn: 2.5, fadeIn: 0.12, fadeOut: 0.9, rot: -3 }),
-    WORD('w-pedidos', 'Pedidos especiales', 74, 84, { driftX: 90, driftY: 115, scaleIn: 0.68, scaleMid: 0.96, scaleOut: 1.05, blurIn: 2, fadeIn: 0.08, fadeOut: 0.85, rot: 2, fs: 12 }),
-    TAG('t-heart', Heart, 6, 28, 44, { driftX: -85, driftY: -70, scaleIn: 0.62, scaleMid: 0.98, scaleOut: 1.18, rot: 8, fadeIn: 0.05 }),
-    TAG('t-candy', Candy, 92, 48, 40, { driftX: 95, driftY: 45, scaleIn: 0.66, scaleMid: 1.0, scaleOut: 1.2, rot: -10, fadeIn: 0.09 }),
-    TAG('t-cake', CakeSlice, 40, 12, 42, { driftX: -60, driftY: 140, scaleIn: 0.7, scaleMid: 1.02, scaleOut: 1.16, rot: 14, fadeIn: 0.04, fadeOut: 0.8 }),
+    PHOTO('p-platano', KEKE_PHOTOS.platano, 43, 84, 150, { z: -380, driftX: -60, driftY: 130, scaleIn: 0.68, scaleMid: 1.0, scaleOut: 1.14, blurIn: 3, rot: 2, fadeOut: 0.82, phase: [0.06, 1] }),
+    WORD('w-amor', 'Hecho con amor', 75, 34, { driftX: 165, driftY: -25, scaleIn: 0.72, scaleMid: 1.0, scaleOut: 1.12, blurIn: 2, fadeIn: 0.08, fadeOut: 0.8, rot: 2, phase: [0.03, 0.9] }),
+    WORD('w-sabor', 'Sabor que se recuerda', 10, 40, { driftX: -150, driftY: 15, scaleIn: 0.74, scaleMid: 1.0, scaleOut: 1.1, blurIn: 2, fadeIn: 0.1, fadeOut: 0.8, rot: -2, phase: [0.06, 0.88] }),
+    WORD('w-momentos', 'Momentos dulces', 13, 78, { driftX: -110, driftY: 100, scaleIn: 0.7, scaleMid: 0.97, scaleOut: 1.06, blurIn: 2.5, fadeIn: 0.12, fadeOut: 0.85, rot: -3, phase: [0.12, 0.85] }),
+    WORD('w-pedidos', 'Pedidos especiales', 74, 84, { driftX: 90, driftY: 115, scaleIn: 0.68, scaleMid: 0.96, scaleOut: 1.05, blurIn: 2, fadeIn: 0.08, fadeOut: 0.85, rot: 2, fs: 12, phase: [0.05, 0.8] }),
+    TAG('t-heart', Heart, 6, 28, 44, { driftX: -85, driftY: -70, scaleIn: 0.62, scaleMid: 0.98, scaleOut: 1.18, rot: 8, fadeIn: 0.06, phase: [0.04, 0.95] }),
+    TAG('t-candy', Candy, 92, 48, 40, { driftX: 95, driftY: 45, scaleIn: 0.66, scaleMid: 1.0, scaleOut: 1.2, rot: -10, fadeIn: 0.12, phase: [0.1, 0.9] }),
+    TAG('t-cake', CakeSlice, 40, 12, 42, { driftX: -60, driftY: 140, scaleIn: 0.7, scaleMid: 1.02, scaleOut: 1.16, rot: 14, fadeIn: 0.05, fadeOut: 0.75, phase: [0.06, 0.78] }),
   ],
   front: [
-    // Cruza por delante: esquina superior derecha → centro izquierda, diluyéndose.
-    PHOTO('f-vainilla', KEKE_PHOTOS.zanahoria, 84, 16, 150, { z: 0, driftX: -600, driftY: 120, scaleIn: 0.42, scaleMid: 1.35, scaleOut: 1.6, blurIn: 2, fadeIn: 0.16, fadeOut: 0.62, rot: -8 }),
-    // Frase que atraviesa la parte baja y se evapora.
-    WORD('f-amor', 'Hecho con amor', 8, 84, { z: 0, driftX: 620, driftY: -70, scaleIn: 0.6, scaleMid: 1.25, scaleOut: 1.5, blurIn: 0, fadeIn: 0.2, fadeOut: 0.58, rot: 3, fs: 12 }),
+    // Cruza por delante a mitad de recorrido: esquina superior derecha → centro.
+    PHOTO('f-vainilla', KEKE_PHOTOS.zanahoria, 84, 16, 150, { z: 0, driftX: -600, driftY: 120, scaleIn: 0.42, scaleMid: 1.35, scaleOut: 1.6, blurIn: 2, fadeIn: 0.14, fadeOut: 0.58, rot: -8, phase: [0.08, 0.68] }),
+    // Frase que atraviesa la parte baja y se evapora (solo en el último tramo).
+    WORD('f-amor', 'Hecho con amor', 8, 84, { z: 0, driftX: 620, driftY: -70, scaleIn: 0.6, scaleMid: 1.25, scaleOut: 1.5, blurIn: 0, fadeIn: 0.18, fadeOut: 0.55, rot: 3, fs: 12, phase: [0.14, 0.62] }),
   ],
 };
 
@@ -187,9 +190,9 @@ const MOBILE_SET: TileSet = {
     PHOTO('p-choco', KEKE_PHOTOS.chocolate, 3, 6, 104, { z: -300, driftX: -70, driftY: -40, scaleIn: 0.78, scaleMid: 1.02, scaleOut: 1.2, blurIn: 3, rot: 2, fadeOut: 0.86, eager: true }),
     PHOTO('p-lucuma', KEKE_PHOTOS.lucuma, 76, 8, 96, { z: -280, driftX: 85, driftY: -35, scaleIn: 0.8, scaleMid: 1.03, scaleOut: 1.22, blurIn: 3, rot: -2, fadeOut: 0.88 }),
     PHOTO('p-maracuya', KEKE_PHOTOS.maracuya, 3, 72, 92, { z: -260, driftX: -80, driftY: 90, scaleIn: 0.8, scaleMid: 1.0, scaleOut: 1.16, blurIn: 3, rot: 3, fadeOut: 0.82 }),
-    WORD('w-amor', 'Hecho con amor', 56, 82, { z: -120, driftX: 130, driftY: 80, scaleIn: 0.8, scaleMid: 1.02, scaleOut: 1.18, blurIn: 1, fadeIn: 0.1, fadeOut: 0.8, rot: 2, fs: 11 }),
-    WORD('w-momentos', 'Momentos dulces', 62, 38, { z: -90, driftX: 160, driftY: -20, scaleIn: 0.82, scaleMid: 1.04, scaleOut: 1.2, blurIn: 1, fadeIn: 0.14, fadeOut: 0.72, rot: -2, fs: 10 }),
-    TAG('t-candy', Candy, 6, 32, 34, { z: -60, driftX: -110, driftY: -60, scaleIn: 0.75, scaleMid: 1.05, scaleOut: 1.25, rot: -12, fadeIn: 0.12, fadeOut: 0.8 }),
+    WORD('w-amor', 'Hecho con amor', 56, 82, { z: -120, driftX: 130, driftY: 80, scaleIn: 0.8, scaleMid: 1.02, scaleOut: 1.18, blurIn: 1, fadeIn: 0.12, fadeOut: 0.75, rot: 2, fs: 11, phase: [0.05, 0.85] }),
+    WORD('w-momentos', 'Momentos dulces', 62, 38, { z: -90, driftX: 160, driftY: -20, scaleIn: 0.82, scaleMid: 1.04, scaleOut: 1.2, blurIn: 1, fadeIn: 0.16, fadeOut: 0.7, rot: -2, fs: 10, phase: [0.12, 0.7] }),
+    TAG('t-candy', Candy, 6, 32, 34, { z: -60, driftX: -110, driftY: -60, scaleIn: 0.75, scaleMid: 1.05, scaleOut: 1.25, rot: -12, fadeIn: 0.16, fadeOut: 0.8, phase: [0.06, 0.9] }),
   ],
   front: [],
 };

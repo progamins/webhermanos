@@ -14,6 +14,14 @@ import type { HeroTile } from './heroSceneData';
  * prefers-reduced-motion: collage elegante, sin movimiento.
  */
 
+/** Retardo determinista (negativo) para la flotación ambiental: cada pieza
+ *  baila en su propio ciclo, sin coordenadas al azar que cambien entre renders. */
+function floatDelay(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 997;
+  return `-${(0.4 + (h % 6) * 1.1).toFixed(2)}s`;
+}
+
 /** Perfil de opacidad por tile: aparece (fadeIn) y/o se desvanece (fadeOut). */
 function opacityKeyframes(def: HeroTile): { input: number[]; output: number[] } {
   const input: number[] = [];
@@ -38,12 +46,13 @@ function TileVisual({ def }: { def: HeroTile }) {
   if (def.variant === 'photo') {
     return (
       <div
-        className="hero-tile-photo rounded-[20px] overflow-hidden border bg-white/70 dark:bg-zinc-900/50"
+        className="hero-tile-photo hero-tile-float rounded-[20px] overflow-hidden border bg-white/70 dark:bg-zinc-900/50"
         style={{
           width: def.width,
           aspectRatio: '4 / 3',
           borderColor: 'rgba(255,255,255,0.55)',
           boxShadow: '0 18px 45px -18px rgba(120,60,25,0.4), 0 1px 1px rgba(255,255,255,0.6) inset',
+          animationDelay: floatDelay(def.id),
         }}
       >
         <img
@@ -82,13 +91,14 @@ function TileVisual({ def }: { def: HeroTile }) {
   // word — chip de frase con punto de acento
   return (
     <div
-      className="hero-tile-word flex items-center gap-2 rounded-full border backdrop-blur-md whitespace-nowrap px-4 py-1.5"
+      className="hero-tile-word hero-tile-float flex items-center gap-2 rounded-full border backdrop-blur-md whitespace-nowrap px-4 py-1.5"
       style={{
         backgroundColor: 'var(--theme-surface-glass)',
         borderColor: 'var(--theme-border)',
         color: 'var(--theme-text-secondary)',
         fontSize: def.fs || 13,
         boxShadow: '0 10px 24px -14px rgba(120,60,25,0.35)',
+        animationDelay: floatDelay(def.id),
       }}
     >
       <span
@@ -111,16 +121,27 @@ interface MotionTileProps {
 }
 
 const MotionTile = memo(function MotionTile({ def, progress }: MotionTileProps) {
-  const x = useTransform(progress, [0, 1], [0, def.driftX]);
-  const y = useTransform(progress, [0, 0.5, 1], [0, def.driftY * 0.55, def.driftY]);
-  const scale = useTransform(progress, [0, 0.45, 1], [def.scaleIn, def.scaleMid, def.scaleOut]);
-  const rotate = useTransform(progress, [0, 1], [0, def.rot]);
-  const blurAmt = useTransform(progress, [0, 0.45], [def.blurIn, 0]);
+  // Ventana de actividad propia: cada pieza vive dentro de [phaseStart, phaseEnd]
+  // del recorrido global (coreografía escalonada: unas se mueven antes, otras
+  // después). Dentro de su ventana aplicamos un smoothstep: el movimiento
+  // arranca y termina suave, sin cambios bruscos de velocidad.
+  const phaseStart = def.phase?.[0] ?? 0;
+  const phaseSpan = Math.max(0.001, (def.phase?.[1] ?? 1) - phaseStart);
+  const local = useTransform(progress, (v) => {
+    const q = Math.min(1, Math.max(0, (v - phaseStart) / phaseSpan));
+    return q * q * (3 - 2 * q); // smoothstep
+  });
+
+  const x = useTransform(local, [0, 1], [0, def.driftX]);
+  const y = useTransform(local, [0, 0.5, 1], [0, def.driftY * 0.55, def.driftY]);
+  const scale = useTransform(local, [0, 0.45, 1], [def.scaleIn, def.scaleMid, def.scaleOut]);
+  const rotate = useTransform(local, [0, 1], [0, def.rot]);
+  const blurAmt = useTransform(local, [0, 0.45], [def.blurIn, 0]);
   // Motion solo escribe strings CSS con unidad para `filter`: convertimos el
   // número a "blur(npx)" (y "none" cuando ya está enfocado).
   const blur = useTransform(blurAmt, (v) => (v > 0.05 ? `blur(${v.toFixed(1)}px)` : 'none'));
   const op = opacityKeyframes(def);
-  const opacity = useTransform(progress, op.input, op.output);
+  const opacity = useTransform(local, op.input, op.output);
 
   return (
     <motion.div
