@@ -296,6 +296,7 @@ function Catalog({ products, onSelectCustomize, loading = false }: CatalogProps)
                       <CachedImage
                         src={currentSrc}
                         width={600}
+                        sizes="(max-width: 639px) 92vw, (max-width: 1023px) 48vw, 24vw"
                         alt={product.name}
                         wrapperClassName="w-full h-full"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 keke-img-zoom"

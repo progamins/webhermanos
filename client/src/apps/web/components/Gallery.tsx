@@ -124,10 +124,10 @@ function Gallery({ galleryItems, loading = false }: GalleryProps) {
               >
                 <CachedImage
                   src={item.imageUrl}
-                  width={400}
+                  width={480}
+                  sizes="(max-width: 639px) 48vw, (max-width: 1023px) 31vw, 23vw"
                   alt={item.title || 'Galería Maison Rosas'}
-                  wrapperClassName="w-full h-full"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-500"
                   onError={() => {
                     markBroken(`${item.id}:${item.imageUrl}`);
                     reportBrokenImage(item.imageUrl);
@@ -153,54 +153,100 @@ function Gallery({ galleryItems, loading = false }: GalleryProps) {
 
       {selectedItem && createPortal(
         <AnimatePresence>
-          <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label={selectedItem.title}>
+          {/* Modal centrado estilo "tarjeta": la web queda visible (fondo
+              difuminado) y la imagen se presenta dentro de un panel con su
+              ficha — nunca ocupa el 100% del viewport. */}
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-label={selectedItem.title || 'Imagen de la galería'}
+          >
             <motion.div
+              key="gallery-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              transition={{ duration: reducedMotion ? 0 : 0.25 }}
+              className="absolute inset-0 bg-black/55 backdrop-blur-[6px]"
               onClick={() => setSelectedItem(null)}
+              aria-hidden="true"
             />
+
             <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              className="relative w-full h-full bg-black select-none"
+              key="gallery-panel"
+              initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.96 }}
+              transition={{ duration: reducedMotion ? 0 : 0.32, ease: [0.16, 1, 0.3, 1] }}
+              className="relative z-10 w-full max-w-[min(94vw,880px)] max-h-[92svh] overflow-y-auto rounded-[28px] border shadow-2xl"
+              style={{
+                backgroundColor: 'var(--theme-surface)',
+                borderColor: 'var(--theme-border)',
+                boxShadow: '0 30px 80px -18px rgba(43,26,18,0.45), 0 1px 1px rgba(255,255,255,0.5) inset',
+              }}
             >
-              <CachedImage
-                src={selectedItem.imageUrl}
-                width={1600}
-                alt={selectedItem.title || 'Galería'}
-                className="w-full h-full object-contain"
-                priority
-              />
+              {/* Botón cerrar — flotante sobre el panel */}
               <button
                 onClick={() => setSelectedItem(null)}
-                className="absolute top-4 right-4 z-10 p-2.5 rounded-full bg-black/50 backdrop-blur-sm text-white hover:bg-black/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                aria-label="Cerrar"
+                className="absolute top-3 right-3 z-20 p-2.5 rounded-full border backdrop-blur-md transition-colors hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 cursor-pointer"
+                style={{
+                  backgroundColor: 'var(--theme-surface-glass)',
+                  borderColor: 'var(--theme-border)',
+                  color: 'var(--theme-text)',
+                }}
+                aria-label="Cerrar vista"
               >
-                <X className="h-5 w-5" aria-hidden="true" />
+                <X className="h-4 w-4" aria-hidden="true" />
               </button>
-              {(selectedItem.title || selectedItem.description) && (
-                <div className="absolute inset-x-0 bottom-0 z-10 p-6 sm:p-8 bg-gradient-to-t from-black/85 via-black/45 to-transparent pointer-events-none">
-                  <div className="space-y-1 max-w-3xl">
-                    {selectedItem.title && (
-                      <h3 className="text-xl sm:text-2xl font-serif font-bold text-white drop-shadow">{selectedItem.title}</h3>
-                    )}
-                    {selectedItem.description && (
-                      <p className="text-sm sm:text-base text-white/85 leading-relaxed max-w-2xl">{selectedItem.description}</p>
-                    )}
-                    <div className="flex items-center gap-4 pt-2 text-[10px] sm:text-[11px] font-mono text-white/60">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
+
+              {/* Imagen — ocupa la zona media del panel, sin llenar la pantalla */}
+              <div
+                className="relative w-full h-[min(60svh,540px)] sm:h-[min(64svh,600px)] flex items-center justify-center overflow-hidden"
+                style={{
+                  background:
+                    'radial-gradient(80% 70% at 50% 35%, var(--theme-bg-alt) 0%, var(--theme-bg) 100%)',
+                }}
+              >
+                <CachedImage
+                  src={selectedItem.imageUrl}
+                  width={1100}
+                  sizes="(max-width: 768px) 94vw, min(92vw, 860px)"
+                  alt={selectedItem.title || 'Galería Maison Rosas'}
+                  className="w-full h-full object-contain"
+                  onError={() => {
+                    markBroken(`${selectedItem.id}:${selectedItem.imageUrl}`);
+                    reportBrokenImage(selectedItem.imageUrl);
+                  }}
+                />
+              </div>
+
+              {/* Ficha de la creación — texto legible sobre la superficie del panel */}
+              {(selectedItem.title || selectedItem.description || selectedItem.category || selectedItem.date) && (
+                <div className="p-5 sm:p-6 space-y-3">
+                  {selectedItem.title && (
+                    <h3 className="text-lg sm:text-xl font-serif font-bold leading-snug" style={{ color: 'var(--theme-text)' }}>
+                      {selectedItem.title}
+                    </h3>
+                  )}
+                  {selectedItem.description && (
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--theme-text-secondary)' }}>
+                      {selectedItem.description}
+                    </p>
+                  )}
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-1 pt-1 text-[10px] sm:text-[11px] font-mono uppercase tracking-wider" style={{ color: 'var(--theme-text-muted)' }}>
+                    {selectedItem.date && (
+                      <span className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5 text-brand-secondary" aria-hidden="true" />
                         {new Date(selectedItem.date).toLocaleDateString('es-PE')}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Layers className="h-3.5 w-3.5" aria-hidden="true" />
+                    )}
+                    {selectedItem.category && (
+                      <span className="flex items-center gap-1.5">
+                        <Layers className="h-3.5 w-3.5 text-brand-secondary" aria-hidden="true" />
                         {selectedItem.category}
                       </span>
-                    </div>
+                    )}
                   </div>
                 </div>
               )}
