@@ -191,11 +191,8 @@ section[id]:not(#inicio):not(#tracking), footer {
   }
 }
 #inicio,
-#hero-badge, #hero-title, #hero-desc, #hero-actions, #hero-stats, #hero-image-container, #hero-review-floater {
+#hero-badge, #hero-title, #hero-desc, #hero-actions, #hero-stats {
   content-visibility: visible;
-}
-#hero-cake-image {
-  contain: layout style paint;
 }
 
 /* ============= CUSTOM SCROLLBAR ============= */
@@ -678,4 +675,39 @@ section[id]:not(#inicio):not(#tracking), footer {
     inset 0 1px 0 rgba(255, 255, 255, 0.10),
     inset 0 -3px 6px rgba(0, 0, 0, 0.45),
     0 16px 32px -12px rgba(0, 0, 0, 0.6);
+}
+
+/* ============= HERO SCENE — Vitrina en profundidad =============
+ * El HERO es una escena "sticky": el wrapper mide ~2x el viewport y la
+ * escena permanece fija mientras el scroll la atraviesa. Los tiles leen
+ * ese progreso (MotionValue) y avanzan en profundidad con transform 3D.
+ * Con prefers-reduced-motion el HERO es estático (altura automática). */
+.hero-scene-tall {
+  height: 205vh;
+}
+@media (max-width: 767px) {
+  .hero-scene-tall {
+    height: 152vh;
+  }
+}
+.hero-scene-stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+@media (max-width: 767px) {
+  .hero-scene-stage {
+    height: 100svh;
+  }
+}
+
+/* Contexto 3D de los tiles en profundidad (perspective se aplica en línea
+ * junto con el MotionValue; aquí solo se garantiza el recorte del stage). */
+.hero-scene-depth {
+  transform-style: preserve-3d;
+}
+
+/* Fotografías decorativas de la vitrina: esquinas redondeadas limpias. */
+.hero-tile-photo img {
+  backface-visibility: hidden;
 }
