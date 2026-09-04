@@ -75,6 +75,7 @@ export function securityHeaders(req: Request, res: Response, next: NextFunction)
 
 export const ALLOWED_IMAGE_DOMAINS = [
   'images.unsplash.com',
+  'upload.wikimedia.org',
   'avatars.githubusercontent.com',
   'github.githubassets.com',
   'lh3.googleusercontent.com',
