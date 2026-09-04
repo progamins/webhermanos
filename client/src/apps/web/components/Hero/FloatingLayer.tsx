@@ -33,17 +33,13 @@ function opacityKeyframes(def: HeroTile): { input: number[]; output: number[] } 
 }
 
 function TileVisual({ def }: { def: HeroTile }) {
-  const base = {
-    left: `${def.left}%`,
-    top: `${def.top}%`,
-  };
-
+  // El anclaje (left/top en %) vive en el elemento que Motion transforma
+  // (MotionTile), NO aquí: este contenido solo define tamaño/apariencia.
   if (def.variant === 'photo') {
     return (
       <div
         className="hero-tile-photo rounded-[20px] overflow-hidden border bg-white/70 dark:bg-zinc-900/50"
         style={{
-          ...base,
           width: def.width,
           aspectRatio: '4 / 3',
           borderColor: 'rgba(255,255,255,0.55)',
@@ -70,7 +66,6 @@ function TileVisual({ def }: { def: HeroTile }) {
       <div
         className="hero-tile-tag flex items-center justify-center rounded-full border backdrop-blur-md"
         style={{
-          ...base,
           width: def.width,
           height: def.width,
           backgroundColor: 'var(--theme-surface-glass)',
@@ -89,7 +84,6 @@ function TileVisual({ def }: { def: HeroTile }) {
     <div
       className="hero-tile-word flex items-center gap-2 rounded-full border backdrop-blur-md whitespace-nowrap px-4 py-1.5"
       style={{
-        ...base,
         backgroundColor: 'var(--theme-surface-glass)',
         borderColor: 'var(--theme-border)',
         color: 'var(--theme-text-secondary)',
@@ -132,6 +126,10 @@ const MotionTile = memo(function MotionTile({ def, progress }: MotionTileProps) 
     <motion.div
       className="absolute pointer-events-none select-none"
       style={{
+        // Anclaje en % del escenario (contenedor con position) — aquí es donde
+        // el porcentaje se resuelve contra el escenario completo.
+        left: `${def.left}%`,
+        top: `${def.top}%`,
         x,
         y,
         scale,
