@@ -2,7 +2,7 @@
   "version": 2,
   "buildCommand": "npm run build --workspace=client",
   "outputDirectory": "client/dist",
-  "installCommand": "npm ci --workspaces --include-workspace-root",
+  "installCommand": "npm ci --workspaces --include-workspace-root --no-audit --no-fund --prefer-offline",
   "devCommand": "npm run dev --workspace=client",
   "functions": {
     "api/index.ts": {
