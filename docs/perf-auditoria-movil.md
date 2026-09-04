@@ -58,3 +58,71 @@ El catálogo/galería no desbordan peso por culpa de `srcSet`… pero **la galer
 ## Qué NO se tocó
 
 Ningún cambio de código en esta auditoría: es medición + documentación. El fix del punto 1 (y el push) quedan pendientes de confirmación.
+
+---
+
+# Comparativa producción vs entorno dev — Lighthouse real (2026-09-04)
+
+> Método: Lighthouse CLI local (Chromium Edge) contra **https://webhermanos-client.vercel.app** (deploy de `6c6e3f6`, fix de srcSet incluido y verificado vivo: aparecen peticiones `w=400&auto=format&fit=crop&q=60`). Perfil móvil simulado 4G. 2 corridas (result-prod.json / result-prod2.json). Nota: **las métricas no son directamente comparables** con dev (localhost sin throttle + caché tibio) — los **bytes por imagen sí lo son** (mismo archivo servido).
+
+## Métricas (2 corridas)
+
+| Métrica | Prod run 1 | Prod run 2 | Dev (local, sin throttle) |
+|---|---|---|---|
+| Score perf | 54 | 49 | — |
+| FCP | 5.1 s | 2.9 s | 644 ms (FP=FCP) |
+| **LCP** | **10.9 s** | **10.9 s** | 644 ms |
+| CLS | 0.015 | **0.117** | 0.000 |
+| Speed Index | 6.2 s | 4.9 s | — |
+| TBT | 300 ms | 530 ms | — |
+| TTI | 10.9 s | 10.9 s | — |
+| Bytes totales | 1,461.8 KB | 1,508.7 KB | JS dev 5 MB (no representativo) |
+
+- **LCP = `p#hero-desc`** («Diseños exclusivos creados por Carol Rosas», texto) — no es la foto (26 KB AVIF cargada temprano): el retraso es de *render* del contenido del hero en arranque frío bajo CPU throttled (JS 368 KB + wasm/lottie ~930 KB + fuentes). Estable en 10.9 s en ambas corridas.
+- **CLS culpable (0.107 de 0.117): `section#inicio > .hero-scene-stage`** — el swap tardío de **Playfair Display** (woff2 de fonts.gstatic) reflowa el bloque del hero. En dev las fuentes estaban calientes → CLS 0; en frío varía 0.015–0.117 según cuándo llega la fuente.
+
+## Peso total transferido por tipo (prod, run 2)
+
+| Tipo | Bytes | Notas |
+|---|---|---|
+| `other` | 930.3 KB | **dotlottie-player.wasm 624.8 KB** (jsdelivr, 1,771 KB crudos) + **cake.lottie 299.5 KB** + favicon |
+| script | 368.4 KB | 20 chunks (incl. vendor-recharts 105 KB gz descargado en home) |
+| font | 102.3 KB | Playfair Display + Plus Jakarta Sans (Google Fonts, swap) |
+| image | 26–74 KB | transferido contado por LH (resto servido por caché interna: SW/IndexedDB) |
+| stylesheet | 30.3 KB | + documento 3.2 KB |
+
+## Imágenes — peso frío único en móvil (prod, datos reales)
+
+| Grupo | Bytes fríos | Qué es |
+|---|---|---|
+| `grande (>800w)` | 1,315.0 KB | w=1200 ×4 (139–263 KB) + w=1920 (467.6 KB) |
+| `original (sin ancho)` | 1,039.6 KB | **config.heroImage crudo: 1,037.5 KB** (solo para meta/SEO, nunca se muestra) + favicon |
+| `w800` | 664.6 KB | portadas de productos/galería horneadas a w=800 (77–136 KB) |
+| `small (≤480)` | 184.4 KB | hero AVIF w=420 (21.9–26.4 KB ×3) + galería w=400&q=60 (29–32 KB ×2) — **lo que el móvil realmente muestra** |
+| `upload` | 58.0 KB | webp del admin (~19 KB ×3) ✅ |
+| **Total frío** | **3,261.6 KB** | vs **~242 KB realmente usados** → **~93 % sobre-descarga** |
+
+### Causa raíz del sobre-peso
+
+El **prewarm de imágenes (`App.tsx` → `imageMemoryCache.startLoad`)** descarga las URLs **crudas** tal como vienen de la DB (`getLocalImageUrl` solo envuelve en proxy, sin ancho): `config.heroImage` original (1,037 KB), productos con `w=1200/1920`, galería con `w=800`. Ese prewarm **no reutiliza** el `srcSet` (claves de caché distintas: URL cruda ≠ variante w=320/400) → en móvil descarga ~3 MB para mostrar ~242 KB, **incluso con el fix de srcSet activo** (las variantes pequeñas SÍ se piden y son las que renderiza el `<img>`).
+
+## Comparación con dev — por imagen (mismo efecto del fix)
+
+| Imagen | Dev (datos demo) | Prod (datos reales) |
+|---|---|---|
+| Foto hero LCP | 32.5 KB @w=420 JPEG | **26.4 KB @w=420 AVIF** (−20 %) |
+| Tarjeta galería (post-fix) | 26.2 / 18.0 KB @w=320 | 31.9 / 29.4 KB @w=400 (DPR 2.6 de LH) |
+| Uploads admin | — | ~19 KB webp ✅ |
+| Frío total página | ~143 KB (hero + 2 galería demo) | 3,261.6 KB únicas (93 % prewarm) |
+
+El fix de srcSet funciona **igual en ambos entornos** (por-tarjeta ~26–32 KB). La diferencia abismal del total es el **prewarm crudo** (prod tiene datos reales con anchos horneados w=800/1200/1920 + heroImage original; el stub demo usaba w=800 y tampoco se optimizaba).
+
+## Recomendaciones nuevas (por impacto)
+
+1. **(P0, ~3 MB fríos)** Prewarm *width-aware*: pasar las URLs por `optimizeImageUrl` (cap móvil 400 / calidad 60) antes de `preloadAll`/`preloadBatch`, o prewarmear solo uploads locales + LCP. Elimina el 93 % de sobre-descarga en móvil.
+2. **(P1, CLS 0.015→0)** Fuentes: precargar los woff2 del hero y declarar fallback con `size-adjust` para que el swap de Playfair Display no reflowe el hero; o self-host con `font-display: swap` + métricas de fallback.
+3. **(P1, ~925 KB)** `dotlottie-player.wasm` (jsdelivr) + `cake.lottie`: self-host y/o cargar solo al abrir el asistente (idle tras interacción), no en el arranque del home.
+4. **(P2, LCP 10.9 s)** El LCP es texto del hero que renderiza tarde en frío: revisar la animación de entrada del contenido central bajo CPU throttled y priorizar fuentes/JS del primer paint (el wasm/lottie del punto 3 compite en el arranque).
+
+*Pendiente: ejecutar el punto 1 y re-medir con Lighthouse (objetivo: imágenes frías < 400 KB móvil y CLS ≈ 0).*
+
